@@ -7,6 +7,10 @@ dist/
 build/
 *.tsbuildinfo
 
+# vercel static output (generated from index.html by vercel.json)
+public/
+.vercel/
+
 # env / secrets — NEVER commit these
 .env
 .env.*
