@@ -554,11 +554,10 @@
 
 <script>
   // ---- Waitlist ----
-  // Set this to your form provider's POST endpoint to go live, e.g.:
-  //   Formspree:  https://formspree.io/f/XXXXXXXX
-  //   Buttondown: https://api.buttondown.email/v1/subscribers (with API setup)
-  //   Tally / your own /api/waitlist endpoint, etc.
-  const WAITLIST_ENDPOINT = "";
+  // Self-hosted: posts to the Vercel serverless function at /api/waitlist,
+  // which stores signups in Vercel Postgres. To activate, connect a Vercel
+  // Postgres store to the project (see api/waitlist.ts).
+  const WAITLIST_ENDPOINT = "/api/waitlist";
 
   const wlOverlay = document.getElementById('wlOverlay');
   const wlMsg = document.getElementById('wlMsg');

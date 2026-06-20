@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "echo \"no install needed for the static landing page\"",
   "buildCommand": "mkdir -p public && cp index.html public/index.html",
   "outputDirectory": "public"
 }
