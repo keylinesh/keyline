@@ -546,7 +546,7 @@
   <div class="wl-modal">
     <button class="wl-close" id="wlClose" aria-label="Close">×</button>
     <h3 id="wlTitle">Join the waitlist</h3>
-    <p>Keyline is in early development. Drop your email and we'll let you know the moment it's ready — no spam, just the launch.</p>
+    <p>Keyline is in early development. Drop your email and we'll tell you when it's ready. No spam.</p>
     <form class="wl-form" id="wlForm">
       <input type="email" id="wlEmail" name="email" placeholder="you@company.com" required autocomplete="email">
       <button class="btn btn-primary" type="submit">Notify me →</button>
@@ -588,7 +588,7 @@
     if(!email) return;
     if(!WAITLIST_ENDPOINT){
       wlMsg.className = 'wl-msg err';
-      wlMsg.textContent = 'Waitlist endpoint not configured yet (set WAITLIST_ENDPOINT).';
+      wlMsg.textContent = 'Waitlist not configured yet.';
       return;
     }
     wlMsg.className = 'wl-msg'; wlMsg.textContent = 'Submitting…';
@@ -600,12 +600,12 @@
       });
       if(!res.ok) throw new Error('bad status');
       wlMsg.className = 'wl-msg ok';
-      wlMsg.textContent = "You're on the list — we'll be in touch. ✓";
+      wlMsg.textContent = "You're on the list ✓";
       wlForm.reset();
       window.plausible?.('waitlist_signup');
     }catch(err){
       wlMsg.className = 'wl-msg err';
-      wlMsg.textContent = 'Something went wrong — please try again.';
+      wlMsg.textContent = 'Something went wrong. Try again.';
     }
   });
 </script>
