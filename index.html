@@ -245,7 +245,27 @@
     .term{order:2}
     h1.hero{max-width:none}
   }
+  /* waitlist modal */
+  .wl-overlay{position:fixed;inset:0;background:rgba(5,7,12,.72);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .wl-overlay.open{display:flex}
+  .wl-modal{background:var(--card,#0e121b);border:1px solid rgba(255,255,255,.1);border-radius:16px;max-width:420px;width:100%;padding:30px;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+  .wl-modal h3{margin:0 0 8px;font-size:22px}
+  .wl-modal p{margin:0 0 20px;color:var(--faint,#8a93a6);font-size:14px;line-height:1.5}
+  .wl-form{display:flex;flex-direction:column;gap:12px}
+  .wl-form input{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:12px 14px;color:#fff;font-size:15px;font-family:inherit}
+  .wl-form input:focus{outline:none;border-color:var(--mint,#3ddc97)}
+  .wl-form button{cursor:pointer}
+  .wl-msg{font-size:13px;min-height:18px}
+  .wl-msg.ok{color:var(--mint,#3ddc97)}
+  .wl-msg.err{color:#ff6b6b}
+  .wl-close{float:right;background:none;border:none;color:var(--faint,#8a93a6);font-size:20px;cursor:pointer;line-height:1;margin:-6px -6px 0 0}
 </style>
+<!--
+  Privacy-friendly analytics (Plausible — no cookies, GDPR-friendly).
+  To enable: create a site at plausible.io, then uncomment and set data-domain.
+  Custom events (waitlist_open / waitlist_signup) already fire via window.plausible().
+-->
+<!-- <script defer data-domain="keyline.sh" src="https://plausible.io/js/script.tagged-events.js"></script> -->
 </head>
 <body>
 
@@ -261,7 +281,7 @@
     </div>
     <div class="nav-cta">
       <a class="btn btn-ghost" href="#">Sign in</a>
-      <a class="btn btn-primary" href="#pricing">Start free</a>
+      <a class="btn btn-primary" href="#waitlist" data-waitlist>Join the waitlist</a>
     </div>
   </div>
 </nav>
@@ -273,7 +293,7 @@
       <h1 class="hero display">Ship secrets,<br>not <em>screenshots.</em></h1>
       <p class="sub">Keyline is the dead-simple secrets manager for small teams. Share your <b>.env</b> files with one command, lock down access per environment, and audit every change — <b>encrypted so completely that not even we can read your keys.</b></p>
       <div class="hero-cta">
-        <a class="btn btn-primary" href="#pricing">Start free →</a>
+        <a class="btn btn-primary" href="#waitlist" data-waitlist>Join the waitlist →</a>
         <a class="btn btn-ghost" href="#how">See how it works</a>
         <span class="note">No card. Free for solo devs.</span>
       </div>
@@ -453,7 +473,7 @@
           <li><span class="ck">✓</span> Full CLI & zero-knowledge encryption</li>
           <li><span class="ck">✓</span> 7-day audit history</li>
         </ul>
-        <a class="btn btn-ghost" href="#">Get started</a>
+        <a class="btn btn-ghost" href="#waitlist" data-waitlist>Join the waitlist</a>
       </div>
       <div class="card feature rv">
         <span class="ribbon">FOR TEAMS</span>
@@ -467,7 +487,7 @@
           <li><span class="ck">✓</span> Unlimited, exportable audit log</li>
           <li><span class="ck">✓</span> Instant revoke, rotate & SSO-ready</li>
         </ul>
-        <a class="btn btn-primary" href="#">Start 14-day trial</a>
+        <a class="btn btn-primary" href="#waitlist" data-waitlist>Join the waitlist</a>
       </div>
     </div>
   </div>
@@ -497,7 +517,7 @@
       <span class="cp" id="cpLabel">click to copy</span>
     </div>
     <div class="hero-cta">
-      <a class="btn btn-primary" href="#pricing">Start free →</a>
+      <a class="btn btn-primary" href="#waitlist" data-waitlist>Join the waitlist →</a>
       <a class="btn btn-ghost" href="#">Read the docs</a>
     </div>
   </div>
@@ -518,6 +538,75 @@
   </div>
 </footer>
 
+<!-- WAITLIST MODAL -->
+<div class="wl-overlay" id="wlOverlay" role="dialog" aria-modal="true" aria-labelledby="wlTitle">
+  <div class="wl-modal">
+    <button class="wl-close" id="wlClose" aria-label="Close">×</button>
+    <h3 id="wlTitle">Join the waitlist</h3>
+    <p>Keyline is in early development. Drop your email and we'll let you know the moment it's ready — no spam, just the launch.</p>
+    <form class="wl-form" id="wlForm">
+      <input type="email" id="wlEmail" name="email" placeholder="you@company.com" required autocomplete="email">
+      <button class="btn btn-primary" type="submit">Notify me →</button>
+      <span class="wl-msg" id="wlMsg" aria-live="polite"></span>
+    </form>
+  </div>
+</div>
+
+<script>
+  // ---- Waitlist ----
+  // Set this to your form provider's POST endpoint to go live, e.g.:
+  //   Formspree:  https://formspree.io/f/XXXXXXXX
+  //   Buttondown: https://api.buttondown.email/v1/subscribers (with API setup)
+  //   Tally / your own /api/waitlist endpoint, etc.
+  const WAITLIST_ENDPOINT = "";
+
+  const wlOverlay = document.getElementById('wlOverlay');
+  const wlMsg = document.getElementById('wlMsg');
+  const wlForm = document.getElementById('wlForm');
+  const wlEmail = document.getElementById('wlEmail');
+
+  function openWaitlist(){
+    wlMsg.textContent = ''; wlMsg.className = 'wl-msg';
+    wlOverlay.classList.add('open');
+    setTimeout(()=>wlEmail.focus(), 50);
+    window.plausible?.('waitlist_open');
+  }
+  function closeWaitlist(){ wlOverlay.classList.remove('open'); }
+
+  document.querySelectorAll('[data-waitlist]').forEach(el=>{
+    el.addEventListener('click', e=>{ e.preventDefault(); openWaitlist(); });
+  });
+  document.getElementById('wlClose').addEventListener('click', closeWaitlist);
+  wlOverlay.addEventListener('click', e=>{ if(e.target === wlOverlay) closeWaitlist(); });
+  document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closeWaitlist(); });
+
+  wlForm.addEventListener('submit', async e=>{
+    e.preventDefault();
+    const email = wlEmail.value.trim();
+    if(!email) return;
+    if(!WAITLIST_ENDPOINT){
+      wlMsg.className = 'wl-msg err';
+      wlMsg.textContent = 'Waitlist endpoint not configured yet (set WAITLIST_ENDPOINT).';
+      return;
+    }
+    wlMsg.className = 'wl-msg'; wlMsg.textContent = 'Submitting…';
+    try{
+      const res = await fetch(WAITLIST_ENDPOINT, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','Accept':'application/json'},
+        body: JSON.stringify({ email })
+      });
+      if(!res.ok) throw new Error('bad status');
+      wlMsg.className = 'wl-msg ok';
+      wlMsg.textContent = "You're on the list — we'll be in touch. ✓";
+      wlForm.reset();
+      window.plausible?.('waitlist_signup');
+    }catch(err){
+      wlMsg.className = 'wl-msg err';
+      wlMsg.textContent = 'Something went wrong — please try again.';
+    }
+  });
+</script>
 <script>
   // Terminal typing animation
   const lines = [
