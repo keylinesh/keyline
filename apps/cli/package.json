@@ -1,0 +1,20 @@
+{
+  "name": "@keyline/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "keyline": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo \"(lint: configure eslint)\"",
+    "test": "echo \"(no tests yet)\"",
+    "dev": "node --import tsx src/index.ts"
+  },
+  "dependencies": {
+    "@keyline/crypto": "workspace:*",
+    "@keyline/shared": "workspace:*"
+  }
+}

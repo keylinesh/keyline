@@ -1,0 +1,57 @@
+# Keyline CI — runs on every merge request and on main.
+# Skeleton pipeline; stages fail the build on any error.
+
+default:
+  image: node:20
+
+stages:
+  - install
+  - verify
+
+variables:
+  PNPM_HOME: "$CI_PROJECT_DIR/.pnpm"
+
+cache:
+  key:
+    files:
+      - pnpm-lock.yaml
+  paths:
+    - .pnpm-store/
+    - node_modules/
+
+.setup: &setup
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@9.0.0 --activate
+    - pnpm config set store-dir .pnpm-store
+    - pnpm install --frozen-lockfile
+
+install:
+  stage: install
+  <<: *setup
+  script:
+    - echo "dependencies installed"
+
+lint:
+  stage: verify
+  <<: *setup
+  script:
+    - pnpm lint
+
+typecheck:
+  stage: verify
+  <<: *setup
+  script:
+    - pnpm typecheck
+
+test:
+  stage: verify
+  <<: *setup
+  script:
+    - pnpm test
+
+build:
+  stage: verify
+  <<: *setup
+  script:
+    - pnpm build

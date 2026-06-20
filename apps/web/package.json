@@ -1,0 +1,12 @@
+{
+  "name": "@keyline/web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo \"(web: scaffold with Vite + React — milestone M4)\"",
+    "typecheck": "echo \"(web: scaffold with Vite + React — milestone M4)\"",
+    "lint": "echo \"(web: scaffold with Vite + React — milestone M4)\"",
+    "test": "echo \"(web: scaffold with Vite + React — milestone M4)\""
+  }
+}
