@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "mkdir -p public && cp index.html favicon.svg public/",
+  "buildCommand": "mkdir -p public && cp index.html favicon.svg og-image.png og-image.svg robots.txt sitemap.xml public/",
   "outputDirectory": "public"
 }
