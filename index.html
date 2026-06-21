@@ -269,6 +269,13 @@
   Custom events (waitlist_open / waitlist_signup) already fire via window.plausible().
 -->
 <!-- <script defer data-domain="keyline.sh" src="https://plausible.io/js/script.tagged-events.js"></script> -->
+<!--
+  Vercel Web Analytics (static-site method). Enable Web Analytics for the project
+  in the Vercel dashboard, then redeploy. Vercel serves /_vercel/insights/script.js
+  automatically. Custom events fire via window.va (waitlist_open / waitlist_signup).
+-->
+<script>window.va=window.va||function(){(window.vai=window.vai||[]).push(arguments);};</script>
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body>
 
@@ -571,6 +578,7 @@
     wlMsg.textContent = ''; wlMsg.className = 'wl-msg';
     wlOverlay.classList.add('open');
     setTimeout(()=>wlEmail.focus(), 50);
+    window.va?.('event', { name: 'waitlist_open' });
     window.plausible?.('waitlist_open');
   }
   function closeWaitlist(){ wlOverlay.classList.remove('open'); }
@@ -602,6 +610,7 @@
       wlMsg.className = 'wl-msg ok';
       wlMsg.textContent = "You're on the list ✓";
       wlForm.reset();
+      window.va?.('event', { name: 'waitlist_signup' });
       window.plausible?.('waitlist_signup');
     }catch(err){
       wlMsg.className = 'wl-msg err';
