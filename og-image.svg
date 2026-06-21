@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0a0b0d"/>
+  <rect x="40" y="40" width="1120" height="550" rx="24" fill="none" stroke="#16201c" stroke-width="2"/>
+  <g transform="translate(80,80)">
+    <rect x="0" y="0" width="92" height="92" rx="22" fill="#0a0b0d" stroke="#5eead4" stroke-width="5"/>
+    <text x="46" y="63" text-anchor="middle" font-family="Menlo, monospace" font-size="46" font-weight="700" fill="#5eead4">k_</text>
+  </g>
+  <text x="200" y="142" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="700" fill="#e9ebee">Keyline</text>
+  <text x="80" y="320" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="800" fill="#e9ebee">Secrets your whole</text>
+  <text x="80" y="402" font-family="Arial, Helvetica, sans-serif" font-size="78" font-weight="800" fill="#e9ebee">team can share.</text>
+  <text x="80" y="470" font-family="Arial, Helvetica, sans-serif" font-size="33" fill="#8a93a6">Zero-knowledge .env sharing, in one command.</text>
+  <text x="80" y="560" font-family="Menlo, monospace" font-size="30" fill="#5eead4">$ keyline pull</text>
+  <text x="1120" y="560" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#5eead4">keyline.sh</text>
+</svg>

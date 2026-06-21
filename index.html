@@ -7,6 +7,78 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" href="favicon.svg">
 <meta name="theme-color" content="#0a0b0d">
+
+<!-- Primary SEO. Replace keyline.sh with your production domain if different. -->
+<meta name="description" content="Zero-knowledge secrets manager for small dev teams. Share .env files with one command and audit every change. Encrypted client-side, so even we can't read them.">
+<meta name="author" content="Keyline">
+<meta name="robots" content="index, follow">
+<meta name="keywords" content="secrets manager, .env, environment variables, zero-knowledge, dev teams, API keys, CLI, Doppler alternative, Infisical alternative">
+<link rel="canonical" href="https://keyline.sh/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Keyline">
+<meta property="og:title" content="Keyline: Secrets your whole team can share">
+<meta property="og:description" content="Share .env files with one command. Encrypted so even we can't read them. A zero-knowledge secrets manager for small dev teams.">
+<meta property="og:url" content="https://keyline.sh/">
+<meta property="og:image" content="https://keyline.sh/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Keyline: secrets your whole team can share">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Keyline: Secrets your whole team can share">
+<meta name="twitter:description" content="Share .env files with one command. Encrypted so even we can't read them.">
+<meta name="twitter:image" content="https://keyline.sh/og-image.png">
+
+<!-- Structured data: product -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Keyline",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "macOS, Linux, Windows",
+  "url": "https://keyline.sh/",
+  "description": "Zero-knowledge secrets manager for small dev teams. Share .env files with one command, control access per environment, and audit every change. Encrypted client-side.",
+  "offers": [
+    { "@type": "Offer", "name": "Solo", "price": "0", "priceCurrency": "USD" },
+    { "@type": "Offer", "name": "Team", "price": "19", "priceCurrency": "USD" }
+  ]
+}
+</script>
+
+<!-- Structured data: FAQ (eligible for rich results) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "If it's zero-knowledge, what happens if we lose our key?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Your workspace key is recoverable through any active admin's device, and we offer an optional sealed recovery file you store yourself. We genuinely can't reset it for you. That's the whole point. Recovery stays in your hands." }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I really not have to change my app code?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Correct, with one honest caveat: instead of a committed .env, your team runs keyline pull (or wraps startup in keyline run). Your app still just reads environment variables. Nothing in your codebase changes." }
+    },
+    {
+      "@type": "Question",
+      "name": "How is this different from Doppler or Vault?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Those are powerful and can feel heavy for a 3-person team. Keyline is deliberately narrow: .env-native, one flat price, zero-knowledge, and nothing to configure. If you outgrow simple, they're great. We won't pretend otherwise." }
+    },
+    {
+      "@type": "Question",
+      "name": "What's your security posture?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Client-side AES-256 encryption, TLS everywhere, scoped access tokens, and a full audit trail. SOC 2 Type II is in progress; our encryption design is documented publicly so you can verify the claims rather than trust them." }
+    }
+  ]
+}
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
