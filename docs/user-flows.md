@@ -1,4 +1,4 @@
-# Keyline — User Flows
+# Keyline: User Flows
 
 How the app works, told as real user steps. This is the target design (milestones M1–M6). Today only the landing page and the M0 scaffold exist. These flows are what we build toward.
 

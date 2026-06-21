@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Keyline — Secrets your whole team can share</title>
+<title>Keyline: Secrets your whole team can share</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" href="favicon.svg">
 <meta name="theme-color" content="#0a0b0d">
@@ -264,7 +264,7 @@
   .wl-close{float:right;background:none;border:none;color:var(--faint,#8a93a6);font-size:20px;cursor:pointer;line-height:1;margin:-6px -6px 0 0}
 </style>
 <!--
-  Privacy-friendly analytics (Plausible — no cookies, GDPR-friendly).
+  Privacy-friendly analytics (Plausible, no cookies, GDPR-friendly).
   To enable: create a site at plausible.io, then uncomment and set data-domain.
   Custom events (waitlist_open / waitlist_signup) already fire via window.plausible().
 -->
@@ -301,7 +301,7 @@
     <div>
       <span class="pill"><span class="dot"></span> Zero-knowledge by default</span>
       <h1 class="hero display">Ship secrets,<br>not <em>screenshots.</em></h1>
-      <p class="sub">Keyline is the dead-simple secrets manager for small teams. Share your <b>.env</b> files with one command, lock down access per environment, and audit every change — <b>encrypted so completely that not even we can read your keys.</b></p>
+      <p class="sub">Keyline is the dead-simple secrets manager for small teams. Share your <b>.env</b> files with one command, lock down access per environment, and audit every change. <b>Encrypted so even we can't read your keys.</b></p>
       <div class="hero-cta">
         <a class="btn btn-primary" href="#waitlist" data-waitlist>Join the waitlist →</a>
         <a class="btn btn-ghost" href="#how">See how it works</a>
@@ -312,7 +312,7 @@
     <div class="term rv">
       <div class="term-bar">
         <span class="d"></span><span class="d"></span><span class="d"></span>
-        <span class="t">~/acme-api — bash</span>
+        <span class="t">~/acme-api · bash</span>
       </div>
       <div class="term-body" id="term"></div>
     </div>
@@ -353,12 +353,12 @@
     <div>
       <div class="eyebrow">The problem</div>
       <h2>Your live keys are in a chat thread right now.</h2>
-      <p class="lead">Every small team starts the same way. It works — until it doesn't.</p>
+      <p class="lead">Every small team starts the same way. It works, until it doesn't.</p>
       <ul class="bad-list">
-        <li><span class="x">✕</span><span><b>Slack & DMs</b> keep an unencrypted, searchable copy of your credentials forever — including for anyone you offboard.</span></li>
+        <li><span class="x">✕</span><span><b>Slack & DMs</b> keep an unencrypted, searchable copy of your credentials forever. That includes anyone you offboard.</span></li>
         <li><span class="x">✕</span><span><b>Shared drives & pinned docs</b> drift out of date, so half the team runs the wrong key.</span></li>
         <li><span class="x">✕</span><span><b>.env in the repo</b> means one bad <code class="mono" style="color:var(--red)">git push</code> from a public leak and a 3am rotation scramble.</span></li>
-        <li><span class="x">✕</span><span><b>No record</b> of who saw what, when — so a leak becomes an unanswerable question.</span></li>
+        <li><span class="x">✕</span><span><b>No record</b> of who saw what, when. A leak becomes an unanswerable question.</span></li>
       </ul>
     </div>
   </div>
@@ -369,7 +369,7 @@
   <div class="wrap">
     <div class="eyebrow">How it works</div>
     <h2>Three commands. No new format to learn.</h2>
-    <p class="lead">Keyline speaks <span class="mono" style="color:var(--amber)">.env</span> natively. If your app reads environment variables today, you're already done — just change where they come from.</p>
+    <p class="lead">Keyline speaks <span class="mono" style="color:var(--amber)">.env</span> natively. If your app reads environment variables today, you're already done. Just change where they come from.</p>
     <div class="steps">
       <div class="step rv">
         <div class="no">01</div>
@@ -407,7 +407,7 @@
         <div class="pipe"></div>
         <div class="node srv">
           <div class="ic">☁</div>
-          <div><div class="nm">Keyline servers</div><div class="ds">store + sync — can't decrypt</div></div>
+          <div><div class="nm">Keyline servers</div><div class="ds">store + sync, can't decrypt</div></div>
         </div>
         <div class="pipe up"></div>
         <div class="cipher">⬆ a8f3..d91c &nbsp; (ciphertext only)</div>
@@ -425,7 +425,7 @@
       <ul class="zk-points">
         <li><span class="ck">✓</span><div><b>We can't see your secrets</b><span>The encryption key is derived from a workspace secret you control. It never touches our servers.</span></div></li>
         <li><span class="ck">✓</span><div><b>A breach of us isn't a breach of you</b><span>If someone stole our entire database, they'd get a pile of unreadable bytes.</span></div></li>
-        <li><span class="ck">✓</span><div><b>No subpoena, no insider, no accident</b><span>You can't hand over data you mathematically cannot read — and neither can we.</span></div></li>
+        <li><span class="ck">✓</span><div><b>No subpoena, no insider, no accident</b><span>You can't hand over data you mathematically cannot read. Neither can we.</span></div></li>
       </ul>
     </div>
   </div>
@@ -442,7 +442,7 @@
       <div class="f"><div class="ic">≡</div><h4>Tamper-evident audit log</h4><p>Every read, write, and denied attempt is recorded with who, what, and when.</p></div>
       <div class="f"><div class="ic">⎇</div><h4>Git-safe by design</h4><p>Secrets sync through Keyline, never your repo. Commit your code, not your credentials.</p></div>
       <div class="f"><div class="ic">↻</div><h4>Instant revoke & rotate</h4><p>Someone leaves? Pull their access in one command and rotate what they touched.</p></div>
-      <div class="f"><div class="ic">⊕</div><h4>Deploy anywhere</h4><p>Vercel, Railway, Fly, your own boxes — if it reads env vars, Keyline feeds it.</p></div>
+      <div class="f"><div class="ic">⊕</div><h4>Deploy anywhere</h4><p>Vercel, Railway, Fly, your own boxes. If it reads env vars, Keyline feeds it.</p></div>
     </div>
   </div>
 </section>
@@ -453,7 +453,7 @@
     <div>
       <div class="eyebrow">Accountability</div>
       <h2>Answer "who touched prod?" in one glance.</h2>
-      <p class="lead">When something goes wrong — or an auditor asks — you have a clean, exportable record instead of a frantic scroll through DMs.</p>
+      <p class="lead">When something goes wrong, or an auditor asks, you have a clean, exportable record. No frantic scroll through DMs.</p>
     </div>
     <div class="logwin rv">
       <div class="h"><span>keyline · acme-api · audit</span><span class="live"><span class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 8px var(--mint);display:inline-block"></span> live</span></div>
@@ -491,7 +491,7 @@
         <div class="amt">$19<small> /month, flat</small></div>
         <div class="who">For 2–10 person teams that share secrets daily.</div>
         <ul>
-          <li><span class="ck">✓</span> <b style="font-weight:600">Up to 10 members</b> <span>— no per-seat fees</span></li>
+          <li><span class="ck">✓</span> <b style="font-weight:600">Up to 10 members</b> <span>· no per-seat fees</span></li>
           <li><span class="ck">✓</span> Unlimited environments & projects</li>
           <li><span class="ck">✓</span> Per-environment access control</li>
           <li><span class="ck">✓</span> Unlimited, exportable audit log</li>
@@ -509,9 +509,9 @@
     <div class="eyebrow">Questions</div>
     <h2>The things you're right to ask.</h2>
     <div class="faq">
-      <div class="q rv"><h4>If it's zero-knowledge, what happens if we lose our key?</h4><p>Your workspace key is recoverable through any active admin's device, and we offer an optional sealed recovery file you store yourself. We genuinely can't reset it for you — that's the whole point — so recovery stays in your hands.</p></div>
-      <div class="q rv"><h4>Do I really not have to change my app code?</h4><p>Correct, with one honest caveat: instead of a committed <code>.env</code>, your team runs <code>keyline pull</code> (or wraps startup in <code>keyline run</code>). Your app still just reads environment variables — nothing in your codebase changes.</p></div>
-      <div class="q rv"><h4>How is this different from Doppler or Vault?</h4><p>Those are powerful and can feel heavy for a 3-person team. Keyline is deliberately narrow: <code>.env</code>-native, one flat price, zero-knowledge, and nothing to configure. If you outgrow simple, they're great — we won't pretend otherwise.</p></div>
+      <div class="q rv"><h4>If it's zero-knowledge, what happens if we lose our key?</h4><p>Your workspace key is recoverable through any active admin's device, and we offer an optional sealed recovery file you store yourself. We genuinely can't reset it for you. That's the whole point. Recovery stays in your hands.</p></div>
+      <div class="q rv"><h4>Do I really not have to change my app code?</h4><p>Correct, with one honest caveat: instead of a committed <code>.env</code>, your team runs <code>keyline pull</code> (or wraps startup in <code>keyline run</code>). Your app still just reads environment variables. Nothing in your codebase changes.</p></div>
+      <div class="q rv"><h4>How is this different from Doppler or Vault?</h4><p>Those are powerful and can feel heavy for a 3-person team. Keyline is deliberately narrow: <code>.env</code>-native, one flat price, zero-knowledge, and nothing to configure. If you outgrow simple, they're great. We won't pretend otherwise.</p></div>
       <div class="q rv"><h4>What's your security posture?</h4><p>Client-side AES-256 encryption, TLS everywhere, scoped access tokens, and a full audit trail. SOC 2 Type II is in progress; our encryption design is documented publicly so you can verify the claims rather than trust them.</p></div>
     </div>
   </div>
@@ -632,7 +632,7 @@
     {h:'  <span class="key">STRIPE_SECRET_KEY</span><span class="dim">=••••••••••</span>', d:120},
     {h:'  <span class="key">DATABASE_URL</span><span class="dim">=••••••••••</span>', d:120},
     {h:'  <span class="key">REDIS_URL</span><span class="dim">=••••••••••</span>', d:120},
-    {h:'<span class="ok">✓</span> <span class="dim">wrote 14 keys to .env — never hit the repo</span>', d:300},
+    {h:'<span class="ok">✓</span> <span class="dim">wrote 14 keys to .env, never hit the repo</span>', d:300},
   ];
   const term = document.getElementById('term');
   let li = 0;

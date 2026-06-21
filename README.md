@@ -1,10 +1,10 @@
 # Keyline
 
-**Share `.env` files securely with one command — encrypted so completely that not even Keyline can read your keys.**
+**Share `.env` files with one command. Encrypted so even we can't read them.**
 
 > We host your secrets. We can't read them.
 
-Keyline is a hosted, zero-knowledge secrets manager for small dev teams (2–10 people). Stop pasting API keys into Slack and committing `.env` files. Encryption and decryption happen **client-side** — our servers only ever hold ciphertext.
+Keyline is a hosted, zero-knowledge secrets manager for small dev teams (2 to 10 people). Stop pasting API keys into Slack and committing `.env` files. Encryption and decryption happen **client-side**. Our servers only ever hold ciphertext.
 
 ## Why
 
@@ -12,7 +12,7 @@ Small teams share secrets in ways that are convenient and dangerous: keys pasted
 
 ## How it works
 
-Three commands. No new format to learn — if your app reads env vars today, you're done.
+Three commands. No new format to learn. If your app reads env vars today, you're done.
 
 ```sh
 keyline link <project> --env prod   # bind a directory to a workspace/environment
@@ -27,8 +27,8 @@ Goal: install → link → pull in **under two minutes**.
 
 - Client-side **AES-256-GCM** encryption; servers store only ciphertext, wrapped keys, metadata, and audit events.
 - The workspace key is derived from a secret **you** control and never reaches our servers.
-- Member access uses **envelope encryption** — the workspace key is wrapped per device, so adding/revoking a member re-wraps rather than re-encrypting everything.
-- **A breach of us is not a breach of you.** This claim must stay true and publicly verifiable — see the encryption design doc (tracked in milestone M1).
+- Member access uses **envelope encryption**. The workspace key is wrapped per device. Adding or removing a member re-wraps it instead of re-encrypting everything.
+- **A breach of us is not a breach of you.** This claim must stay true and publicly verifiable. See the encryption design doc (milestone M1).
 
 Honest caveat: lost key with no recovery = unrecoverable. That's the point. Recovery is offered via any active admin device or an optional sealed recovery file you hold yourself.
 
@@ -70,7 +70,7 @@ pnpm test         # run tests
 
 ## Project status
 
-**Planning / early build.** The roadmap is tracked as GitLab milestones M0–M6 (run `setup-gitlab-issues.sh` to create the backlog). The riskiest assumption — the zero-knowledge crypto core — is M1 and is being built first. See `keyline-context.md` for full positioning, competitive analysis, and the honest risk list.
+**Planning / early build.** The roadmap is tracked as GitLab milestones M0 to M6 (run `setup-gitlab-issues.sh` to create the backlog). The riskiest assumption is the zero-knowledge crypto core. It is M1 and built first. See `keyline-context.md` for full positioning, competitive analysis, and the honest risk list.
 
 ## License
 
