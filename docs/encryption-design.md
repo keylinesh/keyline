@@ -1,4 +1,4 @@
-# Keyline — Encryption Design
+# Keyline: Encryption Design
 
 - **Status:** draft. Must pass an external security review before launch.
 - **Scope:** the client-side, zero-knowledge scheme. The server stores only ciphertext, wrapped keys, metadata, and audit events.
@@ -26,10 +26,10 @@ All primitives are from Node's built-in `crypto`. No third-party crypto librarie
 
 ## Key hierarchy
 
-1. **Workspace secret** — a value the customer controls. Never sent to the server.
-2. **Workspace key** (32 bytes) — derived from the workspace secret via scrypt. Encrypts all secret bundles. Held in client memory only.
-3. **Device keypair** — per device X25519 keypair. The private key stays on the device. The public key is registered with the server.
-4. **Wrapped key** — the workspace key sealed to each member device's public key.
+1. **Workspace secret**: a value the customer controls. Never sent to the server.
+2. **Workspace key** (32 bytes): derived from the workspace secret via scrypt. Encrypts all secret bundles. Held in client memory only.
+3. **Device keypair**: a per-device X25519 keypair. The private key stays on the device. The public key is registered with the server.
+4. **Wrapped key**: the workspace key sealed to each member device's public key.
 
 ## Layers
 
@@ -82,9 +82,9 @@ Honest limit: if every device is lost and there is no recovery file, the workspa
 
 ## Not covered here yet
 
-- Tamper-evident audit log (hash-chained) — milestone M2.
-- Token and session design — milestone M2.
-- Formal external review — open M1 task.
+- Tamper-evident audit log (hash-chained). Milestone M2.
+- Token and session design. Milestone M2.
+- Formal external review. Open M1 task.
 
 ## Status
 
