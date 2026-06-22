@@ -27,6 +27,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@keyline/crypto':
+        specifier: workspace:*
+        version: link:../../packages/crypto
       '@keyline/shared':
         specifier: workspace:*
         version: link:../../packages/shared

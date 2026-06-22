@@ -13,6 +13,7 @@
     "db:migrate": "node --import tsx src/db/migrate.ts"
   },
   "dependencies": {
+    "@keyline/crypto": "workspace:*",
     "@keyline/shared": "workspace:*",
     "pg": "^8.13.0"
   },
