@@ -1,0 +1,47 @@
+{
+  "_comment": "Known-answer vectors for @keyline/crypto. Regenerate with `pnpm gen:vectors`. The aesGcmNist entry is a published NIST constant; the rest lock our wire formats.",
+  "aesGcmNist": {
+    "key": "0000000000000000000000000000000000000000000000000000000000000000",
+    "iv": "000000000000000000000000",
+    "plaintext": "00000000000000000000000000000000",
+    "ciphertext": "cea7403d4d606b6e074ec5d3baf39d18",
+    "tag": "d0d1c8a799996bf0265b98b5d48ab919"
+  },
+  "kdf": {
+    "secret": "correct horse battery staple",
+    "salt": "MDEyMzQ1Njc4OWFiY2RlZg==",
+    "key": "9rcVF+DZ8uU77qz3H/v29+n2g8c877AOCRXSQvC/fs0="
+  },
+  "bundle": {
+    "key": "BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=",
+    "bundle": {
+      "v": 1,
+      "nonce": "CQkJCQkJCQkJCQkJ",
+      "ciphertext": "dNHW3e61njLlIZl9srXomo2NEJhrgp62CvE+rJE1VTuRpLSGvQd4XELDymUwU5GxD26xu3q7yiw=",
+      "tag": "R7+1Bgrr49yAP51lGL1ToQ=="
+    },
+    "plaintext": "STRIPE_SECRET_KEY=sk_live_x\nDATABASE_URL=postgres://h/db"
+  },
+  "envelope": {
+    "recipientPrivateKey": "MC4CAQAwBQYDK2VuBCIEIChI8dd+Qe2v4LT6yc+9pGoaMjtk92GvNU1cu3u9Adxj",
+    "wrapped": {
+      "v": 1,
+      "eph": "MCowBQYDK2VuAyEAU+VS9SQcIacJhQlu/zCYTVFG58LF3Xnl4hF37/i95zQ=",
+      "nonce": "2rbNK8jFeWWyIN33",
+      "ct": "lzD32Cq9EGQZWbgluol/Wy5NjRpsdTydJMIe8HSW1JI=",
+      "tag": "P4wi12cGbXbJ5q0sjj4AKg=="
+    },
+    "workspaceKey": "QkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkI="
+  },
+  "recovery": {
+    "passphrase": "a strong recovery passphrase",
+    "sealed": {
+      "v": 1,
+      "salt": "KavUOKh7cTpmkzPzGKqhGg==",
+      "nonce": "xh++GEb91QiIeMqd",
+      "ct": "v8blCxzFJ5W93K325nwMK/ERtllZq/7J3IHGEZCJyDU=",
+      "tag": "GKC6HtiqsLoaFO3CRiKcKQ=="
+    },
+    "workspaceKey": "q6urq6urq6urq6urq6urq6urq6urq6urq6urq6urq6s="
+  }
+}

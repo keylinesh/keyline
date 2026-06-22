@@ -16,6 +16,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"(lint: configure eslint)\"",
     "test": "node --import tsx --test src/*.test.ts",
+    "gen:vectors": "tsx scripts/gen-vectors.ts",
     "demo": "tsx demo.ts"
   }
 }
