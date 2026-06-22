@@ -6,6 +6,7 @@ default:
 
 stages:
   - install
+  - build
   - verify
 
 variables:
@@ -32,6 +33,20 @@ install:
   script:
     - echo "dependencies installed"
 
+# Build internal packages first; their dist/ output (and type declarations) is
+# what the workspace packages import. Later stages consume these as artifacts,
+# so typecheck and test can resolve @keyline/* without rebuilding.
+build:
+  stage: build
+  <<: *setup
+  script:
+    - pnpm build
+  artifacts:
+    paths:
+      - "packages/*/dist"
+      - "apps/*/dist"
+    expire_in: 1 hour
+
 lint:
   stage: verify
   <<: *setup
@@ -49,9 +64,3 @@ test:
   <<: *setup
   script:
     - pnpm test
-
-build:
-  stage: verify
-  <<: *setup
-  script:
-    - pnpm build

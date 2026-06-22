@@ -7,6 +7,7 @@
  *   - keypair:  per-device X25519 keypairs
  *   - envelope: wrap/unwrap the workspace key to a device public key
  *   - recovery: sealed recovery file under a passphrase
+ *   - admin-recovery: admin-device flow to re-grant a lost member's access
  *
  * The authoritative design and threat model live in docs/encryption-design.md.
  * The scheme must pass an external security review before it ships.
@@ -17,3 +18,4 @@ export * from "./kdf.js";
 export * from "./keypair.js";
 export * from "./envelope.js";
 export * from "./recovery.js";
+export * from "./admin-recovery.js";

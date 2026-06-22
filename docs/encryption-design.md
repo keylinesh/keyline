@@ -43,7 +43,7 @@ A set of secrets (e.g. a serialized `.env`) is sealed with AES-256-GCM under the
 
 ### 3. Device keypairs (`keypair.ts`)
 
-On first login a device generates an X25519 keypair. Public keys are stored as base64 SPKI DER; private keys as base64 PKCS8 DER, kept on the device (OS keychain where available).
+On first login a device generates an X25519 keypair. Public keys are stored as base64 SPKI DER; private keys as base64 PKCS8 DER, kept on the device. The private key is held in the OS keychain where available (macOS today), with a file fallback at `~/.keyline/keys/` (file mode 0600, directory mode 0700). Only the public key and a device id are registered with the server. See `apps/cli/src/keystore.ts` and `apps/cli/src/device.ts`.
 
 ### 4. Envelope encryption (`envelope.ts`)
 
@@ -62,7 +62,10 @@ Adding a member produces a new wrapped key. Revoking a member deletes their wrap
 
 Two paths:
 
-- **Admin device.** An admin unwraps the workspace key with their device and re-wraps it to a new device's public key (`rewrapWorkspaceKey`). The full flow (auth, storage) is in the API (M2).
+- **Admin device.** Any active admin device can restore a member who lost theirs. The flow (`admin-recovery.ts`):
+  1. The server selects an active admin device for the workspace (`selectRecoveryAdmin`). If there are none, recovery stops with a clear message and the only option is a sealed recovery file.
+  2. On that admin's machine, the admin unwraps the workspace key with their device key and re-wraps it to the new device's public key (`recoverToNewDevice` → `rewrapWorkspaceKey`).
+  3. The new wrapped key is stored against the new device. The member unwraps it locally. The workspace key never leaves a member device in plaintext, and the server only ever moves wrapped keys. Auth and storage are in the API (M2).
 - **Sealed recovery file.** The workspace key is sealed with AES-256-GCM under a key derived (scrypt) from a recovery passphrase the customer holds. Importing it restores access.
 
 Honest limit: if every device is lost and there is no recovery file, the workspace key is unrecoverable. That is the point of zero-knowledge.
@@ -84,7 +87,7 @@ Honest limit: if every device is lost and there is no recovery file, the workspa
 
 - Tamper-evident audit log (hash-chained). Milestone M2.
 - Token and session design. Milestone M2.
-- Formal external review. Open M1 task.
+- Formal external review. Packet prepared in [`docs/security-review/`](security-review/README.md); engagement pending (M1 #18).
 
 ## Status
 
