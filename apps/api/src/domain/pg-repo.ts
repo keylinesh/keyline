@@ -22,6 +22,14 @@ import {
 } from "./bundles.js";
 import type { Member, MemberRepo } from "./members.js";
 import type { EnvAccess, EnvironmentAccessRepo, EnvRole } from "./access.js";
+import {
+  type AppendAuditInput,
+  type AuditEvent,
+  type AuditOutcome,
+  type AuditRepo,
+  computeEventHash,
+  GENESIS_HASH,
+} from "./audit.js";
 import type { Role } from "../auth/scope.js";
 
 export class PgWorkspaceRepo implements WorkspaceRepo {
@@ -424,5 +432,109 @@ export class PgEnvironmentAccessRepo implements EnvironmentAccessRepo {
       [environmentId, memberId],
     );
     return (res.rowCount ?? 0) > 0;
+  }
+}
+
+interface AuditRow {
+  id: string;
+  workspace_id: string;
+  seq: string; // bigint comes back as string
+  actor_member_id: string | null;
+  actor_device_id: string | null;
+  action: string;
+  target_type: string | null;
+  target_id: string | null;
+  outcome: AuditOutcome;
+  metadata: Record<string, unknown>;
+  prev_hash: string;
+  hash: string;
+  created_at: Date;
+}
+const toAudit = (r: AuditRow): AuditEvent => ({
+  id: r.id,
+  workspaceId: r.workspace_id,
+  seq: Number(r.seq),
+  actorMemberId: r.actor_member_id,
+  actorDeviceId: r.actor_device_id,
+  action: r.action,
+  targetType: r.target_type,
+  targetId: r.target_id,
+  outcome: r.outcome,
+  metadata: r.metadata,
+  prevHash: r.prev_hash,
+  hash: r.hash,
+  createdAt: r.created_at,
+});
+
+export class PgAuditRepo implements AuditRepo {
+  constructor(private readonly pool: Pool) {}
+
+  async append(input: AppendAuditInput): Promise<AuditEvent> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      // Serialize all appends for this workspace so seq + chain stay consistent.
+      await client.query("select 1 from workspaces where id = $1 for update", [input.workspaceId]);
+      const { rows: headRows } = await client.query<{ seq: string; hash: string }>(
+        `select seq, hash from audit_events where workspace_id = $1 order by seq desc limit 1`,
+        [input.workspaceId],
+      );
+      const head = headRows[0];
+      const seq = (head ? Number(head.seq) : 0) + 1;
+      const prevHash = head?.hash ?? GENESIS_HASH;
+      const createdAt = new Date();
+      const hashable = {
+        seq,
+        workspaceId: input.workspaceId,
+        actorMemberId: input.actorMemberId ?? null,
+        actorDeviceId: input.actorDeviceId ?? null,
+        action: input.action,
+        targetType: input.targetType ?? null,
+        targetId: input.targetId ?? null,
+        outcome: input.outcome,
+        metadata: input.metadata ?? {},
+        createdAt,
+        prevHash,
+      };
+      const hash = computeEventHash(hashable);
+      const { rows } = await client.query<{ id: string }>(
+        `insert into audit_events
+           (workspace_id, seq, actor_member_id, actor_device_id, action, target_type,
+            target_id, outcome, metadata, prev_hash, hash, created_at)
+         values ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10,$11,$12)
+         returning id`,
+        [
+          hashable.workspaceId,
+          seq,
+          hashable.actorMemberId,
+          hashable.actorDeviceId,
+          hashable.action,
+          hashable.targetType,
+          hashable.targetId,
+          hashable.outcome,
+          JSON.stringify(hashable.metadata),
+          prevHash,
+          hash,
+          createdAt,
+        ],
+      );
+      await client.query("commit");
+      return { id: rows[0]!.id, ...hashable, hash };
+    } catch (err) {
+      await client.query("rollback").catch(() => {});
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async list(workspaceId: string): Promise<AuditEvent[]> {
+    const { rows } = await this.pool.query<AuditRow>(
+      `select id, workspace_id, seq, actor_member_id, actor_device_id, action, target_type,
+              target_id, outcome, metadata, prev_hash, hash, created_at
+         from audit_events where workspace_id = $1 order by seq asc`,
+      [workspaceId],
+    );
+    return rows.map(toAudit);
   }
 }

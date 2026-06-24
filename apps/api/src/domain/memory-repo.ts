@@ -21,6 +21,13 @@ import {
 } from "./bundles.js";
 import type { Member, MemberRepo } from "./members.js";
 import type { EnvAccess, EnvironmentAccessRepo, EnvRole } from "./access.js";
+import {
+  type AppendAuditInput,
+  type AuditEvent,
+  type AuditRepo,
+  computeEventHash,
+  GENESIS_HASH,
+} from "./audit.js";
 import type { Role } from "../auth/scope.js";
 
 // A fixed clock keeps records ordering-stable in tests; real time isn't important here.
@@ -214,5 +221,38 @@ export class InMemoryEnvironmentAccessRepo implements EnvironmentAccessRepo {
   }
   async revoke(environmentId: string, memberId: string): Promise<boolean> {
     return this.byKey.delete(this.k(environmentId, memberId));
+  }
+}
+
+export class InMemoryAuditRepo implements AuditRepo {
+  private readonly byWs = new Map<string, AuditEvent[]>();
+
+  async append(input: AppendAuditInput): Promise<AuditEvent> {
+    const events = this.byWs.get(input.workspaceId) ?? [];
+    const head = events[events.length - 1];
+    const seq = (head?.seq ?? 0) + 1;
+    const prevHash = head?.hash ?? GENESIS_HASH;
+    const createdAt = new Date(EPOCH.getTime() + seq * 1000);
+    const hashable = {
+      seq,
+      workspaceId: input.workspaceId,
+      actorMemberId: input.actorMemberId ?? null,
+      actorDeviceId: input.actorDeviceId ?? null,
+      action: input.action,
+      targetType: input.targetType ?? null,
+      targetId: input.targetId ?? null,
+      outcome: input.outcome,
+      metadata: input.metadata ?? {},
+      createdAt,
+      prevHash,
+    };
+    const event: AuditEvent = { id: randomUUID(), ...hashable, hash: computeEventHash(hashable) };
+    events.push(event);
+    this.byWs.set(input.workspaceId, events);
+    return event;
+  }
+
+  async list(workspaceId: string): Promise<AuditEvent[]> {
+    return [...(this.byWs.get(workspaceId) ?? [])];
   }
 }

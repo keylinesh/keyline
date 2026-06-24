@@ -14,12 +14,14 @@ import { ApiError } from "./errors.js";
 import type { ResourceDeps } from "./routes/resources.js";
 import type { BundleDeps } from "./routes/bundles.js";
 import type { MemberRouteDeps } from "./routes/members.js";
+import type { AuditRouteDeps } from "./routes/audit.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerResourceRoutes } from "./routes/resources.js";
 import { registerBundleRoutes } from "./routes/bundles.js";
 import { registerMemberRoutes } from "./routes/members.js";
+import { registerAuditRoutes } from "./routes/audit.js";
 
-export interface AppDeps extends ResourceDeps, BundleDeps, MemberRouteDeps {
+export interface AppDeps extends ResourceDeps, BundleDeps, MemberRouteDeps, AuditRouteDeps {
   tokens: TokenService;
   login: DeviceLoginService;
 }
@@ -46,6 +48,7 @@ export function createApp(deps: AppDeps): Hono<AppEnv> {
   registerResourceRoutes(app, deps, auth);
   registerMemberRoutes(app, deps, auth);
   registerBundleRoutes(app, deps, auth);
+  registerAuditRoutes(app, deps, auth);
 
   return app;
 }
