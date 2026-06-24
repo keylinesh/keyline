@@ -1,28 +1,26 @@
 /**
- * keyline API — entrypoint stub.
+ * keyline API — entrypoint.
  *
- * The real API (auth, push/pull ciphertext, RBAC, tamper-evident audit log,
- * Stripe webhooks) is built across milestones M2 and M5. This stub starts an
- * HTTP server with a health check so the deploy pipeline has something to run.
+ * Builds the Hono app (auth + resource CRUD; push/pull, RBAC, audit, Stripe land
+ * across M2/M5) and serves it. Uses Postgres when DATABASE_URL is set, otherwise
+ * in-memory repos for local dev.
  *
  * INVARIANT: the server must never receive or store plaintext secrets or the
  * workspace master key — only ciphertext, wrapped keys, metadata, audit events.
  */
 
-import { createServer } from "node:http";
+import { serve } from "@hono/node-server";
+import { Pool } from "pg";
+import { createApp } from "./http/app.js";
+import { memoryDeps, pgDeps } from "./deps.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
+const databaseUrl = process.env.DATABASE_URL;
 
-const server = createServer((req, res) => {
-  if (req.url === "/health") {
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ status: "ok", service: "keyline-api" }));
-    return;
-  }
-  res.writeHead(404, { "content-type": "application/json" });
-  res.end(JSON.stringify({ error: "not_found" }));
-});
+const deps = databaseUrl ? pgDeps(new Pool({ connectionString: databaseUrl })) : memoryDeps();
+const app = createApp(deps);
 
-server.listen(PORT, () => {
-  console.log(`keyline-api listening on :${PORT} (stub — see milestones M2/M5)`);
+serve({ fetch: app.fetch, port: PORT }, () => {
+  const backend = databaseUrl ? "postgres" : "in-memory (no DATABASE_URL)";
+  console.log(`keyline-api listening on :${PORT} — storage: ${backend}`);
 });
