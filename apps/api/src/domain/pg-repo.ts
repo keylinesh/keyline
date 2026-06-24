@@ -20,6 +20,9 @@ import {
   VersionConflictError,
   type WrappedKeyRepo,
 } from "./bundles.js";
+import type { Member, MemberRepo } from "./members.js";
+import type { EnvAccess, EnvironmentAccessRepo, EnvRole } from "./access.js";
+import type { Role } from "../auth/scope.js";
 
 export class PgWorkspaceRepo implements WorkspaceRepo {
   constructor(private readonly pool: Pool) {}
@@ -305,5 +308,121 @@ export class PgWrappedKeyRepo implements WrappedKeyRepo {
          eph = excluded.eph, nonce = excluded.nonce, ct = excluded.ct, tag = excluded.tag`,
       [key.workspaceId, key.deviceId, key.formatVersion, key.eph, key.nonce, key.ct, key.tag],
     );
+  }
+}
+
+interface MemberRow {
+  id: string;
+  workspace_id: string;
+  email: string;
+  display_name: string | null;
+  role: Role;
+  created_at: Date;
+}
+const toMember = (r: MemberRow): Member => ({
+  id: r.id,
+  workspaceId: r.workspace_id,
+  email: r.email,
+  displayName: r.display_name,
+  role: r.role,
+  createdAt: r.created_at,
+});
+
+export class PgMemberRepo implements MemberRepo {
+  constructor(private readonly pool: Pool) {}
+
+  async create(input: {
+    workspaceId: string;
+    email: string;
+    role: Role;
+    displayName?: string;
+  }): Promise<Member> {
+    const { rows } = await this.pool.query<MemberRow>(
+      `insert into members (workspace_id, email, role, display_name)
+       values ($1, $2, $3, $4)
+       returning id, workspace_id, email, display_name, role, created_at`,
+      [input.workspaceId, input.email, input.role, input.displayName ?? null],
+    );
+    return toMember(rows[0]!);
+  }
+  async findById(id: string): Promise<Member | null> {
+    const { rows } = await this.pool.query<MemberRow>(
+      `select id, workspace_id, email, display_name, role, created_at from members where id = $1`,
+      [id],
+    );
+    return rows[0] ? toMember(rows[0]) : null;
+  }
+  async findByEmail(workspaceId: string, email: string): Promise<Member | null> {
+    const { rows } = await this.pool.query<MemberRow>(
+      `select id, workspace_id, email, display_name, role, created_at
+         from members where workspace_id = $1 and email = $2`,
+      [workspaceId, email],
+    );
+    return rows[0] ? toMember(rows[0]) : null;
+  }
+  async listByWorkspace(workspaceId: string): Promise<Member[]> {
+    const { rows } = await this.pool.query<MemberRow>(
+      `select id, workspace_id, email, display_name, role, created_at
+         from members where workspace_id = $1 order by created_at`,
+      [workspaceId],
+    );
+    return rows.map(toMember);
+  }
+  async delete(id: string): Promise<boolean> {
+    const res = await this.pool.query(`delete from members where id = $1`, [id]);
+    return (res.rowCount ?? 0) > 0;
+  }
+}
+
+interface EnvAccessRow {
+  id: string;
+  environment_id: string;
+  member_id: string;
+  role: EnvRole;
+  created_at: Date;
+}
+const toEnvAccess = (r: EnvAccessRow): EnvAccess => ({
+  id: r.id,
+  environmentId: r.environment_id,
+  memberId: r.member_id,
+  role: r.role,
+  createdAt: r.created_at,
+});
+
+export class PgEnvironmentAccessRepo implements EnvironmentAccessRepo {
+  constructor(private readonly pool: Pool) {}
+
+  async grant(input: { environmentId: string; memberId: string; role: EnvRole }): Promise<EnvAccess> {
+    const { rows } = await this.pool.query<EnvAccessRow>(
+      `insert into environment_access (environment_id, member_id, role)
+       values ($1, $2, $3)
+       on conflict (environment_id, member_id) do update set role = excluded.role
+       returning id, environment_id, member_id, role, created_at`,
+      [input.environmentId, input.memberId, input.role],
+    );
+    return toEnvAccess(rows[0]!);
+  }
+  async get(memberId: string, environmentId: string): Promise<EnvAccess | null> {
+    const { rows } = await this.pool.query<EnvAccessRow>(
+      `select id, environment_id, member_id, role, created_at
+         from environment_access where member_id = $1 and environment_id = $2`,
+      [memberId, environmentId],
+    );
+    return rows[0] ? toEnvAccess(rows[0]) : null;
+  }
+  async listByEnvironment(environmentId: string): Promise<EnvAccess[]> {
+    const { rows } = await this.pool.query<EnvAccessRow>(
+      `select id, environment_id, member_id, role, created_at
+         from environment_access where environment_id = $1 order by created_at`,
+      [environmentId],
+    );
+    return rows.map(toEnvAccess);
+  }
+  async revoke(environmentId: string, memberId: string): Promise<boolean> {
+    const res = await this.pool.query(
+      `delete from environment_access where environment_id = $1 and member_id = $2`,
+      [environmentId, memberId],
+    );
+    return (res.rowCount ?? 0) > 0;
   }
 }

@@ -12,12 +12,14 @@
 import type { Context, Hono, MiddlewareHandler } from "hono";
 import { z } from "zod";
 import { scopeAllowsEnvironment } from "../../auth/scope.js";
+import type { EnvironmentAccessRepo } from "../../domain/access.js";
 import {
   type BundleRepo,
   VersionConflictError,
   type WrappedKeyRepo,
 } from "../../domain/bundles.js";
 import type { EnvironmentRepo, ProjectRepo } from "../../domain/resources.js";
+import { effectiveEnvRole, meetsEnv } from "../access-control.js";
 import { type AppEnv, requireWorkspace } from "../authz.js";
 import { ApiError, forbidden, notFound } from "../errors.js";
 import { parseBody } from "../validate.js";
@@ -25,6 +27,7 @@ import { parseBody } from "../validate.js";
 export interface BundleDeps {
   bundles: BundleRepo;
   wrappedKeys: WrappedKeyRepo;
+  access: EnvironmentAccessRepo;
   projects: ProjectRepo;
   environments: EnvironmentRepo;
 }
@@ -45,10 +48,11 @@ export function registerBundleRoutes(
   deps: BundleDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { bundles, wrappedKeys, projects, environments } = deps;
+  const { bundles, wrappedKeys, access: accessRepo, projects, environments } = deps;
 
-  // Resolve the environment, assert the token covers its workspace + the env is in scope.
-  async function access(c: Context<AppEnv>, envId: string) {
+  // Resolve the environment; assert the token covers its workspace, the env is in
+  // token scope, and the member's effective environment role meets `need`.
+  async function access(c: Context<AppEnv>, envId: string, need: "read" | "write") {
     const env = await environments.findById(envId);
     if (!env) throw notFound("environment not found");
     const project = await projects.findById(env.projectId);
@@ -58,11 +62,13 @@ export function registerBundleRoutes(
     if (!scopeAllowsEnvironment(principal.scope, env.id)) {
       throw forbidden("token is not scoped to this environment");
     }
+    const role = await effectiveEnvRole(principal, env.id, accessRepo);
+    if (!meetsEnv(role, need)) throw forbidden(`requires ${need} access to this environment`);
     return { env, workspaceId: project.workspaceId, principal };
   }
 
   app.put("/v1/environments/:id/bundle", auth, async (c) => {
-    const { env, principal } = await access(c, c.req.param("id"));
+    const { env, principal } = await access(c, c.req.param("id"), "write");
     const { bundle, baseVersion } = await parseBody(c, pushSchema);
     try {
       const stored = await bundles.append({
@@ -84,7 +90,7 @@ export function registerBundleRoutes(
   });
 
   app.get("/v1/environments/:id/bundle", auth, async (c) => {
-    const { env, workspaceId, principal } = await access(c, c.req.param("id"));
+    const { env, workspaceId, principal } = await access(c, c.req.param("id"), "read");
     const latest = await bundles.getLatest(env.id);
     if (!latest) throw notFound("no bundle has been pushed for this environment yet");
 

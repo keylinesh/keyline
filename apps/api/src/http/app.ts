@@ -13,11 +13,13 @@ import { type AppEnv, authMiddleware } from "./authz.js";
 import { ApiError } from "./errors.js";
 import type { ResourceDeps } from "./routes/resources.js";
 import type { BundleDeps } from "./routes/bundles.js";
+import type { MemberRouteDeps } from "./routes/members.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerResourceRoutes } from "./routes/resources.js";
 import { registerBundleRoutes } from "./routes/bundles.js";
+import { registerMemberRoutes } from "./routes/members.js";
 
-export interface AppDeps extends ResourceDeps, BundleDeps {
+export interface AppDeps extends ResourceDeps, BundleDeps, MemberRouteDeps {
   tokens: TokenService;
   login: DeviceLoginService;
 }
@@ -42,6 +44,7 @@ export function createApp(deps: AppDeps): Hono<AppEnv> {
   const auth = authMiddleware(deps.tokens);
   registerAuthRoutes(app, deps.login);
   registerResourceRoutes(app, deps, auth);
+  registerMemberRoutes(app, deps, auth);
   registerBundleRoutes(app, deps, auth);
 
   return app;

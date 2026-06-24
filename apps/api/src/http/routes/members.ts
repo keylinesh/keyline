@@ -1,0 +1,128 @@
+/**
+ * Member management + per-environment access control (#23).
+ *
+ *   POST   /v1/workspaces/:wid/members         invite a member        (workspace admin)
+ *   GET    /v1/workspaces/:wid/members         list members           (workspace member)
+ *   DELETE /v1/members/:id                     remove a member        (workspace admin)
+ *   PUT    /v1/environments/:id/access         grant an env role      (env admin)
+ *   GET    /v1/environments/:id/access         list env grants        (env admin)
+ *   DELETE /v1/environments/:id/access/:mid    revoke an env grant    (env admin)
+ *
+ * "env admin" = workspace owner/admin (implicit) or a member granted admin on
+ * that environment (see access-control.ts).
+ */
+
+import type { Context, Hono, MiddlewareHandler } from "hono";
+import { z } from "zod";
+import type { EnvironmentAccessRepo, EnvAccess } from "../../domain/access.js";
+import type { Member, MemberRepo } from "../../domain/members.js";
+import type { EnvironmentRepo, ProjectRepo } from "../../domain/resources.js";
+import { effectiveEnvRole } from "../access-control.js";
+import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
+import { conflict, forbidden, notFound } from "../errors.js";
+import { parseBody } from "../validate.js";
+
+export interface MemberRouteDeps {
+  members: MemberRepo;
+  access: EnvironmentAccessRepo;
+  projects: ProjectRepo;
+  environments: EnvironmentRepo;
+}
+
+const workspaceRole = z.enum(["owner", "admin", "member"]);
+const envRole = z.enum(["read", "write", "admin"]);
+
+const inviteSchema = z.object({
+  email: z.string().email(),
+  role: workspaceRole,
+  displayName: z.string().min(1).max(120).optional(),
+});
+const grantSchema = z.object({ memberId: z.string().uuid(), role: envRole });
+
+const memberView = (m: Member) => ({
+  id: m.id,
+  email: m.email,
+  displayName: m.displayName,
+  role: m.role,
+  createdAt: m.createdAt.toISOString(),
+});
+const accessView = (a: EnvAccess) => ({
+  memberId: a.memberId,
+  environmentId: a.environmentId,
+  role: a.role,
+  createdAt: a.createdAt.toISOString(),
+});
+
+export function registerMemberRoutes(
+  app: Hono<AppEnv>,
+  deps: MemberRouteDeps,
+  auth: MiddlewareHandler<AppEnv>,
+): void {
+  const { members, access, projects, environments } = deps;
+
+  // Resolve env -> workspace and require the caller to be an env admin there.
+  async function requireEnvAdmin(c: Context<AppEnv>, envId: string) {
+    const env = await environments.findById(envId);
+    if (!env) throw notFound("environment not found");
+    const project = await projects.findById(env.projectId);
+    if (!project) throw notFound("environment not found");
+    const principal = c.get("principal");
+    requireWorkspace(principal, project.workspaceId);
+    const role = await effectiveEnvRole(principal, env.id, access);
+    if (role !== "admin") throw forbidden("requires admin on this environment");
+    return { env, workspaceId: project.workspaceId };
+  }
+
+  // ---- Member management ----
+  app.post("/v1/workspaces/:wid/members", auth, async (c) => {
+    const wid = c.req.param("wid");
+    requireWorkspace(c.get("principal"), wid);
+    requireRole(c.get("principal"), "admin");
+    const input = await parseBody(c, inviteSchema);
+    if (await members.findByEmail(wid, input.email)) throw conflict("email already a member");
+    const m = await members.create({ workspaceId: wid, ...input });
+    return c.json(memberView(m), 201);
+  });
+
+  app.get("/v1/workspaces/:wid/members", auth, async (c) => {
+    const wid = c.req.param("wid");
+    requireWorkspace(c.get("principal"), wid);
+    requireRole(c.get("principal"), "member");
+    const list = await members.listByWorkspace(wid);
+    return c.json({ members: list.map(memberView) });
+  });
+
+  app.delete("/v1/members/:id", auth, async (c) => {
+    const member = await members.findById(c.req.param("id"));
+    if (!member) throw notFound("member not found");
+    requireWorkspace(c.get("principal"), member.workspaceId);
+    requireRole(c.get("principal"), "admin");
+    await members.delete(member.id);
+    return c.body(null, 204);
+  });
+
+  // ---- Per-environment access ----
+  app.put("/v1/environments/:id/access", auth, async (c) => {
+    const { workspaceId } = await requireEnvAdmin(c, c.req.param("id"));
+    const input = await parseBody(c, grantSchema);
+    const member = await members.findById(input.memberId);
+    if (!member || member.workspaceId !== workspaceId) {
+      throw notFound("member not found in this workspace");
+    }
+    const granted = await access.grant({ environmentId: c.req.param("id"), ...input });
+    return c.json(accessView(granted));
+  });
+
+  app.get("/v1/environments/:id/access", auth, async (c) => {
+    await requireEnvAdmin(c, c.req.param("id"));
+    const list = await access.listByEnvironment(c.req.param("id"));
+    return c.json({ access: list.map(accessView) });
+  });
+
+  app.delete("/v1/environments/:id/access/:memberId", auth, async (c) => {
+    await requireEnvAdmin(c, c.req.param("id"));
+    const ok = await access.revoke(c.req.param("id"), c.req.param("memberId"));
+    if (!ok) throw notFound("grant not found");
+    return c.body(null, 204);
+  });
+}
