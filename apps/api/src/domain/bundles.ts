@@ -64,4 +64,6 @@ export interface WrappedKeyRepo {
   findForDevice(workspaceId: string, deviceId: string): Promise<StoredWrappedKey | null>;
   /** Insert or replace a device's wrapped key (used by membership/recovery, #23/#25). */
   upsert(key: StoredWrappedKey): Promise<void>;
+  /** Delete a device's wrapped key (used by member revoke, #25). Returns true if one existed. */
+  deleteForDevice(workspaceId: string, deviceId: string): Promise<boolean>;
 }

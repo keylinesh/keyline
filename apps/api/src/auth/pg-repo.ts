@@ -77,6 +77,20 @@ export class PgDeviceRepo implements DeviceRepo {
       revokedAt: row.revoked_at,
     };
   }
+
+  async listByMember(memberId: string): Promise<DeviceRecord[]> {
+    const { rows } = await this.pool.query<DeviceRow>(
+      `select d.id, d.member_id, m.workspace_id, d.public_key, m.role, d.revoked_at
+         from devices d join members m on m.id = d.member_id
+        where d.member_id = $1`,
+      [memberId],
+    );
+    return rows.map(toDeviceRecord);
+  }
+
+  async revoke(deviceId: string, when: Date): Promise<void> {
+    await this.pool.query(`update devices set revoked_at = $2 where id = $1`, [deviceId, when]);
+  }
 }
 
 export class PgChallengeRepo implements ChallengeRepo {
@@ -187,6 +201,13 @@ export class PgTokenRepo implements TokenRepo {
     const res = await this.pool.query(
       `update access_tokens set revoked_at = $2 where device_id = $1 and revoked_at is null`,
       [deviceId, when],
+    );
+    return res.rowCount ?? 0;
+  }
+  async revokeByMember(memberId: string, when: Date): Promise<number> {
+    const res = await this.pool.query(
+      `update access_tokens set revoked_at = $2 where member_id = $1 and revoked_at is null`,
+      [memberId, when],
     );
     return res.rowCount ?? 0;
   }

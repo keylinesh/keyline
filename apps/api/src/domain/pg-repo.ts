@@ -317,6 +317,14 @@ export class PgWrappedKeyRepo implements WrappedKeyRepo {
       [key.workspaceId, key.deviceId, key.formatVersion, key.eph, key.nonce, key.ct, key.tag],
     );
   }
+
+  async deleteForDevice(workspaceId: string, deviceId: string): Promise<boolean> {
+    const res = await this.pool.query(
+      `delete from wrapped_keys where workspace_id = $1 and device_id = $2`,
+      [workspaceId, deviceId],
+    );
+    return (res.rowCount ?? 0) > 0;
+  }
 }
 
 interface MemberRow {
