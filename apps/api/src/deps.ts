@@ -15,11 +15,19 @@ import {
 } from "./auth/memory-repo.js";
 import { PgChallengeRepo, PgDeviceRepo, PgTokenRepo } from "./auth/pg-repo.js";
 import {
+  InMemoryBundleRepo,
   InMemoryEnvironmentRepo,
   InMemoryProjectRepo,
   InMemoryWorkspaceRepo,
+  InMemoryWrappedKeyRepo,
 } from "./domain/memory-repo.js";
-import { PgEnvironmentRepo, PgProjectRepo, PgWorkspaceRepo } from "./domain/pg-repo.js";
+import {
+  PgBundleRepo,
+  PgEnvironmentRepo,
+  PgProjectRepo,
+  PgWorkspaceRepo,
+  PgWrappedKeyRepo,
+} from "./domain/pg-repo.js";
 import type { AppDeps } from "./http/app.js";
 
 export function memoryDeps(): AppDeps {
@@ -35,6 +43,8 @@ export function memoryDeps(): AppDeps {
     workspaces: new InMemoryWorkspaceRepo(),
     projects: new InMemoryProjectRepo(),
     environments: new InMemoryEnvironmentRepo(),
+    bundles: new InMemoryBundleRepo(),
+    wrappedKeys: new InMemoryWrappedKeyRepo(),
   };
 }
 
@@ -51,5 +61,7 @@ export function pgDeps(pool: Pool): AppDeps {
     workspaces: new PgWorkspaceRepo(pool),
     projects: new PgProjectRepo(pool),
     environments: new PgEnvironmentRepo(pool),
+    bundles: new PgBundleRepo(pool),
+    wrappedKeys: new PgWrappedKeyRepo(pool),
   };
 }

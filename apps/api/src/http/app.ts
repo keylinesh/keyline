@@ -12,10 +12,12 @@ import type { TokenService } from "../auth/tokens.js";
 import { type AppEnv, authMiddleware } from "./authz.js";
 import { ApiError } from "./errors.js";
 import type { ResourceDeps } from "./routes/resources.js";
+import type { BundleDeps } from "./routes/bundles.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerResourceRoutes } from "./routes/resources.js";
+import { registerBundleRoutes } from "./routes/bundles.js";
 
-export interface AppDeps extends ResourceDeps {
+export interface AppDeps extends ResourceDeps, BundleDeps {
   tokens: TokenService;
   login: DeviceLoginService;
 }
@@ -37,8 +39,10 @@ export function createApp(deps: AppDeps): Hono<AppEnv> {
 
   app.get("/health", (c) => c.json({ status: "ok", service: "keyline-api" }));
 
+  const auth = authMiddleware(deps.tokens);
   registerAuthRoutes(app, deps.login);
-  registerResourceRoutes(app, deps, authMiddleware(deps.tokens));
+  registerResourceRoutes(app, deps, auth);
+  registerBundleRoutes(app, deps, auth);
 
   return app;
 }

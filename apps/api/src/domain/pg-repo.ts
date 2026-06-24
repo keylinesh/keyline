@@ -12,6 +12,14 @@ import type {
   Workspace,
   WorkspaceRepo,
 } from "./resources.js";
+import {
+  type AppendBundleInput,
+  type BundleRepo,
+  type StoredBundle,
+  type StoredWrappedKey,
+  VersionConflictError,
+  type WrappedKeyRepo,
+} from "./bundles.js";
 
 export class PgWorkspaceRepo implements WorkspaceRepo {
   constructor(private readonly pool: Pool) {}
@@ -168,5 +176,134 @@ export class PgEnvironmentRepo implements EnvironmentRepo {
   async delete(id: string): Promise<boolean> {
     const res = await this.pool.query(`delete from environments where id = $1`, [id]);
     return (res.rowCount ?? 0) > 0;
+  }
+}
+
+interface BundleRow {
+  id: string;
+  environment_id: string;
+  version: number;
+  format_version: number;
+  nonce: string;
+  ciphertext: string;
+  tag: string;
+  created_by_device_id: string | null;
+  created_at: Date;
+}
+const toBundle = (r: BundleRow): StoredBundle => ({
+  id: r.id,
+  environmentId: r.environment_id,
+  version: r.version,
+  formatVersion: r.format_version,
+  nonce: r.nonce,
+  ciphertext: r.ciphertext,
+  tag: r.tag,
+  createdByDeviceId: r.created_by_device_id,
+  createdAt: r.created_at,
+});
+
+export class PgBundleRepo implements BundleRepo {
+  constructor(private readonly pool: Pool) {}
+
+  async getLatest(environmentId: string): Promise<StoredBundle | null> {
+    const { rows } = await this.pool.query<BundleRow>(
+      `select id, environment_id, version, format_version, nonce, ciphertext, tag,
+              created_by_device_id, created_at
+         from secret_bundles
+        where environment_id = $1
+        order by version desc
+        limit 1`,
+      [environmentId],
+    );
+    return rows[0] ? toBundle(rows[0]) : null;
+  }
+
+  async append(input: AppendBundleInput): Promise<StoredBundle> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("begin");
+      // Lock concurrent appends for this environment to a single writer.
+      const { rows: cur } = await client.query<{ version: number }>(
+        `select coalesce(max(version), 0) as version
+           from secret_bundles where environment_id = $1 for update`,
+        [input.environmentId],
+      );
+      const current = cur[0]?.version ?? 0;
+      if (input.baseVersion !== undefined && input.baseVersion !== current) {
+        await client.query("rollback");
+        throw new VersionConflictError(current);
+      }
+      const { rows } = await client.query<BundleRow>(
+        `insert into secret_bundles
+           (environment_id, version, format_version, nonce, ciphertext, tag, created_by_device_id)
+         values ($1, $2, $3, $4, $5, $6, $7)
+         returning id, environment_id, version, format_version, nonce, ciphertext, tag,
+                   created_by_device_id, created_at`,
+        [
+          input.environmentId,
+          current + 1,
+          input.formatVersion,
+          input.nonce,
+          input.ciphertext,
+          input.tag,
+          input.createdByDeviceId,
+        ],
+      );
+      await client.query("commit");
+      return toBundle(rows[0]!);
+    } catch (err) {
+      await client.query("rollback").catch(() => {});
+      // Unique (environment_id, version) violation under a race == a conflict.
+      if ((err as { code?: string }).code === "23505") {
+        const latest = await this.getLatest(input.environmentId);
+        throw new VersionConflictError(latest?.version ?? 0);
+      }
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+}
+
+export class PgWrappedKeyRepo implements WrappedKeyRepo {
+  constructor(private readonly pool: Pool) {}
+
+  async findForDevice(workspaceId: string, deviceId: string): Promise<StoredWrappedKey | null> {
+    const { rows } = await this.pool.query<{
+      workspace_id: string;
+      device_id: string;
+      format_version: number;
+      eph: string;
+      nonce: string;
+      ct: string;
+      tag: string;
+    }>(
+      `select workspace_id, device_id, format_version, eph, nonce, ct, tag
+         from wrapped_keys where workspace_id = $1 and device_id = $2`,
+      [workspaceId, deviceId],
+    );
+    const r = rows[0];
+    return r
+      ? {
+          workspaceId: r.workspace_id,
+          deviceId: r.device_id,
+          formatVersion: r.format_version,
+          eph: r.eph,
+          nonce: r.nonce,
+          ct: r.ct,
+          tag: r.tag,
+        }
+      : null;
+  }
+
+  async upsert(key: StoredWrappedKey): Promise<void> {
+    await this.pool.query(
+      `insert into wrapped_keys (workspace_id, device_id, format_version, eph, nonce, ct, tag)
+       values ($1, $2, $3, $4, $5, $6, $7)
+       on conflict (workspace_id, device_id) do update set
+         format_version = excluded.format_version,
+         eph = excluded.eph, nonce = excluded.nonce, ct = excluded.ct, tag = excluded.tag`,
+      [key.workspaceId, key.deviceId, key.formatVersion, key.eph, key.nonce, key.ct, key.tag],
+    );
   }
 }
