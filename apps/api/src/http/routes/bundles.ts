@@ -13,6 +13,7 @@ import type { Context, Hono, MiddlewareHandler } from "hono";
 import { z } from "zod";
 import { scopeAllowsEnvironment } from "../../auth/scope.js";
 import type { EnvironmentAccessRepo } from "../../domain/access.js";
+import type { AuditService } from "../../domain/audit.js";
 import {
   type BundleRepo,
   VersionConflictError,
@@ -30,6 +31,7 @@ export interface BundleDeps {
   access: EnvironmentAccessRepo;
   projects: ProjectRepo;
   environments: EnvironmentRepo;
+  audit: AuditService;
 }
 
 const b64 = z.string().min(1);
@@ -48,27 +50,48 @@ export function registerBundleRoutes(
   deps: BundleDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { bundles, wrappedKeys, access: accessRepo, projects, environments } = deps;
+  const { bundles, wrappedKeys, access: accessRepo, projects, environments, audit } = deps;
 
   // Resolve the environment; assert the token covers its workspace, the env is in
-  // token scope, and the member's effective environment role meets `need`.
-  async function access(c: Context<AppEnv>, envId: string, need: "read" | "write") {
+  // token scope, and the member's effective environment role meets `need`. Denied
+  // attempts are recorded to the audit log before the 403 is thrown.
+  async function access(
+    c: Context<AppEnv>,
+    envId: string,
+    need: "read" | "write",
+    action: string,
+  ) {
     const env = await environments.findById(envId);
     if (!env) throw notFound("environment not found");
     const project = await projects.findById(env.projectId);
     if (!project) throw notFound("environment not found");
     const principal = c.get("principal");
     requireWorkspace(principal, project.workspaceId);
+
+    const deny = async (reason: string) => {
+      await audit.record({
+        workspaceId: project.workspaceId,
+        actorMemberId: principal.memberId,
+        actorDeviceId: principal.deviceId,
+        action,
+        targetType: "environment",
+        targetId: env.id,
+        outcome: "denied",
+        metadata: { reason },
+      });
+      throw forbidden(reason);
+    };
+
     if (!scopeAllowsEnvironment(principal.scope, env.id)) {
-      throw forbidden("token is not scoped to this environment");
+      await deny("token is not scoped to this environment");
     }
     const role = await effectiveEnvRole(principal, env.id, accessRepo);
-    if (!meetsEnv(role, need)) throw forbidden(`requires ${need} access to this environment`);
+    if (!meetsEnv(role, need)) await deny(`requires ${need} access to this environment`);
     return { env, workspaceId: project.workspaceId, principal };
   }
 
   app.put("/v1/environments/:id/bundle", auth, async (c) => {
-    const { env, principal } = await access(c, c.req.param("id"), "write");
+    const { env, workspaceId, principal } = await access(c, c.req.param("id"), "write", "bundle.push");
     const { bundle, baseVersion } = await parseBody(c, pushSchema);
     try {
       const stored = await bundles.append({
@@ -80,6 +103,16 @@ export function registerBundleRoutes(
         tag: bundle.tag,
         createdByDeviceId: principal.deviceId,
       });
+      await audit.record({
+        workspaceId,
+        actorMemberId: principal.memberId,
+        actorDeviceId: principal.deviceId,
+        action: "bundle.push",
+        targetType: "environment",
+        targetId: env.id,
+        outcome: "allowed",
+        metadata: { version: stored.version },
+      });
       return c.json({ version: stored.version, createdAt: stored.createdAt.toISOString() }, 201);
     } catch (err) {
       if (err instanceof VersionConflictError) {
@@ -90,11 +123,21 @@ export function registerBundleRoutes(
   });
 
   app.get("/v1/environments/:id/bundle", auth, async (c) => {
-    const { env, workspaceId, principal } = await access(c, c.req.param("id"), "read");
+    const { env, workspaceId, principal } = await access(c, c.req.param("id"), "read", "bundle.pull");
     const latest = await bundles.getLatest(env.id);
     if (!latest) throw notFound("no bundle has been pushed for this environment yet");
 
     const wk = await wrappedKeys.findForDevice(workspaceId, principal.deviceId);
+    await audit.record({
+      workspaceId,
+      actorMemberId: principal.memberId,
+      actorDeviceId: principal.deviceId,
+      action: "bundle.pull",
+      targetType: "environment",
+      targetId: env.id,
+      outcome: "allowed",
+      metadata: { version: latest.version },
+    });
     return c.json({
       bundle: {
         version: latest.version,

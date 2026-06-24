@@ -15,6 +15,7 @@
 import type { Context, Hono, MiddlewareHandler } from "hono";
 import { z } from "zod";
 import type { EnvironmentAccessRepo, EnvAccess } from "../../domain/access.js";
+import type { AuditService } from "../../domain/audit.js";
 import type { Member, MemberRepo } from "../../domain/members.js";
 import type { EnvironmentRepo, ProjectRepo } from "../../domain/resources.js";
 import { effectiveEnvRole } from "../access-control.js";
@@ -27,6 +28,7 @@ export interface MemberRouteDeps {
   access: EnvironmentAccessRepo;
   projects: ProjectRepo;
   environments: EnvironmentRepo;
+  audit: AuditService;
 }
 
 const workspaceRole = z.enum(["owner", "admin", "member"]);
@@ -58,7 +60,7 @@ export function registerMemberRoutes(
   deps: MemberRouteDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { members, access, projects, environments } = deps;
+  const { members, access, projects, environments, audit } = deps;
 
   // Resolve env -> workspace and require the caller to be an env admin there.
   async function requireEnvAdmin(c: Context<AppEnv>, envId: string) {
@@ -81,6 +83,16 @@ export function registerMemberRoutes(
     const input = await parseBody(c, inviteSchema);
     if (await members.findByEmail(wid, input.email)) throw conflict("email already a member");
     const m = await members.create({ workspaceId: wid, ...input });
+    await audit.record({
+      workspaceId: wid,
+      actorMemberId: c.get("principal").memberId,
+      actorDeviceId: c.get("principal").deviceId,
+      action: "member.invite",
+      targetType: "member",
+      targetId: m.id,
+      outcome: "allowed",
+      metadata: { email: m.email, role: m.role },
+    });
     return c.json(memberView(m), 201);
   });
 
@@ -98,6 +110,15 @@ export function registerMemberRoutes(
     requireWorkspace(c.get("principal"), member.workspaceId);
     requireRole(c.get("principal"), "admin");
     await members.delete(member.id);
+    await audit.record({
+      workspaceId: member.workspaceId,
+      actorMemberId: c.get("principal").memberId,
+      actorDeviceId: c.get("principal").deviceId,
+      action: "member.remove",
+      targetType: "member",
+      targetId: member.id,
+      outcome: "allowed",
+    });
     return c.body(null, 204);
   });
 
@@ -110,6 +131,16 @@ export function registerMemberRoutes(
       throw notFound("member not found in this workspace");
     }
     const granted = await access.grant({ environmentId: c.req.param("id"), ...input });
+    await audit.record({
+      workspaceId,
+      actorMemberId: c.get("principal").memberId,
+      actorDeviceId: c.get("principal").deviceId,
+      action: "access.grant",
+      targetType: "environment",
+      targetId: c.req.param("id"),
+      outcome: "allowed",
+      metadata: { memberId: input.memberId, role: input.role },
+    });
     return c.json(accessView(granted));
   });
 
@@ -120,9 +151,19 @@ export function registerMemberRoutes(
   });
 
   app.delete("/v1/environments/:id/access/:memberId", auth, async (c) => {
-    await requireEnvAdmin(c, c.req.param("id"));
+    const { workspaceId } = await requireEnvAdmin(c, c.req.param("id"));
     const ok = await access.revoke(c.req.param("id"), c.req.param("memberId"));
     if (!ok) throw notFound("grant not found");
+    await audit.record({
+      workspaceId,
+      actorMemberId: c.get("principal").memberId,
+      actorDeviceId: c.get("principal").deviceId,
+      action: "access.revoke",
+      targetType: "environment",
+      targetId: c.req.param("id"),
+      outcome: "allowed",
+      metadata: { memberId: c.req.param("memberId") },
+    });
     return c.body(null, 204);
   });
 }
