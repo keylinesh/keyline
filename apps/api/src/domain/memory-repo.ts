@@ -11,6 +11,14 @@ import type {
   Workspace,
   WorkspaceRepo,
 } from "./resources.js";
+import {
+  type AppendBundleInput,
+  type BundleRepo,
+  type StoredBundle,
+  type StoredWrappedKey,
+  VersionConflictError,
+  type WrappedKeyRepo,
+} from "./bundles.js";
 
 // A fixed clock keeps records ordering-stable in tests; real time isn't important here.
 const EPOCH = new Date("2026-01-01T00:00:00Z");
@@ -97,5 +105,49 @@ export class InMemoryEnvironmentRepo implements EnvironmentRepo {
   }
   async delete(id: string): Promise<boolean> {
     return this.byId.delete(id);
+  }
+}
+
+export class InMemoryBundleRepo implements BundleRepo {
+  private readonly byEnv = new Map<string, StoredBundle[]>();
+
+  async getLatest(environmentId: string): Promise<StoredBundle | null> {
+    const versions = this.byEnv.get(environmentId);
+    return versions && versions.length > 0 ? versions[versions.length - 1]! : null;
+  }
+
+  async append(input: AppendBundleInput): Promise<StoredBundle> {
+    const versions = this.byEnv.get(input.environmentId) ?? [];
+    const current = versions.length > 0 ? versions[versions.length - 1]!.version : 0;
+    if (input.baseVersion !== undefined && input.baseVersion !== current) {
+      throw new VersionConflictError(current);
+    }
+    const bundle: StoredBundle = {
+      id: randomUUID(),
+      environmentId: input.environmentId,
+      version: current + 1,
+      formatVersion: input.formatVersion,
+      nonce: input.nonce,
+      ciphertext: input.ciphertext,
+      tag: input.tag,
+      createdByDeviceId: input.createdByDeviceId,
+      createdAt: EPOCH,
+    };
+    versions.push(bundle);
+    this.byEnv.set(input.environmentId, versions);
+    return bundle;
+  }
+}
+
+export class InMemoryWrappedKeyRepo implements WrappedKeyRepo {
+  private readonly byKey = new Map<string, StoredWrappedKey>();
+  private k(workspaceId: string, deviceId: string) {
+    return `${workspaceId}:${deviceId}`;
+  }
+  async findForDevice(workspaceId: string, deviceId: string): Promise<StoredWrappedKey | null> {
+    return this.byKey.get(this.k(workspaceId, deviceId)) ?? null;
+  }
+  async upsert(key: StoredWrappedKey): Promise<void> {
+    this.byKey.set(this.k(key.workspaceId, key.deviceId), key);
   }
 }
