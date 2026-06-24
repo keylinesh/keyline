@@ -19,6 +19,9 @@ import {
   VersionConflictError,
   type WrappedKeyRepo,
 } from "./bundles.js";
+import type { Member, MemberRepo } from "./members.js";
+import type { EnvAccess, EnvironmentAccessRepo, EnvRole } from "./access.js";
+import type { Role } from "../auth/scope.js";
 
 // A fixed clock keeps records ordering-stable in tests; real time isn't important here.
 const EPOCH = new Date("2026-01-01T00:00:00Z");
@@ -149,5 +152,67 @@ export class InMemoryWrappedKeyRepo implements WrappedKeyRepo {
   }
   async upsert(key: StoredWrappedKey): Promise<void> {
     this.byKey.set(this.k(key.workspaceId, key.deviceId), key);
+  }
+}
+
+export class InMemoryMemberRepo implements MemberRepo {
+  private readonly byId = new Map<string, Member>();
+
+  async create(input: {
+    workspaceId: string;
+    email: string;
+    role: Role;
+    displayName?: string;
+  }): Promise<Member> {
+    const m: Member = {
+      id: randomUUID(),
+      workspaceId: input.workspaceId,
+      email: input.email,
+      displayName: input.displayName ?? null,
+      role: input.role,
+      createdAt: EPOCH,
+    };
+    this.byId.set(m.id, m);
+    return m;
+  }
+  async findById(id: string): Promise<Member | null> {
+    return this.byId.get(id) ?? null;
+  }
+  async findByEmail(workspaceId: string, email: string): Promise<Member | null> {
+    for (const m of this.byId.values()) {
+      if (m.workspaceId === workspaceId && m.email === email) return m;
+    }
+    return null;
+  }
+  async listByWorkspace(workspaceId: string): Promise<Member[]> {
+    return [...this.byId.values()].filter((m) => m.workspaceId === workspaceId);
+  }
+  async delete(id: string): Promise<boolean> {
+    return this.byId.delete(id);
+  }
+}
+
+export class InMemoryEnvironmentAccessRepo implements EnvironmentAccessRepo {
+  private readonly byKey = new Map<string, EnvAccess>();
+  private k(environmentId: string, memberId: string) {
+    return `${environmentId}:${memberId}`;
+  }
+  async grant(input: { environmentId: string; memberId: string; role: EnvRole }): Promise<EnvAccess> {
+    const key = this.k(input.environmentId, input.memberId);
+    const existing = this.byKey.get(key);
+    const rec: EnvAccess = existing
+      ? { ...existing, role: input.role }
+      : { id: randomUUID(), createdAt: EPOCH, ...input };
+    this.byKey.set(key, rec);
+    return rec;
+  }
+  async get(memberId: string, environmentId: string): Promise<EnvAccess | null> {
+    return this.byKey.get(this.k(environmentId, memberId)) ?? null;
+  }
+  async listByEnvironment(environmentId: string): Promise<EnvAccess[]> {
+    return [...this.byKey.values()].filter((a) => a.environmentId === environmentId);
+  }
+  async revoke(environmentId: string, memberId: string): Promise<boolean> {
+    return this.byKey.delete(this.k(environmentId, memberId));
   }
 }

@@ -22,6 +22,8 @@ async function setup(opts: { role?: Role; environmentIds?: string[]; deviceId?: 
   const project = await deps.projects.create({ workspaceId: ws.id, name: "API", slug: "api" });
   const env = await deps.environments.create({ projectId: project.id, name: "prod" });
   const deviceId = opts.deviceId ?? "dev-1";
+  // Grant the member write access on the env (RBAC from #23); push/pull need it.
+  await deps.access.grant({ environmentId: env.id, memberId: "mem-1", role: "write" });
   const { token } = await deps.tokens.issue({
     deviceId,
     memberId: "mem-1",
