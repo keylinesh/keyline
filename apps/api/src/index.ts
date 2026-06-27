@@ -9,10 +9,11 @@
  */
 
 import { serve } from "@hono/node-server";
-import { buildApp, storageLabel } from "./server.js";
+import { buildApp, resolveRuntimeConfig, storageLabel } from "./server.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
+const { environment } = resolveRuntimeConfig();
 
 serve({ fetch: buildApp().fetch, port: PORT }, () => {
-  console.log(`keyline-api listening on :${PORT} — storage: ${storageLabel()}`);
+  console.log(`keyline-api [${environment}] listening on :${PORT} — storage: ${storageLabel()}`);
 });
