@@ -15,6 +15,9 @@ import { type AppEnv, authMiddleware } from "./authz.js";
 import { ApiError } from "./errors.js";
 import { ipKey, rateLimit, tokenOrIpKey } from "./middleware/rate-limit.js";
 import { requireHttps } from "./middleware/tls.js";
+import { observability } from "./middleware/observability.js";
+import { Logger, logger as defaultLogger, reportError } from "../observability/logger.js";
+import { Metrics, metrics as defaultMetrics } from "../observability/metrics.js";
 import type { ResourceDeps } from "./routes/resources.js";
 import type { BundleDeps } from "./routes/bundles.js";
 import type { MemberRouteDeps } from "./routes/members.js";
@@ -42,6 +45,10 @@ export interface AppConfig {
   bodyLimitBytes?: number;
   /** Refuse non-HTTPS requests (behind a proxy that sets x-forwarded-proto). */
   requireHttps?: boolean;
+  /** Structured logger (#29). Defaults to the process logger. */
+  logger?: Logger;
+  /** Metrics registry (#29). Defaults to the process registry. */
+  metrics?: Metrics;
 }
 
 export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
@@ -50,6 +57,12 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   const rl = config.rateLimit ?? { windowMs: 60_000, max: 300 };
   const authRl = config.authRateLimit ?? { windowMs: 60_000, max: 20 };
   const maxBody = config.bodyLimitBytes ?? 1024 * 1024;
+  const log = config.logger ?? defaultLogger;
+  const metrics = config.metrics ?? defaultMetrics;
+
+  // Observability wraps everything so it times and logs every request (incl.
+  // rate-limited / denied ones).
+  app.use("*", observability(log, metrics));
 
   // Hardening middleware runs before everything else.
   app.use("*", secureHeaders());
@@ -69,8 +82,8 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
 
   app.onError((err, c) => {
     if (err instanceof ApiError) return c.json(err.body(), err.status as 400);
-    // Unexpected: log server-side, return a generic 500 (no internals leaked).
-    console.error("unhandled error:", err);
+    // Unexpected: report with stack (error tracking), return a generic 500.
+    reportError(err, { path: c.req.path, method: c.req.method }, log);
     return c.json(
       { error: { code: "internal", message: "internal server error" } },
       500,
@@ -82,6 +95,9 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   app.get("/health", (c) =>
     c.json({ status: "ok", service: "keyline-api", environment: config.environment ?? "unknown" }),
   );
+
+  // Prometheus metrics for scraping (aggregate, non-secret counts).
+  app.get("/metrics", (c) => c.text(metrics.render(), 200, { "content-type": "text/plain; version=0.0.4" }));
 
   const auth = authMiddleware(deps.tokens);
   registerAuthRoutes(app, deps.login);
