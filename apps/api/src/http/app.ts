@@ -32,6 +32,8 @@ export interface AppDeps extends ResourceDeps, BundleDeps, MemberRouteDeps, Audi
 
 /** Tunable hardening knobs (#26). Sensible defaults; production sets requireHttps. */
 export interface AppConfig {
+  /** Which deployment this is — development / staging / production (#28). */
+  environment?: string;
   /** Per-token / per-IP limit across all routes. Default 300/min. */
   rateLimit?: { windowMs: number; max: number };
   /** Tighter per-IP limit on auth endpoints (brute-force guard). Default 20/min. */
@@ -77,7 +79,9 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "not found" } }, 404));
 
-  app.get("/health", (c) => c.json({ status: "ok", service: "keyline-api" }));
+  app.get("/health", (c) =>
+    c.json({ status: "ok", service: "keyline-api", environment: config.environment ?? "unknown" }),
+  );
 
   const auth = authMiddleware(deps.tokens);
   registerAuthRoutes(app, deps.login);

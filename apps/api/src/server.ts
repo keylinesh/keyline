@@ -13,12 +13,32 @@ import { memoryDeps, pgDeps } from "./deps.js";
 import { type AppConfig, createApp } from "./http/app.js";
 import type { AppEnv } from "./http/authz.js";
 
+export type Environment = "development" | "staging" | "production";
+
+/**
+ * Resolve the deployment environment + derived config from the process env.
+ * APP_ENV is authoritative; otherwise fall back to NODE_ENV. HTTPS is enforced
+ * everywhere except local development (#28).
+ */
+export function resolveRuntimeConfig(env: NodeJS.ProcessEnv = process.env): {
+  environment: Environment;
+  requireHttps: boolean;
+} {
+  const raw = (env.APP_ENV ?? env.NODE_ENV ?? "development").toLowerCase();
+  const environment: Environment =
+    raw === "production" || raw === "prod"
+      ? "production"
+      : raw === "staging" || raw === "stage"
+        ? "staging"
+        : "development";
+  return { environment, requireHttps: environment !== "development" };
+}
+
 export function buildApp(): Hono<AppEnv> {
   const databaseUrl = process.env.DATABASE_URL;
   const deps = databaseUrl ? pgDeps(new Pool(connectionConfig(databaseUrl))) : memoryDeps();
-  const config: AppConfig = {
-    requireHttps: process.env.NODE_ENV === "production",
-  };
+  const { environment, requireHttps } = resolveRuntimeConfig();
+  const config: AppConfig = { environment, requireHttps };
   return createApp(deps, config);
 }
 

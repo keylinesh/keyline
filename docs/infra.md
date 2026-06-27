@@ -15,16 +15,48 @@ The runtime stack and how to stand it up reproducibly. Milestone M2 (#27/#28).
 The API connects with TLS automatically for any non-local host
 (`src/db/connection.ts`); local Postgres connects without SSL.
 
-## Environments
+## Environments (#28)
 
-| Env | Branch | Neon branch | `DATABASE_URL` set in |
-|---|---|---|---|
-| Production | `main` | `production` (Neon default) | Vercel (Production), GitLab CI (protected) |
-| Preview | feature branches | per-deploy Neon branch | Vercel (Preview) — auto-injected by the Neon integration |
+Each environment has **isolated data** (its own Neon database/branch) and its own
+secret values. `APP_ENV` tells the app which it is; it drives HTTPS enforcement
+and the `/health` `environment` field.
+
+| Env | Git branch | `APP_ENV` | Neon database | Secrets live in |
+|---|---|---|---|---|
+| Production | `main` | `production` | Neon `production` branch (default) | Vercel **Production** env vars; GitLab CI **protected+masked** vars |
+| Staging | `staging` | `staging` | a **separate** Neon branch (`staging`) | Vercel **Preview/Custom (staging)** env vars |
+| Preview | feature branches | (unset → development) | per-deploy Neon branch | Vercel Preview (auto-injected by the Neon integration) |
+| Local dev | — | `development` | local or a personal Neon branch | `.env` (gitignored; see `.env.example`) |
+
+Create the staging database as a Neon **branch** of production (Neon console →
+Branches → New branch) so it starts from the prod schema and stays isolated.
+Point the staging deployment's `DATABASE_URL` at it.
 
 > Note: the Vercel↔Neon integration creates a Neon **branch per deployment**.
 > The free plan has a branch quota — delete old branches in the Neon console if a
 > deploy fails with "Branch limit reached", or limit branching to Production.
+
+## Secrets management (#28)
+
+Secrets are **never** committed. The repo holds only `.env.example` (placeholders).
+
+- **Local**: `.env` (gitignored).
+- **Staging / Production**: stored in the platform's secrets manager —
+  **Vercel Environment Variables** (encrypted at rest, scoped per environment) and
+  **GitLab CI/CD Variables** (masked + protected) for pipeline-time needs. Set at
+  minimum `DATABASE_URL`, `DATABASE_URL_UNPOOLED` (migrations), and `APP_ENV` per
+  environment. Rotating a secret = update it in Vercel/GitLab and redeploy; no
+  code change.
+
+## TLS
+
+Automated and enforced end to end, with no manual certs:
+
+- **Edge**: Vercel terminates TLS with auto-provisioned, auto-renewing
+  certificates for every deployment and custom domain.
+- **App**: in staging/production the API refuses non-HTTPS requests
+  (`x-forwarded-proto`) and sends HSTS (see #26).
+- **Database**: connections to Neon use verified TLS (`src/db/connection.ts`).
 
 ## One-time setup (#27)
 
