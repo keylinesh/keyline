@@ -12,12 +12,13 @@
 import { serve } from "@hono/node-server";
 import { Pool } from "pg";
 import { createApp } from "./http/app.js";
+import { connectionConfig } from "./db/connection.js";
 import { memoryDeps, pgDeps } from "./deps.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const databaseUrl = process.env.DATABASE_URL;
 
-const deps = databaseUrl ? pgDeps(new Pool({ connectionString: databaseUrl })) : memoryDeps();
+const deps = databaseUrl ? pgDeps(new Pool(connectionConfig(databaseUrl))) : memoryDeps();
 const app = createApp(deps, {
   // Enforce HTTPS in production (the proxy sets x-forwarded-proto).
   requireHttps: process.env.NODE_ENV === "production",
