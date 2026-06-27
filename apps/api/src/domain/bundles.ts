@@ -32,7 +32,8 @@ export interface AppendBundleInput {
   nonce: string;
   ciphertext: string;
   tag: string;
-  createdByDeviceId: string;
+  /** The device that pushed it; null for system-originated writes. */
+  createdByDeviceId: string | null;
 }
 
 /** Thrown when a push's baseVersion is stale (someone else pushed first). */

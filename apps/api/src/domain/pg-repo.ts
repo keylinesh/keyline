@@ -233,10 +233,14 @@ export class PgBundleRepo implements BundleRepo {
     const client = await this.pool.connect();
     try {
       await client.query("begin");
-      // Lock concurrent appends for this environment to a single writer.
+      // Serialize concurrent appends for this environment via a row lock on the
+      // parent (FOR UPDATE can't be combined with the max() aggregate below).
+      await client.query("select 1 from environments where id = $1 for update", [
+        input.environmentId,
+      ]);
       const { rows: cur } = await client.query<{ version: number }>(
         `select coalesce(max(version), 0) as version
-           from secret_bundles where environment_id = $1 for update`,
+           from secret_bundles where environment_id = $1`,
         [input.environmentId],
       );
       const current = cur[0]?.version ?? 0;
