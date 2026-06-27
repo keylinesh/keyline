@@ -51,8 +51,8 @@ apps/
 packages/
   crypto/     # client-side encryption library (shared by cli + web)
   shared/     # shared types and utilities
-docs/
-  decisions/  # architecture decision records (ADRs)
+api/          # Vercel serverless entry — mounts the Hono API at /api
+docs/         # encryption-design, api, infra, observability, decisions/, security-review/
 index.html    # landing page (self-contained)
 ```
 
@@ -70,7 +70,14 @@ pnpm test         # run tests
 
 ## Project status
 
-**Planning / early build.** The roadmap is tracked as GitLab milestones M0 to M6 (run `setup-gitlab-issues.sh` to create the backlog). The riskiest assumption is the zero-knowledge crypto core. It is M1 and built first. See `keyline-context.md` for full positioning, competitive analysis, and the honest risk list.
+**Backend built and deployed; CLI next.** Roadmap tracked as GitLab milestones M0–M6.
+
+- **M0 Foundations** — done (monorepo, CI, docs).
+- **M1 Crypto Core** — done. `packages/crypto`: AES-256-GCM bundles, scrypt KDF, X25519 device keypairs, sealed-box envelope wrap/unwrap, admin + sealed-file recovery; known-answer + property/fuzz tests. (External security review is the launch gate, still pending — backlog #18.)
+- **M2 Backend API & Data Model** — done. `apps/api` (Hono): device auth + scoped tokens, workspace/project/environment CRUD, push/pull encrypted bundles, per-environment RBAC, tamper-evident hash-chained audit log, revoke/rotate, rate-limiting/validation/security-headers/TLS, structured logs + metrics. Runs on **Neon** (Postgres) and is **live as a Vercel function** (`/api/health`). ~127 tests; CI includes a real-Postgres job.
+- **M3 CLI** — next. The `keyline` CLI that drives the live API.
+
+Docs: [encryption design](docs/encryption-design.md) · [API reference](docs/api.md) · [infra/deploy](docs/infra.md) · [observability](docs/observability.md) · [ADRs](docs/decisions/) · [security review packet](docs/security-review/). Full positioning + risk list in `keyline-context.md`.
 
 ## License
 
