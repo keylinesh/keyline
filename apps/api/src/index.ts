@@ -1,29 +1,18 @@
 /**
- * keyline API — entrypoint.
+ * keyline API — Node entrypoint (long-running server).
  *
- * Builds the Hono app (auth + resource CRUD; push/pull, RBAC, audit, Stripe land
- * across M2/M5) and serves it. Uses Postgres when DATABASE_URL is set, otherwise
- * in-memory repos for local dev.
+ * Builds the configured Hono app (see server.ts) and serves it. The same app is
+ * deployed as a Vercel serverless function via root `api/[[...route]].ts`.
  *
  * INVARIANT: the server must never receive or store plaintext secrets or the
  * workspace master key — only ciphertext, wrapped keys, metadata, audit events.
  */
 
 import { serve } from "@hono/node-server";
-import { Pool } from "pg";
-import { createApp } from "./http/app.js";
-import { memoryDeps, pgDeps } from "./deps.js";
+import { buildApp, storageLabel } from "./server.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
-const databaseUrl = process.env.DATABASE_URL;
 
-const deps = databaseUrl ? pgDeps(new Pool({ connectionString: databaseUrl })) : memoryDeps();
-const app = createApp(deps, {
-  // Enforce HTTPS in production (the proxy sets x-forwarded-proto).
-  requireHttps: process.env.NODE_ENV === "production",
-});
-
-serve({ fetch: app.fetch, port: PORT }, () => {
-  const backend = databaseUrl ? "postgres" : "in-memory (no DATABASE_URL)";
-  console.log(`keyline-api listening on :${PORT} — storage: ${backend}`);
+serve({ fetch: buildApp().fetch, port: PORT }, () => {
+  console.log(`keyline-api listening on :${PORT} — storage: ${storageLabel()}`);
 });

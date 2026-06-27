@@ -10,6 +10,7 @@
 
 import { fileURLToPath } from "node:url";
 import { Client } from "pg";
+import { connectionConfig } from "./connection.js";
 import { loadMigrations } from "./migrations.js";
 
 export async function migrate(
@@ -19,7 +20,7 @@ export async function migrate(
     throw new Error("DATABASE_URL is required to run migrations");
   }
 
-  const client = new Client({ connectionString: databaseUrl });
+  const client = new Client(connectionConfig(databaseUrl));
   await client.connect();
   try {
     await client.query(`

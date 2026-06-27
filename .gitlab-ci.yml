@@ -64,3 +64,21 @@ test:
   <<: *setup
   script:
     - pnpm test
+
+# Integration tests against a real Postgres (catches transactional/SQL issues
+# the in-memory repos can't, e.g. FOR UPDATE semantics). DATABASE_URL points at
+# the service; sslmode=disable since the throwaway service has no TLS.
+pg-test:
+  stage: verify
+  <<: *setup
+  services:
+    - name: postgres:16-alpine
+      alias: postgres
+  variables:
+    POSTGRES_DB: keyline_test
+    POSTGRES_USER: keyline
+    POSTGRES_PASSWORD: keyline
+    DATABASE_URL: "postgres://keyline:keyline@postgres:5432/keyline_test?sslmode=disable"
+  script:
+    - pnpm --filter @keyline/api db:migrate
+    - pnpm --filter @keyline/api exec node --import tsx --test src/domain/pg-repo.pg.test.ts

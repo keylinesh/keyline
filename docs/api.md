@@ -4,8 +4,13 @@ The backend API (`apps/api`, built on Hono). The server stores and returns only
 ciphertext, wrapped keys, public keys, salts, and metadata — never a workspace
 secret, workspace key, device private key, or plaintext secret value.
 
-Status: built across **M2** (#19–#25). Persistence runs against Postgres when
+Status: built across **M2** (#19–#26). Persistence runs against Postgres when
 `DATABASE_URL` is set, otherwise in-memory for local dev.
+
+## Base URL
+
+- **Local (Node server):** `http://localhost:3000` — paths exactly as below (`/health`, `/v1/...`).
+- **Deployed (Vercel, same project):** the API is served under **`/api`** (`api/[[...route]].ts`), so paths are `/api/health` and `/api/v1/...`. `DATABASE_URL` must be set in the Vercel environment, or the API runs on ephemeral in-memory storage. See [`docs/infra.md`](infra.md).
 
 ## Auth model
 
