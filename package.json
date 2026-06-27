@@ -2,6 +2,7 @@
   "name": "keyline",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "description": "Zero-knowledge secrets manager for small dev teams",
   "packageManager": "pnpm@9.0.0",
   "engines": {
