@@ -11,13 +11,16 @@
 import { fileURLToPath } from "node:url";
 import { Client } from "pg";
 import { connectionConfig } from "./connection.js";
+import { migrationDatabaseUrl } from "./database-url.js";
 import { loadMigrations } from "./migrations.js";
 
 export async function migrate(
-  databaseUrl: string | undefined = process.env.DATABASE_URL,
+  databaseUrl: string | undefined = migrationDatabaseUrl(),
 ): Promise<{ applied: string[] }> {
   if (!databaseUrl) {
-    throw new Error("DATABASE_URL is required to run migrations");
+    throw new Error(
+      "No database URL found (DATABASE_URL / DATABASE_URL_UNPOOLED / POSTGRES_URL_NON_POOLING / POSTGRES_DATABASE_URL)",
+    );
   }
 
   const client = new Client(connectionConfig(databaseUrl));

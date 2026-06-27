@@ -9,6 +9,7 @@
 import { Pool } from "pg";
 import type { Hono } from "hono";
 import { connectionConfig } from "./db/connection.js";
+import { appDatabaseUrl } from "./db/database-url.js";
 import { memoryDeps, pgDeps } from "./deps.js";
 import { type AppConfig, createApp } from "./http/app.js";
 import type { AppEnv } from "./http/authz.js";
@@ -35,7 +36,7 @@ export function resolveRuntimeConfig(env: NodeJS.ProcessEnv = process.env): {
 }
 
 export function buildApp(): Hono<AppEnv> {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = appDatabaseUrl();
   const deps = databaseUrl ? pgDeps(new Pool(connectionConfig(databaseUrl))) : memoryDeps();
   const { environment, requireHttps } = resolveRuntimeConfig();
   const config: AppConfig = { environment, requireHttps };
@@ -43,5 +44,5 @@ export function buildApp(): Hono<AppEnv> {
 }
 
 export function storageLabel(): string {
-  return process.env.DATABASE_URL ? "postgres" : "in-memory (no DATABASE_URL)";
+  return appDatabaseUrl() ? "postgres" : "in-memory (no database url)";
 }
