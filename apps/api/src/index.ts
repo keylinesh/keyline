@@ -18,7 +18,10 @@ const PORT = Number(process.env.PORT ?? 3000);
 const databaseUrl = process.env.DATABASE_URL;
 
 const deps = databaseUrl ? pgDeps(new Pool({ connectionString: databaseUrl })) : memoryDeps();
-const app = createApp(deps);
+const app = createApp(deps, {
+  // Enforce HTTPS in production (the proxy sets x-forwarded-proto).
+  requireHttps: process.env.NODE_ENV === "production",
+});
 
 serve({ fetch: app.fetch, port: PORT }, () => {
   const backend = databaseUrl ? "postgres" : "in-memory (no DATABASE_URL)";
