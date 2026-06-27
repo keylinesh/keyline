@@ -11,6 +11,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Pool } from "pg";
 import { connectionConfig } from "../db/connection.js";
+import { appDatabaseUrl } from "../db/database-url.js";
 import { migrate } from "../db/migrate.js";
 import {
   PgWorkspaceRepo,
@@ -22,11 +23,11 @@ import {
 import { VersionConflictError } from "./bundles.js";
 import { verifyChain } from "./audit.js";
 
-const run = !!process.env.DATABASE_URL;
+const dbUrl = appDatabaseUrl();
 
-test("pg repos round-trip against Postgres", { skip: !run }, async () => {
+test("pg repos round-trip against Postgres", { skip: !dbUrl }, async () => {
   await migrate(); // idempotent — ensure schema exists
-  const pool = new Pool(connectionConfig(process.env.DATABASE_URL!));
+  const pool = new Pool(connectionConfig(dbUrl!));
   const ws = new PgWorkspaceRepo(pool);
   const pr = new PgProjectRepo(pool);
   const en = new PgEnvironmentRepo(pool);
