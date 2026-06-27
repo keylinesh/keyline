@@ -23,7 +23,15 @@ Status: built across **M2** (#19–#25). Persistence runs against Postgres when
 
 All errors are `{ "error": { "code", "message", "details?" } }` with a matching
 status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
-`conflict` (409), `validation_error` (422), `internal` (500).
+`conflict` (409), `payload_too_large` (413), `validation_error` (422),
+`rate_limited` (429), `internal` (500).
+
+## Hardening (#26)
+
+- **Rate limits**: per token (or per IP when unauthenticated) across all routes, plus a tighter per-IP limit on `/v1/auth/*` and `/v1/devices`. Over the limit returns `429 rate_limited` with a `Retry-After` header.
+- **Body size limit**: oversized requests return `413 payload_too_large`.
+- **Security headers**: HSTS, `X-Frame-Options`, `X-Content-Type-Options: nosniff`, etc. (Hono `secureHeaders`).
+- **TLS-only**: in production, requests not forwarded as HTTPS (`x-forwarded-proto`) are refused.
 
 ## Endpoints
 
