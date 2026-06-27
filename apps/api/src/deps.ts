@@ -9,6 +9,7 @@ import type { Pool } from "pg";
 import { DeviceLoginService } from "./auth/device-login.js";
 import { TokenService } from "./auth/tokens.js";
 import { AuditService } from "./domain/audit.js";
+import { RevokeService } from "./services/revoke.js";
 import {
   InMemoryChallengeRepo,
   InMemoryDeviceRepo,
@@ -39,11 +40,9 @@ import type { AppDeps } from "./http/app.js";
 
 export function memoryDeps(): AppDeps {
   const tokens = new TokenService(new InMemoryTokenRepo());
-  const login = new DeviceLoginService(
-    new InMemoryDeviceRepo(),
-    new InMemoryChallengeRepo(),
-    tokens,
-  );
+  const devices = new InMemoryDeviceRepo();
+  const wrappedKeys = new InMemoryWrappedKeyRepo();
+  const login = new DeviceLoginService(devices, new InMemoryChallengeRepo(), tokens);
   return {
     tokens,
     login,
@@ -51,20 +50,19 @@ export function memoryDeps(): AppDeps {
     projects: new InMemoryProjectRepo(),
     environments: new InMemoryEnvironmentRepo(),
     bundles: new InMemoryBundleRepo(),
-    wrappedKeys: new InMemoryWrappedKeyRepo(),
+    wrappedKeys,
     members: new InMemoryMemberRepo(),
     access: new InMemoryEnvironmentAccessRepo(),
     audit: new AuditService(new InMemoryAuditRepo()),
+    revoke: new RevokeService(devices, wrappedKeys, tokens),
   };
 }
 
 export function pgDeps(pool: Pool): AppDeps {
   const tokens = new TokenService(new PgTokenRepo(pool));
-  const login = new DeviceLoginService(
-    new PgDeviceRepo(pool),
-    new PgChallengeRepo(pool),
-    tokens,
-  );
+  const devices = new PgDeviceRepo(pool);
+  const wrappedKeys = new PgWrappedKeyRepo(pool);
+  const login = new DeviceLoginService(devices, new PgChallengeRepo(pool), tokens);
   return {
     tokens,
     login,
@@ -72,9 +70,10 @@ export function pgDeps(pool: Pool): AppDeps {
     projects: new PgProjectRepo(pool),
     environments: new PgEnvironmentRepo(pool),
     bundles: new PgBundleRepo(pool),
-    wrappedKeys: new PgWrappedKeyRepo(pool),
+    wrappedKeys,
     members: new PgMemberRepo(pool),
     access: new PgEnvironmentAccessRepo(pool),
     audit: new AuditService(new PgAuditRepo(pool)),
+    revoke: new RevokeService(devices, wrappedKeys, tokens),
   };
 }

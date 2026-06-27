@@ -18,6 +18,7 @@ import type { EnvironmentAccessRepo, EnvAccess } from "../../domain/access.js";
 import type { AuditService } from "../../domain/audit.js";
 import type { Member, MemberRepo } from "../../domain/members.js";
 import type { EnvironmentRepo, ProjectRepo } from "../../domain/resources.js";
+import type { RevokeService } from "../../services/revoke.js";
 import { effectiveEnvRole } from "../access-control.js";
 import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
 import { conflict, forbidden, notFound } from "../errors.js";
@@ -29,6 +30,7 @@ export interface MemberRouteDeps {
   projects: ProjectRepo;
   environments: EnvironmentRepo;
   audit: AuditService;
+  revoke: RevokeService;
 }
 
 const workspaceRole = z.enum(["owner", "admin", "member"]);
@@ -60,7 +62,7 @@ export function registerMemberRoutes(
   deps: MemberRouteDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { members, access, projects, environments, audit } = deps;
+  const { members, access, projects, environments, audit, revoke } = deps;
 
   // Resolve env -> workspace and require the caller to be an env admin there.
   async function requireEnvAdmin(c: Context<AppEnv>, envId: string) {
@@ -120,6 +122,27 @@ export function registerMemberRoutes(
       outcome: "allowed",
     });
     return c.body(null, 204);
+  });
+
+  // Revoke a member's access immediately (keeps the member + ciphertext, drops
+  // their tokens and wrapped keys). #25.
+  app.post("/v1/members/:id/revoke", auth, async (c) => {
+    const member = await members.findById(c.req.param("id"));
+    if (!member) throw notFound("member not found");
+    requireWorkspace(c.get("principal"), member.workspaceId);
+    requireRole(c.get("principal"), "admin");
+    const result = await revoke.revokeMember(member.workspaceId, member.id);
+    await audit.record({
+      workspaceId: member.workspaceId,
+      actorMemberId: c.get("principal").memberId,
+      actorDeviceId: c.get("principal").deviceId,
+      action: "member.revoke",
+      targetType: "member",
+      targetId: member.id,
+      outcome: "allowed",
+      metadata: { ...result },
+    });
+    return c.json(result);
   });
 
   // ---- Per-environment access ----

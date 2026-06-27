@@ -28,6 +28,8 @@ export interface TokenRepo {
   revokeByHash(hash: string, when: Date): Promise<void>;
   /** Revoke every active token for a device; returns how many were revoked. */
   revokeByDevice(deviceId: string, when: Date): Promise<number>;
+  /** Revoke every active token for a member; returns how many were revoked. */
+  revokeByMember(memberId: string, when: Date): Promise<number>;
 }
 
 /** The authenticated caller behind a valid token. */
@@ -96,8 +98,13 @@ export class TokenService {
     await this.repo.revokeByHash(hashToken(token), now);
   }
 
-  /** Revoke all of a device's tokens (used by revoke/rotate in #25). */
+  /** Revoke all of a device's tokens. */
   async revokeDevice(deviceId: string, now: Date = new Date()): Promise<number> {
     return this.repo.revokeByDevice(deviceId, now);
+  }
+
+  /** Revoke all of a member's tokens (used by member revoke, #25). */
+  async revokeMember(memberId: string, now: Date = new Date()): Promise<number> {
+    return this.repo.revokeByMember(memberId, now);
   }
 }

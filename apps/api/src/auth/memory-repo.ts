@@ -35,7 +35,9 @@ export class InMemoryDeviceRepo implements DeviceRepo {
     this.byId.set(record.id, record);
     return record;
   }
-  /** test helper */
+  async listByMember(memberId: string): Promise<DeviceRecord[]> {
+    return [...this.byId.values()].filter((d) => d.memberId === memberId);
+  }
   async revoke(id: string, when: Date): Promise<void> {
     const d = this.byId.get(id);
     if (d) d.revokedAt = when;
@@ -76,6 +78,16 @@ export class InMemoryTokenRepo implements TokenRepo {
     let n = 0;
     for (const t of this.byHash.values()) {
       if (t.deviceId === deviceId && !t.revokedAt) {
+        t.revokedAt = when;
+        n++;
+      }
+    }
+    return n;
+  }
+  async revokeByMember(memberId: string, when: Date): Promise<number> {
+    let n = 0;
+    for (const t of this.byHash.values()) {
+      if (t.memberId === memberId && !t.revokedAt) {
         t.revokedAt = when;
         n++;
       }

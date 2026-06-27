@@ -85,9 +85,12 @@ Honest limit: if every device is lost and there is no recovery file, the workspa
 
 ## Not covered here yet
 
-- Tamper-evident audit log (hash-chained). Milestone M2.
-- Token and session design. Milestone M2.
 - Formal external review. Packet prepared in [`docs/security-review/`](security-review/README.md); engagement pending (M1 #18).
+
+## Built in M2 (see [`docs/api.md`](api.md))
+
+- **Tamper-evident audit log** — append-only events, hash-chained per workspace (`hash(n) = SHA-256(canonical(event) ‖ hash(n-1))`); `verifyChain` detects any edit, deletion, or reordering. Honest limit: an attacker who rewrites *every* later event could reseal an unanchored chain, so the chain head should also be witnessed externally (tracked toward launch).
+- **Token & session design** — opaque access tokens, stored only as SHA-256 hashes (a DB leak yields no usable token), short-lived, scoped to device + member + workspace (+ environments), revocable per token / device / member. Device login proves possession of the device private key by unsealing a challenge (no password, no private key on the wire).
 
 ## Status
 

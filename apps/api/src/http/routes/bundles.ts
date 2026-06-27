@@ -35,14 +35,20 @@ export interface BundleDeps {
 }
 
 const b64 = z.string().min(1);
+const sealedBundle = z.object({
+  v: z.number().int().positive(),
+  nonce: b64,
+  ciphertext: b64,
+  tag: b64,
+});
 const pushSchema = z.object({
-  bundle: z.object({
-    v: z.number().int().positive(),
-    nonce: b64,
-    ciphertext: b64,
-    tag: b64,
-  }),
+  bundle: sealedBundle,
   baseVersion: z.number().int().nonnegative().optional(),
+});
+const rotateSchema = z.object({
+  bundle: sealedBundle,
+  baseVersion: z.number().int().nonnegative().optional(),
+  secretName: z.string().min(1).max(256),
 });
 
 export function registerBundleRoutes(
@@ -112,6 +118,41 @@ export function registerBundleRoutes(
         targetId: env.id,
         outcome: "allowed",
         metadata: { version: stored.version },
+      });
+      return c.json({ version: stored.version, createdAt: stored.createdAt.toISOString() }, 201);
+    } catch (err) {
+      if (err instanceof VersionConflictError) {
+        throw new ApiError(409, "conflict", err.message, { currentVersion: err.currentVersion });
+      }
+      throw err;
+    }
+  });
+
+  // Rotate a single secret (#25). The client re-encrypts the bundle with the
+  // secret changed and pushes it; the server appends a new version and records
+  // which secret was rotated (never the value). Same write access + concurrency.
+  app.post("/v1/environments/:id/rotate", auth, async (c) => {
+    const { env, workspaceId, principal } = await access(c, c.req.param("id"), "write", "secret.rotate");
+    const { bundle, baseVersion, secretName } = await parseBody(c, rotateSchema);
+    try {
+      const stored = await bundles.append({
+        environmentId: env.id,
+        baseVersion,
+        formatVersion: bundle.v,
+        nonce: bundle.nonce,
+        ciphertext: bundle.ciphertext,
+        tag: bundle.tag,
+        createdByDeviceId: principal.deviceId,
+      });
+      await audit.record({
+        workspaceId,
+        actorMemberId: principal.memberId,
+        actorDeviceId: principal.deviceId,
+        action: "secret.rotate",
+        targetType: "environment",
+        targetId: env.id,
+        outcome: "allowed",
+        metadata: { secretName, version: stored.version },
       });
       return c.json({ version: stored.version, createdAt: stored.createdAt.toISOString() }, 201);
     } catch (err) {

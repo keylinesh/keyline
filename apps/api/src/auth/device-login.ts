@@ -45,6 +45,10 @@ export interface DeviceRepo {
   findById(id: string): Promise<DeviceRecord | null>;
   findByPublicKey(publicKey: string): Promise<DeviceRecord | null>;
   register(input: RegisterInput): Promise<DeviceRecord>;
+  /** All devices belonging to a member (used by member revoke, #25). */
+  listByMember(memberId: string): Promise<DeviceRecord[]>;
+  /** Mark a device revoked (sets revokedAt). */
+  revoke(deviceId: string, when: Date): Promise<void>;
 }
 
 export interface ChallengeRecord {

@@ -160,6 +160,9 @@ export class InMemoryWrappedKeyRepo implements WrappedKeyRepo {
   async upsert(key: StoredWrappedKey): Promise<void> {
     this.byKey.set(this.k(key.workspaceId, key.deviceId), key);
   }
+  async deleteForDevice(workspaceId: string, deviceId: string): Promise<boolean> {
+    return this.byKey.delete(this.k(workspaceId, deviceId));
+  }
 }
 
 export class InMemoryMemberRepo implements MemberRepo {
