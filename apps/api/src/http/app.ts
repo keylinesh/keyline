@@ -7,10 +7,14 @@
  */
 
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
+import { secureHeaders } from "hono/secure-headers";
 import type { DeviceLoginService } from "../auth/device-login.js";
 import type { TokenService } from "../auth/tokens.js";
 import { type AppEnv, authMiddleware } from "./authz.js";
 import { ApiError } from "./errors.js";
+import { ipKey, rateLimit, tokenOrIpKey } from "./middleware/rate-limit.js";
+import { requireHttps } from "./middleware/tls.js";
 import type { ResourceDeps } from "./routes/resources.js";
 import type { BundleDeps } from "./routes/bundles.js";
 import type { MemberRouteDeps } from "./routes/members.js";
@@ -26,8 +30,40 @@ export interface AppDeps extends ResourceDeps, BundleDeps, MemberRouteDeps, Audi
   login: DeviceLoginService;
 }
 
-export function createApp(deps: AppDeps): Hono<AppEnv> {
+/** Tunable hardening knobs (#26). Sensible defaults; production sets requireHttps. */
+export interface AppConfig {
+  /** Per-token / per-IP limit across all routes. Default 300/min. */
+  rateLimit?: { windowMs: number; max: number };
+  /** Tighter per-IP limit on auth endpoints (brute-force guard). Default 20/min. */
+  authRateLimit?: { windowMs: number; max: number };
+  /** Max request body size in bytes. Default 1 MiB. */
+  bodyLimitBytes?: number;
+  /** Refuse non-HTTPS requests (behind a proxy that sets x-forwarded-proto). */
+  requireHttps?: boolean;
+}
+
+export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
+
+  const rl = config.rateLimit ?? { windowMs: 60_000, max: 300 };
+  const authRl = config.authRateLimit ?? { windowMs: 60_000, max: 20 };
+  const maxBody = config.bodyLimitBytes ?? 1024 * 1024;
+
+  // Hardening middleware runs before everything else.
+  app.use("*", secureHeaders());
+  if (config.requireHttps) app.use("*", requireHttps());
+  app.use(
+    "*",
+    bodyLimit({
+      maxSize: maxBody,
+      onError: (c) =>
+        c.json({ error: { code: "payload_too_large", message: "request body too large" } }, 413),
+    }),
+  );
+  // Per-token-or-IP limit everywhere; a stricter per-IP limit on auth endpoints.
+  app.use("*", rateLimit({ ...rl, keyFn: tokenOrIpKey }));
+  app.use("/v1/auth/*", rateLimit({ ...authRl, keyFn: ipKey }));
+  app.use("/v1/devices", rateLimit({ ...authRl, keyFn: ipKey }));
 
   app.onError((err, c) => {
     if (err instanceof ApiError) return c.json(err.body(), err.status as 400);

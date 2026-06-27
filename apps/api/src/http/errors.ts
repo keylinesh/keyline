@@ -12,6 +12,8 @@ export type ErrorCode =
   | "not_found"
   | "validation_error"
   | "conflict"
+  | "payload_too_large"
+  | "rate_limited"
   | "internal";
 
 export class ApiError extends Error {
