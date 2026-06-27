@@ -21,6 +21,7 @@
     "typescript": "^5.6.0"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.0",
     "@keyline/api": "workspace:*",
     "@vercel/postgres": "^0.10.0",
     "hono": "^4.6.0"
