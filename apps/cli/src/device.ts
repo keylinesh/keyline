@@ -76,6 +76,18 @@ export function loadOrCreateDeviceIdentity(store: KeyStore): {
   return { identity, created: true };
 }
 
+/** Read the device identity without creating one. Null if not provisioned. */
+export function loadDeviceIdentity(store: KeyStore): DeviceIdentity | null {
+  const existing = store.get(IDENTITY_ACCOUNT);
+  if (!existing) return null;
+  try {
+    const parsed: unknown = JSON.parse(existing);
+    return isIdentity(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Forget the local device identity (e.g. on logout or reset). */
 export function clearDeviceIdentity(store: KeyStore): void {
   store.delete(IDENTITY_ACCOUNT);
