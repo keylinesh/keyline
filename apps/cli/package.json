@@ -10,12 +10,15 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"(lint: configure eslint)\"",
-    "test": "node --import tsx --test src/*.test.ts",
+    "test": "KEYLINE_LOG_SILENT=1 node --import tsx --test $(find src -name '*.test.ts')",
     "dev": "node --import tsx src/index.ts"
   },
   "dependencies": {
     "@keyline/crypto": "workspace:*",
     "@keyline/shared": "workspace:*",
     "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@keyline/api": "workspace:*"
   }
 }

@@ -10,14 +10,12 @@
 import { readFileSync } from "node:fs";
 import { Command } from "commander";
 import { openKeyStore } from "./keystore.js";
-import {
-  clearDeviceIdentity,
-  loadDeviceIdentity,
-  loadOrCreateDeviceIdentity,
-  registrationOf,
-} from "./device.js";
+import { loadDeviceIdentity } from "./device.js";
+import { loadAccount } from "./account.js";
 import { findProjectConfig, loadGlobalConfig } from "./config.js";
 import { isCredentialValid, loadCredentials } from "./credentials.js";
+import { runLogin } from "./commands/login.js";
+import { explainLinkError, runLink } from "./commands/link.js";
 
 function version(): string {
   try {
@@ -44,21 +42,42 @@ export function buildProgram(): Command {
 
   program
     .command("login")
-    .description("authenticate this device")
-    .option("--reset", "clear the local device identity first")
-    .action((opts: { reset?: boolean }) => {
-      const store = openKeyStore();
-      if (opts.reset) {
-        clearDeviceIdentity(store);
-        console.log("Local device identity cleared.");
+    .description("authenticate this device (creates an account on first run)")
+    .option("--workspace <name>", "workspace name (first run, creates the account)")
+    .option("--email <email>", "your email (first run)")
+    .option("--reset", "forget the local account + session and start over")
+    .action(async (opts: { workspace?: string; email?: string; reset?: boolean }) => {
+      const cfg = loadGlobalConfig();
+      const result = await runLogin(
+        { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
+        { workspaceName: opts.workspace, email: opts.email, reset: opts.reset },
+      );
+      console.log(result.created ? "Account created and logged in." : "Logged in.");
+      console.log(`  workspace:   ${result.workspaceId}`);
+      console.log(`  device id:   ${result.deviceId}`);
+      console.log(`  key storage: ${result.keyStorage}`);
+      console.log("\nNext: `keyline link <project> --env <env>` to bind this directory.");
+    });
+
+  program
+    .command("link")
+    .description("bind this directory to a workspace/project/environment")
+    .argument("<project>", "project name/slug to link")
+    .option("-e, --env <env>", "environment name", "prod")
+    .action(async (project: string, opts: { env: string }) => {
+      try {
+        const cfg = loadGlobalConfig();
+        const result = await runLink(
+          { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
+          { project, environment: opts.env },
+        );
+        console.log(`Linked this directory:`);
+        console.log(`  project:     ${result.projectSlug}`);
+        console.log(`  environment: ${result.environmentName}`);
+        console.log("\nNext: `keyline push` / `keyline pull` (lands in #32).");
+      } catch (err) {
+        throw new Error(explainLinkError(err));
       }
-      const { identity, created } = loadOrCreateDeviceIdentity(store);
-      const reg = registrationOf(identity);
-      console.log(created ? "New device keypair generated." : "Device already provisioned.");
-      console.log(`  device id:   ${reg.deviceId}`);
-      console.log(`  public key:  ${reg.publicKey}`);
-      console.log(`  key storage: ${store.backend}`);
-      console.log("\nServer challenge + scoped token land in #31.");
     });
 
   program
@@ -68,23 +87,24 @@ export function buildProgram(): Command {
       const cfg = loadGlobalConfig();
       const store = openKeyStore();
       const device = loadDeviceIdentity(store);
+      const account = loadAccount(store);
       const session = isCredentialValid(loadCredentials(store)) ? "active" : "none";
       const project = findProjectConfig();
 
-      console.log(`api:     ${cfg.apiBaseUrl}`);
-      console.log(`device:  ${device ? `provisioned (${device.deviceId})` : "not provisioned — run `keyline login`"}`);
-      console.log(`session: ${session}`);
+      console.log(`api:       ${cfg.apiBaseUrl}`);
+      console.log(`device:    ${device ? "provisioned" : "not provisioned — run `keyline login`"}`);
+      console.log(`account:   ${account ? `${account.email} (workspace ${account.workspaceId})` : "none — run `keyline login`"}`);
+      console.log(`session:   ${session}`);
       if (project) {
         const { config, path } = project;
-        console.log(`linked:  ${config.projectSlug ?? config.projectId} / ${config.environmentName ?? config.environmentId}`);
-        console.log(`         (${path})`);
+        console.log(`linked:    ${config.projectSlug ?? config.projectId} / ${config.environmentName ?? config.environmentId}`);
+        console.log(`           (${path})`);
       } else {
-        console.log("linked:  this directory is not linked — run `keyline link`");
+        console.log("linked:    this directory is not linked — run `keyline link`");
       }
     });
 
   const stubs: ReadonlyArray<[name: string, desc: string, issue: string]> = [
-    ["link", "bind a directory to a workspace/environment", "#31"],
     ["push", "encrypt local .env -> workspace", "#32"],
     ["pull", "decrypt workspace -> local .env", "#32"],
     ["run", "inject vars into a process, no file written", "#33"],
