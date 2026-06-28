@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@keyline/crypto": "workspace:*",
-    "@keyline/shared": "workspace:*"
+    "@keyline/shared": "workspace:*",
+    "commander": "^12.1.0"
   }
 }
