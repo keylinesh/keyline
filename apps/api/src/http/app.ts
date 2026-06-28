@@ -9,7 +9,7 @@
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { secureHeaders } from "hono/secure-headers";
-import type { DeviceLoginService } from "../auth/device-login.js";
+import type { DeviceLoginService, DeviceRepo } from "../auth/device-login.js";
 import type { TokenService } from "../auth/tokens.js";
 import { type AppEnv, authMiddleware } from "./authz.js";
 import { ApiError } from "./errors.js";
@@ -22,15 +22,24 @@ import type { ResourceDeps } from "./routes/resources.js";
 import type { BundleDeps } from "./routes/bundles.js";
 import type { MemberRouteDeps } from "./routes/members.js";
 import type { AuditRouteDeps } from "./routes/audit.js";
+import type { DeviceRouteDeps } from "./routes/devices.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerResourceRoutes } from "./routes/resources.js";
 import { registerBundleRoutes } from "./routes/bundles.js";
 import { registerMemberRoutes } from "./routes/members.js";
 import { registerAuditRoutes } from "./routes/audit.js";
+import { registerOnboardingRoutes } from "./routes/onboarding.js";
+import { registerDeviceRoutes } from "./routes/devices.js";
 
-export interface AppDeps extends ResourceDeps, BundleDeps, MemberRouteDeps, AuditRouteDeps {
+export interface AppDeps
+  extends ResourceDeps,
+    BundleDeps,
+    MemberRouteDeps,
+    AuditRouteDeps,
+    DeviceRouteDeps {
   tokens: TokenService;
   login: DeviceLoginService;
+  devices: DeviceRepo;
 }
 
 /** Tunable hardening knobs (#26). Sensible defaults; production sets requireHttps. */
@@ -101,9 +110,11 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
 
   const auth = authMiddleware(deps.tokens);
   registerAuthRoutes(app, deps.login);
+  registerOnboardingRoutes(app, deps);
   registerResourceRoutes(app, deps, auth);
   registerMemberRoutes(app, deps, auth);
   registerBundleRoutes(app, deps, auth);
+  registerDeviceRoutes(app, deps, auth);
   registerAuditRoutes(app, deps, auth);
 
   return app;

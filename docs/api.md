@@ -43,6 +43,9 @@ status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
 ### Health
 - `GET /health` → `{ status, service }` (public)
 
+### Onboarding (public)
+- `POST /v1/onboard` — bootstrap a new account: creates a workspace (+ KDF salt), a first **owner** member, and registers the caller's device. Body: `{ workspaceName, kdfSalt, email, displayName?, devicePublicKey, deviceName? }` → `{ workspaceId, memberId, deviceId, publicKey }`. Open signup (invite/verification gating tracked as #64).
+
 ### Device auth (public)
 - `POST /v1/devices` — register a device public key. Body: `{ memberId, workspaceId, publicKey, role, name? }` → `{ deviceId, publicKey }`. (Onboarding seam — to be gated by enrollment.)
 - `POST /v1/auth/device/challenge` — Body: `{ deviceId }` → `{ challengeId, sealed }`. `sealed` is a 32-byte challenge sealed to the device public key.
@@ -75,6 +78,7 @@ status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
 - `GET /v1/workspaces/:wid/members` — list (member).
 - `DELETE /v1/members/:id` — remove (admin).
 - `POST /v1/members/:id/revoke` — cut access immediately (admin): revokes the member's tokens, deletes each device's wrapped key, marks devices revoked → `{ tokensRevoked, devicesRevoked, wrappedKeysDeleted }`.
+- `PUT /v1/devices/:id/wrapped-key` — issue a wrapped workspace key to a device (admin, or the device's own member). Body: `{ wrappedKey: { v, eph, nonce, ct, tag } }`. The client wraps the workspace key to the device's public key; the server stores the blob so the device can decrypt on pull. The inverse of revoke; server never sees the workspace key.
 - `PUT /v1/environments/:id/access` — grant an env role (env admin). Body: `{ memberId, role }` where role ∈ `read|write|admin`.
 - `GET /v1/environments/:id/access` — list grants (env admin).
 - `DELETE /v1/environments/:id/access/:memberId` — revoke a grant (env admin).
