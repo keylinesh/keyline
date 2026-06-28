@@ -54,6 +54,7 @@ export function memoryDeps(): AppDeps {
     members: new InMemoryMemberRepo(),
     access: new InMemoryEnvironmentAccessRepo(),
     audit: new AuditService(new InMemoryAuditRepo()),
+    devices,
     revoke: new RevokeService(devices, wrappedKeys, tokens),
   };
 }
@@ -74,6 +75,7 @@ export function pgDeps(pool: Pool): AppDeps {
     members: new PgMemberRepo(pool),
     access: new PgEnvironmentAccessRepo(pool),
     audit: new AuditService(new PgAuditRepo(pool)),
+    devices,
     revoke: new RevokeService(devices, wrappedKeys, tokens),
   };
 }
