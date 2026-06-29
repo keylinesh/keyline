@@ -2,5 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
   "buildCommand": "pnpm -r build && mkdir -p public && cp index.html favicon.svg og-image.png og-image.svg robots.txt sitemap.xml public/",
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "rewrites": [{ "source": "/api/:path*", "destination": "/api/[[...route]]" }]
 }
