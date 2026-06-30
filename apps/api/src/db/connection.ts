@@ -7,11 +7,11 @@
  * certificate, so verification stays on.
  */
 
-import type { ClientConfig } from "pg";
+import type { PoolConfig } from "pg";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", ""]);
 
-export function connectionConfig(connectionString: string): ClientConfig {
+export function connectionConfig(connectionString: string): PoolConfig {
   let host = "";
   let sslmode: string | null = null;
   try {
@@ -25,5 +25,13 @@ export function connectionConfig(connectionString: string): ClientConfig {
   return {
     connectionString,
     ssl: sslmode === "disable" ? false : wantsSsl ? { rejectUnauthorized: true } : false,
+    // Serverless safety: an unreachable/misconfigured DB must fail fast and
+    // surface the error, never hang the function. Without these, a bad
+    // connection blocks until the platform kills the invocation (no log, no
+    // 5xx — just a timeout the caller sees as a dead endpoint).
+    connectionTimeoutMillis: 8_000,
+    statement_timeout: 10_000,
+    query_timeout: 10_000,
+    idleTimeoutMillis: 10_000,
   };
 }
