@@ -70,6 +70,10 @@ importers:
       commander:
         specifier: ^12.1.0
         version: 12.1.0
+    devDependencies:
+      '@keyline/api':
+        specifier: workspace:*
+        version: link:../api
 
   apps/web: {}
 
