@@ -102,7 +102,19 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   app.notFound((c) => c.json({ error: { code: "not_found", message: "not found" } }, 404));
 
   app.get("/health", (c) =>
-    c.json({ status: "ok", service: "keyline-api", environment: config.environment ?? "unknown" }),
+    c.json({
+      status: "ok",
+      service: "keyline-api",
+      environment: config.environment ?? "unknown",
+      // Deployed git commit (Vercel injects VERCEL_GIT_COMMIT_SHA). Lets us
+      // verify exactly which build is live without touching the database.
+      version: (process.env.VERCEL_GIT_COMMIT_SHA ?? "unknown").slice(0, 8),
+      // Which storage the app resolved to. "postgres" means a DB URL was found;
+      // "memory" means none was — a quick tell for env-var problems.
+      storage: process.env.DATABASE_URL || process.env.POSTGRES_DATABASE_URL || process.env.POSTGRES_URL
+        ? "postgres"
+        : "memory",
+    }),
   );
 
   // Prometheus metrics for scraping (aggregate, non-secret counts).
