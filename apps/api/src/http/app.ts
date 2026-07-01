@@ -120,6 +120,50 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   // Prometheus metrics for scraping (aggregate, non-secret counts).
   app.get("/metrics", (c) => c.text(metrics.render(), 200, { "content-type": "text/plain; version=0.0.4" }));
 
+  // TEMPORARY (#60 debug): probe the DB connection and return the real error.
+  // Bounded by a hard 6s race so it can never hang the function like /v1/* does.
+  // Shows host/db (non-secret) but never credentials. Remove once resolved.
+  app.get("/debug/db", async (c) => {
+    const { appDatabaseUrl } = await import("../db/database-url.js");
+    const { connectionConfig } = await import("../db/connection.js");
+    const { Pool } = await import("pg");
+    const url = appDatabaseUrl();
+    if (!url) return c.json({ resolved: false, storage: "memory" });
+    let host = "unknown";
+    let database = "unknown";
+    try {
+      const u = new URL(url);
+      host = u.hostname;
+      database = u.pathname.slice(1);
+    } catch {
+      /* non-URL DSN */
+    }
+    const started = Date.now();
+    const pool = new Pool({ ...connectionConfig(url), connectionTimeoutMillis: 5_000, max: 1 });
+    try {
+      await Promise.race([
+        pool.query("select 1 as ok"),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("hard-timeout: no response in 6s")), 6_000),
+        ),
+      ]);
+      return c.json({ resolved: true, host, database, ok: true, ms: Date.now() - started });
+    } catch (err) {
+      const e = err as { message?: string; code?: string };
+      return c.json({
+        resolved: true,
+        host,
+        database,
+        ok: false,
+        ms: Date.now() - started,
+        error: e.message ?? String(err),
+        code: e.code ?? null,
+      });
+    } finally {
+      void pool.end().catch(() => {});
+    }
+  });
+
   const auth = authMiddleware(deps.tokens);
   registerAuthRoutes(app, deps.login);
   registerOnboardingRoutes(app, deps);
