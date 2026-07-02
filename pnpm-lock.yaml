@@ -45,6 +45,9 @@ importers:
       '@keyline/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@vercel/postgres':
+        specifier: ^0.10.0
+        version: 0.10.0
       hono:
         specifier: ^4.6.0
         version: 4.12.27
