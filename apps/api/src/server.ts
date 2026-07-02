@@ -7,12 +7,32 @@
  */
 
 import { Pool } from "pg";
+import { createPool as createVercelPool } from "@vercel/postgres";
 import type { Hono } from "hono";
 import { connectionConfig } from "./db/connection.js";
 import { appDatabaseUrl } from "./db/database-url.js";
 import { memoryDeps, pgDeps } from "./deps.js";
 import { type AppConfig, createApp } from "./http/app.js";
 import type { AppEnv } from "./http/authz.js";
+
+/**
+ * Build the app's connection pool.
+ *
+ * On Vercel serverless, a long-lived `pg.Pool` is a trap: the runtime freezes
+ * the function between invocations, which silently kills the pool's idle TCP
+ * sockets. The next request gets handed a dead connection and the query hangs
+ * on a black-holed socket until the platform times out the whole invocation
+ * (observed: /v1/* → 504 FUNCTION_INVOCATION_TIMEOUT, with no query ever
+ * reaching Postgres). @vercel/postgres (Neon serverless) manages connections
+ * per-invocation and is freeze-safe, so we use it in the serverless runtime.
+ * Everywhere else (local dev, migrations, *.pg.test.ts) keeps plain `pg`.
+ */
+function buildPool(databaseUrl: string): Pool {
+  if (process.env.VERCEL) {
+    return createVercelPool({ connectionString: databaseUrl }) as unknown as Pool;
+  }
+  return new Pool(connectionConfig(databaseUrl));
+}
 
 export type Environment = "development" | "staging" | "production";
 
@@ -37,7 +57,7 @@ export function resolveRuntimeConfig(env: NodeJS.ProcessEnv = process.env): {
 
 export function buildApp(): Hono<AppEnv> {
   const databaseUrl = appDatabaseUrl();
-  const deps = databaseUrl ? pgDeps(new Pool(connectionConfig(databaseUrl))) : memoryDeps();
+  const deps = databaseUrl ? pgDeps(buildPool(databaseUrl)) : memoryDeps();
   const { environment, requireHttps } = resolveRuntimeConfig();
   const config: AppConfig = { environment, requireHttps };
   return createApp(deps, config);
