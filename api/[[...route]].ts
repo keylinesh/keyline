@@ -35,6 +35,36 @@ async function getHandler(): Promise<NodeHandler> {
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
+  // TEMPORARY diagnostic: report what Vercel hands us for a POST body, without
+  // touching the Hono app. Confirms the rawBody reconstruction below. Remove later.
+  if ((req.url ?? "").includes("__echo")) {
+    const d = req as IncomingMessage & { body?: unknown; rawBody?: unknown };
+    res.setHeader("content-type", "application/json");
+    res.end(
+      JSON.stringify({
+        method: req.method,
+        url: req.url,
+        hasBody: d.body !== undefined,
+        bodyType: typeof d.body,
+        hasRawBody: Buffer.isBuffer(d.rawBody),
+      }),
+    );
+    return;
+  }
+
   const h = await getHandler();
+  // Vercel's Node runtime parses the JSON body and CONSUMES the request stream.
+  // @hono/node-server/vercel then falls back to re-reading that (already ended)
+  // stream, so `c.req.json()` awaits data that never comes and every POST hangs
+  // to a FUNCTION_INVOCATION_TIMEOUT. Re-attach the parsed body as `rawBody`
+  // (a Buffer) — the adapter uses that directly instead of the dead stream.
+  const r = req as IncomingMessage & { body?: unknown; rawBody?: Buffer };
+  if (r.body !== undefined && !(r.rawBody instanceof Buffer)) {
+    r.rawBody = Buffer.isBuffer(r.body)
+      ? r.body
+      : typeof r.body === "string"
+        ? Buffer.from(r.body)
+        : Buffer.from(JSON.stringify(r.body));
+  }
   return h(req, res);
 }
