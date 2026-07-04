@@ -19,7 +19,10 @@ import {
   PgEnvironmentRepo,
   PgBundleRepo,
   PgAuditRepo,
+  PgMemberRepo,
+  PgWrappedKeyRepo,
 } from "./pg-repo.js";
+import { PgDeviceRepo } from "../auth/pg-repo.js";
 import { VersionConflictError } from "./bundles.js";
 import { verifyChain } from "./audit.js";
 
@@ -53,6 +56,21 @@ test("pg repos round-trip against Postgres", { skip: !dbUrl }, async () => {
       VersionConflictError,
     );
     assert.equal((await bn.getLatest(e.id))!.version, 2);
+
+    // wrapped keys: existsForWorkspace distinguishes fresh workspace vs granted (#32)
+    const wk = new PgWrappedKeyRepo(pool);
+    assert.equal(await wk.existsForWorkspace(w.id), false);
+    const member = await new PgMemberRepo(pool).create({
+      workspaceId: w.id, email: "pg@test", role: "owner",
+    });
+    const device = await new PgDeviceRepo(pool).register({
+      memberId: member.id, workspaceId: w.id, publicKey: "pk", role: "owner",
+    });
+    await wk.upsert({
+      workspaceId: w.id, deviceId: device.id, formatVersion: 1, eph: "e", nonce: "n", ct: "c", tag: "t",
+    });
+    assert.equal(await wk.existsForWorkspace(w.id), true);
+    assert.equal((await wk.findForDevice(w.id, device.id))?.ct, "c");
 
     await au.append({ workspaceId: w.id, action: "a", outcome: "allowed" });
     await au.append({ workspaceId: w.id, action: "b", outcome: "denied", metadata: { reason: "x" } });

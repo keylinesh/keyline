@@ -157,6 +157,12 @@ export class InMemoryWrappedKeyRepo implements WrappedKeyRepo {
   async findForDevice(workspaceId: string, deviceId: string): Promise<StoredWrappedKey | null> {
     return this.byKey.get(this.k(workspaceId, deviceId)) ?? null;
   }
+  async existsForWorkspace(workspaceId: string): Promise<boolean> {
+    for (const key of this.byKey.values()) {
+      if (key.workspaceId === workspaceId) return true;
+    }
+    return false;
+  }
   async upsert(key: StoredWrappedKey): Promise<void> {
     this.byKey.set(this.k(key.workspaceId, key.deviceId), key);
   }

@@ -63,6 +63,12 @@ export interface StoredWrappedKey {
 
 export interface WrappedKeyRepo {
   findForDevice(workspaceId: string, deviceId: string): Promise<StoredWrappedKey | null>;
+  /**
+   * Whether ANY device in the workspace holds a wrapped key. Distinguishes a
+   * brand-new workspace (the CLI may generate the workspace key, #32) from a
+   * device that simply hasn't been granted one (ask an admin).
+   */
+  existsForWorkspace(workspaceId: string): Promise<boolean>;
   /** Insert or replace a device's wrapped key (used by membership/recovery, #23/#25). */
   upsert(key: StoredWrappedKey): Promise<void>;
   /** Delete a device's wrapped key (used by member revoke, #25). Returns true if one existed. */

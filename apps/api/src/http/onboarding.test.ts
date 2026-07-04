@@ -104,6 +104,69 @@ test("full bootstrap: onboard -> login -> issue wrapped key -> pull -> decrypt",
   assert.equal(plaintext.toString("utf8"), "API_KEY=sk_live_x");
 });
 
+test("GET wrapped-key distinguishes fresh workspace / granted / not granted", async () => {
+  const deps: AppDeps = memoryDeps();
+  const app = createApp(deps);
+  const device = generateDeviceKeyPair();
+
+  const onboard = await readJson(
+    await client(app)("POST", "/v1/onboard", {
+      workspaceName: "Acme",
+      kdfSalt: SALT,
+      email: "founder@acme.test",
+      devicePublicKey: device.publicKey,
+    }),
+  );
+  const ch = await readJson(
+    await client(app)("POST", "/v1/auth/device/challenge", { deviceId: onboard.deviceId }),
+  );
+  const answer = unwrapWorkspaceKey(ch.sealed, device.privateKey).toString("base64");
+  const { token } = await readJson(
+    await client(app)("POST", "/v1/auth/device/login", { challengeId: ch.challengeId, answer }),
+  );
+  const c = client(app, token);
+
+  // Fresh workspace: no key anywhere → the caller may bootstrap one.
+  let res = await readJson(await c("GET", `/v1/devices/${onboard.deviceId}/wrapped-key`));
+  assert.equal(res.wrappedKey, null);
+  assert.equal(res.workspaceHasKey, false);
+
+  // Issue this device its key → GET returns it.
+  const wk = wrapWorkspaceKey(generateWorkspaceKey(), device.publicKey);
+  await c("PUT", `/v1/devices/${onboard.deviceId}/wrapped-key`, {
+    wrappedKey: { v: wk.v, eph: wk.eph, nonce: wk.nonce, ct: wk.ct, tag: wk.tag },
+  });
+  res = await readJson(await c("GET", `/v1/devices/${onboard.deviceId}/wrapped-key`));
+  assert.deepEqual(res.wrappedKey, { v: wk.v, eph: wk.eph, nonce: wk.nonce, ct: wk.ct, tag: wk.tag });
+  assert.equal(res.workspaceHasKey, true);
+
+  // Another device of the same member: no key of its own, but the workspace has one.
+  const second = await deps.login.register({
+    memberId: onboard.memberId,
+    workspaceId: onboard.workspaceId,
+    publicKey: generateDeviceKeyPair().publicKey,
+    role: "owner",
+  });
+  res = await readJson(await c("GET", `/v1/devices/${second.id}/wrapped-key`));
+  assert.equal(res.wrappedKey, null);
+  assert.equal(res.workspaceHasKey, true);
+});
+
+test("a member cannot read another member's device wrapped key", async () => {
+  const deps: AppDeps = memoryDeps();
+  const app = createApp(deps);
+  const ws = await deps.workspaces.create({ name: "Acme", kdfSalt: SALT });
+  const otherMember = await deps.members.create({ workspaceId: ws.id, email: "x@acme.test", role: "member" });
+  const otherDevice = await deps.login.register({
+    memberId: otherMember.id, workspaceId: ws.id, publicKey: generateDeviceKeyPair().publicKey, role: "member",
+  });
+  const { token } = await deps.tokens.issue({
+    deviceId: "d", memberId: "mem-self", scope: { workspaceId: ws.id, role: "member" },
+  });
+  const res = await client(app, token)("GET", `/v1/devices/${otherDevice.id}/wrapped-key`);
+  assert.equal(res.status, 403);
+});
+
 test("a member cannot issue a wrapped key to another member's device", async () => {
   const deps: AppDeps = memoryDeps();
   const app = createApp(deps);
