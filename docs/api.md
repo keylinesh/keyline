@@ -79,6 +79,7 @@ status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
 - `DELETE /v1/members/:id` — remove (admin).
 - `POST /v1/members/:id/revoke` — cut access immediately (admin): revokes the member's tokens, deletes each device's wrapped key, marks devices revoked → `{ tokensRevoked, devicesRevoked, wrappedKeysDeleted }`.
 - `PUT /v1/devices/:id/wrapped-key` — issue a wrapped workspace key to a device (admin, or the device's own member). Body: `{ wrappedKey: { v, eph, nonce, ct, tag } }`. The client wraps the workspace key to the device's public key; the server stores the blob so the device can decrypt on pull. The inverse of revoke; server never sees the workspace key.
+- `GET /v1/devices/:id/wrapped-key` — read a device's wrapped key (same authorization) → `{ wrappedKey: {…} | null, workspaceHasKey }`. `workspaceHasKey: false` means no device in the workspace holds a key yet (fresh workspace — the CLI's first `push` generates one); `null` + `true` means this device hasn't been granted access.
 - `PUT /v1/environments/:id/access` — grant an env role (env admin). Body: `{ memberId, role }` where role ∈ `read|write|admin`.
 - `GET /v1/environments/:id/access` — list grants (env admin).
 - `DELETE /v1/environments/:id/access/:memberId` — revoke a grant (env admin).

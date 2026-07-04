@@ -311,6 +311,14 @@ export class PgWrappedKeyRepo implements WrappedKeyRepo {
       : null;
   }
 
+  async existsForWorkspace(workspaceId: string): Promise<boolean> {
+    const { rows } = await this.pool.query<{ one: number }>(
+      `select 1 as one from wrapped_keys where workspace_id = $1 limit 1`,
+      [workspaceId],
+    );
+    return rows.length > 0;
+  }
+
   async upsert(key: StoredWrappedKey): Promise<void> {
     await this.pool.query(
       `insert into wrapped_keys (workspace_id, device_id, format_version, eph, nonce, ct, tag)
