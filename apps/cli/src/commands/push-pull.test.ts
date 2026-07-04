@@ -1,50 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { buildApp } from "@keyline/api/app";
 import { generateDeviceKeyPair, unwrapWorkspaceKey } from "@keyline/crypto";
 import { ApiClient } from "../api-client.js";
-import type { KeyStore } from "../keystore.js";
 import { loadAccount, saveAccount } from "../account.js";
 import { loadCredentials, saveCredentials } from "../credentials.js";
-import { runLogin } from "./login.js";
-import { runLink } from "./link.js";
+import { harness, memStore, TEST_ENV as ENV } from "../test-harness.js";
 import { runPush } from "./push.js";
 import { runPull } from "./pull.js";
 import { NO_ACCESS_MESSAGE, obtainWorkspaceKey } from "./workspace-key.js";
-
-const ENV = "API_KEY=sk_live_x\n# a comment survives round-trips\nDB_URL=postgres://localhost/app\n";
-
-function memStore(): KeyStore {
-  const map = new Map<string, string>();
-  return {
-    backend: "memory",
-    get: (a) => map.get(a) ?? null,
-    set: (a, s) => void map.set(a, s),
-    delete: (a) => void map.delete(a),
-  };
-}
-
-/** CLI deps on a fresh in-memory API + a linked temp dir with an .env. */
-async function harness() {
-  const app = buildApp();
-  const fetchImpl = ((url: string, init?: RequestInit) =>
-    app.request(url, init)) as unknown as typeof fetch;
-  const dir = mkdtempSync(join(tmpdir(), "keyline-sync-"));
-  const deps = {
-    store: memStore(),
-    apiBaseUrl: "",
-    fetchImpl,
-    statePath: join(dir, "state.json"),
-  };
-  await runLogin(deps, { workspaceName: "Acme", email: "founder@acme.test" });
-  await runLink(deps, { project: "api", environment: "prod", dir });
-  writeFileSync(join(dir, ".env"), ENV);
-  const cleanup = () => rmSync(dir, { recursive: true, force: true });
-  return { deps, dir, fetchImpl, cleanup };
-}
 
 test("push then pull round-trips the .env byte-for-byte", async () => {
   const { deps, dir, cleanup } = await harness();

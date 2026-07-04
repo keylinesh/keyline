@@ -18,6 +18,7 @@ import { runLogin } from "./commands/login.js";
 import { explainLinkError, runLink } from "./commands/link.js";
 import { runPush } from "./commands/push.js";
 import { runPull } from "./commands/pull.js";
+import { runRun } from "./commands/run.js";
 
 function version(): string {
   try {
@@ -40,7 +41,8 @@ export function buildProgram(): Command {
   program
     .name("keyline")
     .description("Share .env files securely with one command. Servers only ever hold ciphertext.")
-    .version(version(), "-v, --version", "print the version");
+    .version(version(), "-v, --version", "print the version")
+    .enablePositionalOptions(); // lets `run` pass the child command's flags through
 
   program
     .command("login")
@@ -150,8 +152,30 @@ export function buildProgram(): Command {
       }
     });
 
+  program
+    .command("run")
+    .description("run a command with secrets injected — nothing written to disk")
+    .argument("<cmd...>", "the command to run (use `keyline run -- cmd --flags`)")
+    .passThroughOptions()
+    .action(async (cmd: string[]) => {
+      try {
+        const cfg = loadGlobalConfig();
+        const [command, ...args] = cmd;
+        const outcome = await runRun(
+          { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
+          { command: command!, args },
+        );
+        if (outcome.signal) {
+          // Mirror the child's fatal signal so callers see the real outcome.
+          process.kill(process.pid, outcome.signal);
+        }
+        process.exitCode = outcome.exitCode ?? 1;
+      } catch (err) {
+        throw new Error(explainLinkError(err));
+      }
+    });
+
   const stubs: ReadonlyArray<[name: string, desc: string, issue: string]> = [
-    ["run", "inject vars into a process, no file written", "#33"],
     ["rotate", "rotate a single secret", "#34"],
     ["revoke", "cut a member's access immediately", "#34"],
     ["audit", "view / export the log", "#35"],
