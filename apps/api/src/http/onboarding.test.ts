@@ -152,6 +152,57 @@ test("GET wrapped-key distinguishes fresh workspace / granted / not granted", as
   assert.equal(res.workspaceHasKey, true);
 });
 
+test("GET member devices lists public keys + wrapped-key status (admin or self)", async () => {
+  const deps: AppDeps = memoryDeps();
+  const app = createApp(deps);
+  const device = generateDeviceKeyPair();
+  const onboard = await readJson(
+    await client(app)("POST", "/v1/onboard", {
+      workspaceName: "Acme",
+      kdfSalt: SALT,
+      email: "founder@acme.test",
+      devicePublicKey: device.publicKey,
+    }),
+  );
+  const ch = await readJson(
+    await client(app)("POST", "/v1/auth/device/challenge", { deviceId: onboard.deviceId }),
+  );
+  const { token } = await readJson(
+    await client(app)("POST", "/v1/auth/device/login", {
+      challengeId: ch.challengeId,
+      answer: unwrapWorkspaceKey(ch.sealed, device.privateKey).toString("base64"),
+    }),
+  );
+  const c = client(app, token);
+
+  let res = await readJson(await c("GET", `/v1/members/${onboard.memberId}/devices`));
+  assert.equal(res.devices.length, 1);
+  assert.equal(res.devices[0].id, onboard.deviceId);
+  assert.equal(res.devices[0].publicKey, device.publicKey);
+  assert.equal(res.devices[0].revoked, false);
+  assert.equal(res.devices[0].hasWrappedKey, false);
+
+  const wk = wrapWorkspaceKey(generateWorkspaceKey(), device.publicKey);
+  await c("PUT", `/v1/devices/${onboard.deviceId}/wrapped-key`, {
+    wrappedKey: { v: wk.v, eph: wk.eph, nonce: wk.nonce, ct: wk.ct, tag: wk.tag },
+  });
+  res = await readJson(await c("GET", `/v1/members/${onboard.memberId}/devices`));
+  assert.equal(res.devices[0].hasWrappedKey, true);
+
+  assert.equal((await c("GET", "/v1/members/00000000-0000-0000-0000-000000000000/devices")).status, 404);
+});
+
+test("a plain member cannot list another member's devices", async () => {
+  const deps: AppDeps = memoryDeps();
+  const app = createApp(deps);
+  const ws = await deps.workspaces.create({ name: "Acme", kdfSalt: SALT });
+  const other = await deps.members.create({ workspaceId: ws.id, email: "x@acme.test", role: "member" });
+  const { token } = await deps.tokens.issue({
+    deviceId: "d", memberId: "mem-self", scope: { workspaceId: ws.id, role: "member" },
+  });
+  assert.equal((await client(app, token)("GET", `/v1/members/${other.id}/devices`)).status, 403);
+});
+
 test("a member cannot read another member's device wrapped key", async () => {
   const deps: AppDeps = memoryDeps();
   const app = createApp(deps);
