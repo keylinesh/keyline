@@ -50,6 +50,33 @@ export function countSecrets(content: string): number {
   return Object.keys(parseEnv(content)).length;
 }
 
+export const ENV_KEY_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+/** Render a value for a .env line, double-quoting when it needs it. */
+export function formatEnvValue(value: string): string {
+  if (value !== "" && !/[\s#"'\\]/.test(value) && !/[\n\r\t]/.test(value)) return value;
+  const escaped = value
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\r/g, "\\r")
+    .replace(/\t/g, "\\t");
+  return `"${escaped}"`;
+}
+
+/**
+ * Replace the value of `key` in dotenv content, leaving every other byte —
+ * comments, ordering, unrelated lines — untouched (used by `rotate`, #34).
+ * Replaces every assignment of the key. Returns null if the key isn't present.
+ */
+export function replaceEnvValue(content: string, key: string, value: string): string | null {
+  if (!ENV_KEY_PATTERN.test(key)) throw new Error(`invalid secret name: ${JSON.stringify(key)}`);
+  const assignment = new RegExp(`^([ \\t]*(?:export[ \\t]+)?${key}[ \\t]*=).*$`, "gm");
+  if (!assignment.test(content)) return null;
+  assignment.lastIndex = 0;
+  return content.replace(assignment, `$1${formatEnvValue(value)}`);
+}
+
 /**
  * Whether git ignores `filePath`. Returns null when the answer is unknowable
  * (not a git repo, git not installed) — callers warn only on an explicit false.

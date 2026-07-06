@@ -20,6 +20,8 @@ interface PullResponse {
 export interface DecryptedBundle {
   plaintext: Buffer;
   version: number;
+  /** The unwrapped workspace key — needed by `rotate` to re-seal. Memory only. */
+  key: Buffer;
 }
 
 export async function fetchDecryptedBundle(ctx: SyncContext): Promise<DecryptedBundle> {
@@ -40,7 +42,7 @@ export async function fetchDecryptedBundle(ctx: SyncContext): Promise<DecryptedB
       { v: res.bundle.v, nonce: res.bundle.nonce, ciphertext: res.bundle.ciphertext, tag: res.bundle.tag },
       key,
     );
-    return { plaintext, version: res.bundle.version };
+    return { plaintext, version: res.bundle.version, key };
   } catch {
     throw new Error(
       "Could not decrypt the bundle with this device's key. " +
