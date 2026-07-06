@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { countSecrets, parseEnv } from "./env-file.js";
+import { countSecrets, formatEnvValue, parseEnv, replaceEnvValue } from "./env-file.js";
 
 test("parseEnv handles plain, export-prefixed, and =-containing values", () => {
   const vars = parseEnv(
@@ -50,4 +50,34 @@ test("parseEnv handles CRLF files", () => {
 
 test("countSecrets counts distinct keys", () => {
   assert.equal(countSecrets("A=1\nB=2\nB=3\n# C=4\n"), 2);
+});
+
+test("replaceEnvValue swaps one value and leaves every other byte alone", () => {
+  const content = "# payment keys\nSTRIPE_KEY=sk_old # inline note\nOTHER=keep\n\nexport SPACED = also-old\n";
+  const rotated = replaceEnvValue(content, "STRIPE_KEY", "sk_new")!;
+  assert.equal(rotated, "# payment keys\nSTRIPE_KEY=sk_new\nOTHER=keep\n\nexport SPACED = also-old\n");
+  // export-prefixed and space-padded assignments are found too
+  assert.match(replaceEnvValue(content, "SPACED", "x")!, /export SPACED =x\n/);
+});
+
+test("replaceEnvValue quotes values that need it and round-trips through parseEnv", () => {
+  const rotated = replaceEnvValue("KEY=old\n", "KEY", 'multi word "quoted" #hash')!;
+  assert.deepEqual(parseEnv(rotated), { KEY: 'multi word "quoted" #hash' });
+});
+
+test("replaceEnvValue replaces every assignment of a duplicated key", () => {
+  const rotated = replaceEnvValue("A=1\nA=2\n", "A", "3")!;
+  assert.deepEqual(rotated, "A=3\nA=3\n");
+});
+
+test("replaceEnvValue: missing key -> null, similar names untouched", () => {
+  assert.equal(replaceEnvValue("KEY_2=x\n", "KEY", "v"), null);
+  assert.throws(() => replaceEnvValue("A=1", "BAD KEY", "v"), /invalid secret name/);
+});
+
+test("formatEnvValue only quotes when needed", () => {
+  assert.equal(formatEnvValue("plain-value_123"), "plain-value_123");
+  assert.equal(formatEnvValue("has space"), '"has space"');
+  assert.equal(formatEnvValue("line1\nline2"), '"line1\\nline2"');
+  assert.equal(formatEnvValue(""), '""');
 });

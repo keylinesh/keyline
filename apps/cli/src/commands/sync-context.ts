@@ -27,10 +27,13 @@ export interface SyncInput {
   dir?: string;
 }
 
-export interface SyncContext {
+export interface Session {
   api: ApiClient;
   account: StoredAccount;
   identity: DeviceIdentity;
+}
+
+export interface SyncContext extends Session {
   binding: ProjectConfig;
   /** Absolute path of the local .env to read (push) or write (pull). */
   envFile: string;
@@ -38,7 +41,8 @@ export interface SyncContext {
   label: string;
 }
 
-export function resolveSyncContext(deps: SyncDeps, input: SyncInput): SyncContext {
+/** A valid login + device identity — enough for workspace-level commands. */
+export function resolveSession(deps: SyncDeps): Session {
   const creds = loadCredentials(deps.store);
   if (!isCredentialValid(creds)) {
     throw new Error("Not logged in. Run `keyline login` first.");
@@ -48,6 +52,15 @@ export function resolveSyncContext(deps: SyncDeps, input: SyncInput): SyncContex
   if (!account || !identity) {
     throw new Error("No account on this device. Run `keyline login` first.");
   }
+  return {
+    api: new ApiClient({ baseUrl: deps.apiBaseUrl, token: creds.token, fetchImpl: deps.fetchImpl }),
+    account,
+    identity,
+  };
+}
+
+export function resolveSyncContext(deps: SyncDeps, input: SyncInput): SyncContext {
+  const session = resolveSession(deps);
 
   const found = findProjectConfig(input.dir);
   if (!found) {
@@ -62,9 +75,7 @@ export function resolveSyncContext(deps: SyncDeps, input: SyncInput): SyncContex
     : join(linkedDir, DEFAULT_ENV_FILE);
 
   return {
-    api: new ApiClient({ baseUrl: deps.apiBaseUrl, token: creds.token, fetchImpl: deps.fetchImpl }),
-    account,
-    identity,
+    ...session,
     binding,
     envFile,
     label: `${binding.projectSlug ?? binding.projectId}/${binding.environmentName ?? binding.environmentId}`,

@@ -19,6 +19,9 @@ import { explainLinkError, runLink } from "./commands/link.js";
 import { runPush } from "./commands/push.js";
 import { runPull } from "./commands/pull.js";
 import { runRun } from "./commands/run.js";
+import { runRotate } from "./commands/rotate.js";
+import { runRevoke } from "./commands/revoke.js";
+import { confirm, promptHidden, readStdin } from "./prompt.js";
 
 function version(): string {
   try {
@@ -175,9 +178,66 @@ export function buildProgram(): Command {
       }
     });
 
+  program
+    .command("rotate")
+    .description("replace one secret's value (re-encrypted on this machine)")
+    .argument("<name>", "the secret to rotate, e.g. STRIPE_KEY")
+    .option("--value <value>", "the new value (omit to be prompted, or pipe it in)")
+    .option("-f, --file <path>", "local env file to keep in sync")
+    .action(async (name: string, opts: { value?: string; file?: string }) => {
+      try {
+        let value = opts.value;
+        if (value === undefined) {
+          value = process.stdin.isTTY
+            ? await promptHidden(`New value for ${name}: `)
+            : await readStdin();
+        }
+        if (!value) throw new Error("No value given. Pass --value, pipe one in, or type it at the prompt.");
+        const cfg = loadGlobalConfig();
+        const result = await runRotate(
+          { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
+          { name, value, file: opts.file },
+        );
+        console.log(`Rotated ${result.name} in ${result.label} (version ${result.version}).`);
+        if (result.envFileUpdated) console.log(`  local file updated: ${result.envFileUpdated}`);
+        console.log("Anything running with the old value keeps it until restarted.");
+      } catch (err) {
+        throw new Error(explainLinkError(err));
+      }
+    });
+
+  program
+    .command("revoke")
+    .description("cut a member's access immediately")
+    .argument("<email>", "the member to revoke")
+    .option("-y, --yes", "skip the confirmation prompt")
+    .action(async (email: string, opts: { yes?: boolean }) => {
+      try {
+        if (!opts.yes) {
+          if (!process.stdin.isTTY) {
+            throw new Error("Refusing to revoke without confirmation. Pass --yes.");
+          }
+          if (!(await confirm(`Immediately revoke ${email}'s access? [y/N] `))) {
+            console.log("Aborted.");
+            return;
+          }
+        }
+        const cfg = loadGlobalConfig();
+        const result = await runRevoke(
+          { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
+          { email },
+        );
+        console.log(
+          `Revoked ${result.email}: ${result.tokensRevoked} sessions ended, ` +
+            `${result.devicesRevoked} devices cut off, ${result.wrappedKeysDeleted} keys deleted.`,
+        );
+        console.log("They may still know current values — rotate the secrets that matter.");
+      } catch (err) {
+        throw new Error(explainLinkError(err));
+      }
+    });
+
   const stubs: ReadonlyArray<[name: string, desc: string, issue: string]> = [
-    ["rotate", "rotate a single secret", "#34"],
-    ["revoke", "cut a member's access immediately", "#34"],
     ["audit", "view / export the log", "#35"],
     ["members", "list + scope members per environment", "#35"],
   ];
