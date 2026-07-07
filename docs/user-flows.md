@@ -13,7 +13,7 @@ See also: [MVP scope](mvp-scope.md), [ICP](icp.md), [ADR-0002 zero-knowledge bou
 
 ## 2. Put your first secrets in
 
-1. In your project folder, run `keyline link my-app --env dev`.
+1. In your project folder, run `keyline link` (the folder name becomes the project; add `--env dev` to pick an environment).
 2. The folder is now bound to a workspace and environment.
 3. Run `keyline push`. Your local `.env` is encrypted on your laptop, then uploaded.
 4. The server only ever stores ciphertext. It cannot read your keys.
