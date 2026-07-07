@@ -8,6 +8,7 @@ stages:
   - install
   - build
   - verify
+  - release
 
 variables:
   PNPM_HOME: "$CI_PROJECT_DIR/.pnpm"
@@ -82,3 +83,46 @@ pg-test:
   script:
     - pnpm --filter @keyline/api db:migrate
     - pnpm --filter @keyline/api exec node --import tsx --test src/domain/pg-repo.pg.test.ts
+
+# ---- Release (#37) ----------------------------------------------------------
+# Runs only on version tags (vX.Y.Z). Publishes the single-file CLI to npm and
+# creates a GitLab release with SHA-256 checksums attached. Requires the
+# NPM_TOKEN CI/CD variable (npm automation token) — see docs/distribution.md.
+publish-npm:
+  stage: release
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+  <<: *setup
+  script:
+    - pnpm build
+    - pnpm --filter keyline bundle
+    - cd apps/cli
+    # The tag must match the package version, or refuse to publish.
+    - test "v$(node -p "require('./package.json').version")" = "$CI_COMMIT_TAG"
+    - npm pack
+    - sha256sum keyline-*.tgz dist/keyline.js > SHA256SUMS
+    - cat SHA256SUMS
+    - npm config set "//registry.npmjs.org/:_authToken" "$NPM_TOKEN"
+    - npm publish keyline-*.tgz --access public
+  artifacts:
+    paths:
+      - apps/cli/SHA256SUMS
+      - apps/cli/keyline-*.tgz
+    expire_in: never
+
+gitlab-release:
+  stage: release
+  needs: ["publish-npm"]
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  script:
+    - echo "creating release for $CI_COMMIT_TAG"
+  release:
+    tag_name: "$CI_COMMIT_TAG"
+    name: "keyline $CI_COMMIT_TAG"
+    description: |
+      Install: `curl -fsSL keyline.sh/install | sh` or `npm i -g keyline`.
+
+      SHA-256 checksums for this release are in the publish-npm job's
+      SHA256SUMS artifact.

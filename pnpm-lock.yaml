@@ -63,7 +63,10 @@ importers:
         version: 8.11.6
 
   apps/cli:
-    dependencies:
+    devDependencies:
+      '@keyline/api':
+        specifier: workspace:*
+        version: link:../api
       '@keyline/crypto':
         specifier: workspace:*
         version: link:../../packages/crypto
@@ -73,10 +76,9 @@ importers:
       commander:
         specifier: ^12.1.0
         version: 12.1.0
-    devDependencies:
-      '@keyline/api':
-        specifier: workspace:*
-        version: link:../api
+      esbuild:
+        specifier: ^0.28.1
+        version: 0.28.1
 
   apps/web: {}
 

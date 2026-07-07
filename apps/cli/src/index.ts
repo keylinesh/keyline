@@ -1,7 +1,8 @@
-#!/usr/bin/env node
 /**
  * keyline CLI entrypoint. Builds the commander program (cli.ts) and runs it,
  * turning ApiErrors and other failures into a clean message + non-zero exit.
+ * (The shebang is added by the bundle step — bundle.mjs — which produces the
+ * executable dist/keyline.js that npm's bin points at.)
  */
 
 import { buildProgram } from "./cli.js";

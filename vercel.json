@@ -1,7 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "pnpm -r build && mkdir -p public && cp index.html favicon.svg og-image.png og-image.svg robots.txt sitemap.xml public/",
+  "buildCommand": "pnpm -r build && mkdir -p public && cp index.html favicon.svg og-image.png og-image.svg robots.txt sitemap.xml install.sh public/",
   "outputDirectory": "public",
-  "rewrites": [{ "source": "/api/:path*", "destination": "/api/[[...route]]" }]
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/[[...route]]" },
+    { "source": "/install", "destination": "/install.sh" }
+  ],
+  "headers": [
+    {
+      "source": "/install",
+      "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+    }
+  ]
 }

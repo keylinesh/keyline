@@ -1,24 +1,45 @@
 {
-  "name": "@keyline/cli",
-  "version": "0.0.0",
-  "private": true,
+  "name": "keyline",
+  "version": "0.1.0",
+  "description": "Share .env files securely with one command. Servers only ever hold ciphertext.",
   "type": "module",
   "bin": {
-    "keyline": "dist/index.js"
+    "keyline": "dist/keyline.js"
   },
+  "files": [
+    "dist/keyline.js"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT",
+  "homepage": "https://keyline.sh",
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/resim.boyadzhiev/keyline.git",
+    "directory": "apps/cli"
+  },
+  "keywords": [
+    "env",
+    "dotenv",
+    "secrets",
+    "encryption",
+    "zero-knowledge"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "bundle": "node bundle.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "echo \"(lint: configure eslint)\"",
     "test": "KEYLINE_LOG_SILENT=1 node --import tsx --test $(find src -name '*.test.ts')",
-    "dev": "node --import tsx src/index.ts"
-  },
-  "dependencies": {
-    "@keyline/crypto": "workspace:*",
-    "@keyline/shared": "workspace:*",
-    "commander": "^12.1.0"
+    "dev": "node --import tsx src/index.ts",
+    "prepublishOnly": "pnpm bundle"
   },
   "devDependencies": {
-    "@keyline/api": "workspace:*"
+    "@keyline/api": "workspace:*",
+    "@keyline/crypto": "workspace:*",
+    "@keyline/shared": "workspace:*",
+    "commander": "^12.1.0",
+    "esbuild": "^0.28.1"
   }
 }
