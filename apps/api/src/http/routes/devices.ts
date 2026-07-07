@@ -1,8 +1,11 @@
 /**
- * Device key management (#60, #32) — a device's wrapped workspace key.
+ * Device key management (#60, #32, #35) — devices and their wrapped keys.
  *
  *   PUT /v1/devices/:id/wrapped-key — issue (upload) a wrapped key
  *   GET /v1/devices/:id/wrapped-key — read it back (push/pull key acquisition)
+ *   GET /v1/members/:id/devices    — a member's devices + public keys, so an
+ *                                    admin can wrap the workspace key to them
+ *                                    (`keyline members grant`)
  *
  * The client wraps the workspace key to the target device's public key (envelope
  * encryption, client-side) and uploads the WrappedKey; the server stores it so
@@ -22,6 +25,7 @@ import { z } from "zod";
 import type { DeviceRepo } from "../../auth/device-login.js";
 import type { AuditService } from "../../domain/audit.js";
 import type { WrappedKeyRepo } from "../../domain/bundles.js";
+import type { MemberRepo } from "../../domain/members.js";
 import { type AppEnv, requireWorkspace } from "../authz.js";
 import { forbidden, notFound } from "../errors.js";
 import { parseBody } from "../validate.js";
@@ -29,6 +33,7 @@ import { parseBody } from "../validate.js";
 export interface DeviceRouteDeps {
   devices: DeviceRepo;
   wrappedKeys: WrappedKeyRepo;
+  members: MemberRepo;
   audit: AuditService;
 }
 
@@ -62,6 +67,31 @@ export function registerDeviceRoutes(
     }
     return { device, principal };
   }
+
+  app.get("/v1/members/:id/devices", auth, async (c) => {
+    const member = await deps.members.findById(c.req.param("id"));
+    if (!member) throw notFound("member not found");
+
+    const principal = c.get("principal");
+    requireWorkspace(principal, member.workspaceId);
+    const isAdmin = principal.scope.role === "admin" || principal.scope.role === "owner";
+    if (!isAdmin && member.id !== principal.memberId) {
+      throw forbidden("requires admin to list another member's devices");
+    }
+
+    const devices = await deps.devices.listByMember(member.id);
+    return c.json({
+      devices: await Promise.all(
+        devices.map(async (d) => ({
+          id: d.id,
+          publicKey: d.publicKey,
+          revoked: d.revokedAt !== null,
+          hasWrappedKey:
+            (await deps.wrappedKeys.findForDevice(member.workspaceId, d.id)) !== null,
+        })),
+      ),
+    });
+  });
 
   app.get("/v1/devices/:id/wrapped-key", auth, async (c) => {
     const { device } = await authorizedDevice(c, c.req.param("id"), "read the key of");

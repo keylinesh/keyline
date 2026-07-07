@@ -1,10 +1,10 @@
 /**
  * keyline CLI — command surface (commander).
  *
- * #30 wired the framework, config, and credential storage. `login`, `link`,
- * `push`, `pull`, and `status` are live; the rest are registered as stubs whose
- * implementations land in their own M3 issues. All crypto goes through
- * @keyline/crypto (via device.ts and the command modules).
+ * #30 wired the framework, config, and credential storage; #31–#35 filled in
+ * the commands. The full surface is live: login, link, status, push, pull,
+ * run, rotate, revoke, audit, members. All crypto goes through @keyline/crypto
+ * (via device.ts and the command modules).
  */
 
 import { readFileSync } from "node:fs";
@@ -21,6 +21,8 @@ import { runPull } from "./commands/pull.js";
 import { runRun } from "./commands/run.js";
 import { runRotate } from "./commands/rotate.js";
 import { runRevoke } from "./commands/revoke.js";
+import { runAudit, runAuditVerify } from "./commands/audit.js";
+import { parseEnvRole, runGrant, runInvite, runMembersList } from "./commands/members.js";
 import { confirm, promptHidden, readStdin } from "./prompt.js";
 
 function version(): string {
@@ -32,11 +34,6 @@ function version(): string {
   } catch {
     return "0.0.0";
   }
-}
-
-/** Placeholder action for commands implemented in a later M3 issue. */
-function notYet(issue: string): () => void {
-  return () => console.log(`'keyline' for this command lands in milestone M3 (${issue}).`);
 }
 
 export function buildProgram(): Command {
@@ -237,13 +234,122 @@ export function buildProgram(): Command {
       }
     });
 
-  const stubs: ReadonlyArray<[name: string, desc: string, issue: string]> = [
-    ["audit", "view / export the log", "#35"],
-    ["members", "list + scope members per environment", "#35"],
-  ];
-  for (const [name, desc, issue] of stubs) {
-    program.command(name).description(desc).action(notYet(issue));
-  }
+  program
+    .command("audit")
+    .description("who did what: view or export the tamper-evident log")
+    .option("-e, --env <env>", "only events for this environment (linked project)")
+    .option("-n, --limit <n>", "only the most recent N events", (v) => parseInt(v, 10))
+    .option("--json", "machine-readable output")
+    .option("--verify", "check the hash chain instead of listing events")
+    .action(async (opts: { env?: string; limit?: number; json?: boolean; verify?: boolean }) => {
+      try {
+        const cfg = loadGlobalConfig();
+        const deps = { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() };
+        if (opts.verify) {
+          const v = await runAuditVerify(deps);
+          if (opts.json) return void console.log(JSON.stringify(v));
+          console.log(
+            v.ok
+              ? `Chain intact: ${v.count} events verified.`
+              : `CHAIN BROKEN at seq ${v.brokenSeq}: ${v.reason}`,
+          );
+          if (!v.ok) process.exitCode = 1;
+          return;
+        }
+        const result = await runAudit(deps, { env: opts.env, limit: opts.limit });
+        if (opts.json) return void console.log(JSON.stringify(result.events, null, 2));
+        if (result.events.length === 0) return void console.log("No events yet.");
+        for (const e of result.events) {
+          const detail = e.metadata && Object.keys(e.metadata).length > 0
+            ? `  ${JSON.stringify(e.metadata)}`
+            : "";
+          console.log(
+            `${e.createdAt}  ${e.outcome.padEnd(7)}  ${e.action.padEnd(16)}  ${e.actor}${detail}`,
+          );
+        }
+        if (result.total > result.events.length) {
+          console.log(`(${result.events.length} of ${result.total} — raise --limit to see more)`);
+        }
+      } catch (err) {
+        throw new Error(explainLinkError(err));
+      }
+    });
+
+  const members = program
+    .command("members")
+    .description("list members and scope their access per environment");
+
+  members
+    .command("list", { isDefault: true })
+    .description("list workspace members (add --env for per-environment roles)")
+    .option("-e, --env <env>", "show each member's role for this environment")
+    .option("--json", "machine-readable output")
+    .action(async (opts: { env?: string; json?: boolean }) => {
+      try {
+        const cfg = loadGlobalConfig();
+        const result = await runMembersList(
+          { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
+          { env: opts.env },
+        );
+        if (opts.json) return void console.log(JSON.stringify(result.members, null, 2));
+        for (const m of result.members) {
+          const envRole =
+            result.env !== undefined
+              ? `  ${result.env}: ${m.envRole ?? (m.role === "member" ? "no access" : `${m.role} (implicit)`)}`
+              : "";
+          console.log(`${m.email.padEnd(32)}  ${m.role}${envRole}`);
+        }
+      } catch (err) {
+        throw new Error(explainLinkError(err));
+      }
+    });
+
+  members
+    .command("invite")
+    .description("add a member to the workspace")
+    .argument("<email>", "their email")
+    .option("--role <role>", "workspace role: member or admin", "member")
+    .action(async (email: string, opts: { role: string }) => {
+      try {
+        if (opts.role !== "member" && opts.role !== "admin") {
+          throw new Error(`workspace role must be "member" or "admin" (got "${opts.role}")`);
+        }
+        const cfg = loadGlobalConfig();
+        const invited = await runInvite(
+          { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
+          { email, role: opts.role },
+        );
+        console.log(`Invited ${invited.email} as ${invited.role}.`);
+        console.log("Next: `keyline members grant " + invited.email + " --env <env> --role read|write|admin`");
+      } catch (err) {
+        throw new Error(explainLinkError(err));
+      }
+    });
+
+  members
+    .command("grant")
+    .description("give a member a role on an environment (and the key to decrypt)")
+    .argument("<email>", "the member")
+    .requiredOption("-e, --env <env>", "environment name (linked project)")
+    .requiredOption("-r, --role <role>", "read, write, or admin")
+    .action(async (email: string, opts: { env: string; role: string }) => {
+      try {
+        const cfg = loadGlobalConfig();
+        const result = await runGrant(
+          { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
+          { email, env: opts.env, role: parseEnvRole(opts.role) },
+        );
+        console.log(`Granted ${result.email} ${result.role} on ${result.env}.`);
+        if (result.keysIssued > 0) {
+          console.log(`  workspace key wrapped to ${result.keysIssued} of their device(s).`);
+        }
+        if (result.memberHasNoDevice) {
+          console.log("  note: they have no device yet — they can decrypt once one is registered.");
+        }
+      } catch (err) {
+        throw new Error(explainLinkError(err));
+      }
+    });
 
   return program;
 }
