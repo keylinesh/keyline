@@ -28,6 +28,16 @@ export async function promptHidden(question: string): Promise<string> {
   }
 }
 
+/** Ask a plain (echoed) question, returning the trimmed answer. */
+export async function promptLine(question: string): Promise<string> {
+  const rl = createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    return (await rl.question(question)).trim();
+  } finally {
+    rl.close();
+  }
+}
+
 /** y/N confirmation. Anything but y/yes is a no. */
 export async function confirm(question: string): Promise<boolean> {
   const rl = createInterface({ input: process.stdin, output: process.stdout });

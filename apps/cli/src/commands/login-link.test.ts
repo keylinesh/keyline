@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { buildApp } from "@keyline/api/app";
 import type { KeyStore } from "../keystore.js";
 import { loadAccount } from "../account.js";
@@ -71,6 +71,19 @@ test("link creates project + environment and writes the binding", async () => {
     const found = findProjectConfig(dir);
     assert.equal(found?.config.projectId, cfg.projectId);
     assert.equal(found?.config.environmentId, cfg.environmentId);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("link without a project name uses the folder's name (#36)", async () => {
+  const deps = harness();
+  await runLogin(deps, { workspaceName: "Acme", email: "founder@acme.test" });
+  const dir = mkdtempSync(join(tmpdir(), "My Cool App-"));
+  try {
+    const cfg = await runLink(deps, { environment: "dev", dir });
+    assert.equal(cfg.projectSlug, slugify(basename(dir)));
+    assert.match(cfg.projectSlug!, /^my-cool-app-/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

@@ -1,11 +1,14 @@
 /**
- * `keyline link <project> --env <env>` — bind the current directory to a
+ * `keyline link [project] --env <env>` — bind the current directory to a
  * workspace/project/environment, writing a `.keyline.json` that push/pull read.
  *
- * Finds the project (by slug) and environment (by name) in your workspace,
- * creating them if they don't exist, then persists the binding.
+ * The project name defaults to the folder's name (#36): in the happy path a
+ * new user just types `keyline link`. Finds the project (by slug) and
+ * environment (by name) in your workspace, creating them if they don't exist,
+ * then persists the binding.
  */
 
+import { basename, resolve } from "node:path";
 import { ApiClient, ApiError } from "../api-client.js";
 import type { KeyStore } from "../keystore.js";
 import { loadAccount } from "../account.js";
@@ -13,7 +16,8 @@ import { isCredentialValid, loadCredentials } from "../credentials.js";
 import { type ProjectConfig, saveProjectConfig } from "../config.js";
 
 export interface LinkInput {
-  project: string;
+  /** Project name; defaults to the linked folder's name. */
+  project?: string;
   environment: string;
   dir?: string;
 }
@@ -50,8 +54,15 @@ export async function runLink(deps: LinkDeps, input: LinkInput): Promise<Project
   const account = loadAccount(deps.store);
   if (!account) throw new Error("No account on this device. Run `keyline login` first.");
 
-  const slug = slugify(input.project);
-  if (!slug) throw new Error(`invalid project name: ${JSON.stringify(input.project)}`);
+  const projectName = input.project ?? basename(resolve(input.dir ?? process.cwd()));
+  const slug = slugify(projectName);
+  if (!slug) {
+    throw new Error(
+      input.project
+        ? `invalid project name: ${JSON.stringify(input.project)}`
+        : `cannot make a project name out of this folder (${JSON.stringify(projectName)}); pass one: keyline link <project>`,
+    );
+  }
 
   const api = new ApiClient({ baseUrl: deps.apiBaseUrl, token: creds.token, fetchImpl: deps.fetchImpl });
 
@@ -62,7 +73,7 @@ export async function runLink(deps: LinkDeps, input: LinkInput): Promise<Project
   let project = projects.find((p) => p.slug === slug);
   if (!project) {
     project = await api.post<Project>(`/v1/workspaces/${account.workspaceId}/projects`, {
-      name: input.project,
+      name: projectName,
       slug,
     });
   }

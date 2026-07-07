@@ -23,7 +23,7 @@ import { runRotate } from "./commands/rotate.js";
 import { runRevoke } from "./commands/revoke.js";
 import { runAudit, runAuditVerify } from "./commands/audit.js";
 import { parseEnvRole, runGrant, runInvite, runMembersList } from "./commands/members.js";
-import { confirm, promptHidden, readStdin } from "./prompt.js";
+import { confirm, promptHidden, promptLine, readStdin } from "./prompt.js";
 
 function version(): string {
   try {
@@ -52,23 +52,34 @@ export function buildProgram(): Command {
     .option("--reset", "forget the local account + session and start over")
     .action(async (opts: { workspace?: string; email?: string; reset?: boolean }) => {
       const cfg = loadGlobalConfig();
+      const store = openKeyStore();
+
+      // First run on a TTY: ask instead of erroring with flag instructions (#36).
+      let { workspace, email } = opts;
+      const firstRun = opts.reset || !loadAccount(store);
+      if (firstRun && process.stdin.isTTY) {
+        console.log("Welcome to keyline. Two questions and you're in.");
+        if (!workspace) workspace = await promptLine("Workspace name (your team or app): ");
+        if (!email) email = await promptLine("Your email: ");
+      }
+
       const result = await runLogin(
-        { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
-        { workspaceName: opts.workspace, email: opts.email, reset: opts.reset },
+        { apiBaseUrl: cfg.apiBaseUrl, store },
+        { workspaceName: workspace || undefined, email: email || undefined, reset: opts.reset },
       );
       console.log(result.created ? "Account created and logged in." : "Logged in.");
       console.log(`  workspace:   ${result.workspaceId}`);
       console.log(`  device id:   ${result.deviceId}`);
       console.log(`  key storage: ${result.keyStorage}`);
-      console.log("\nNext: `keyline link <project> --env <env>` to bind this directory.");
+      console.log("\nNext: cd into your project, then `keyline link` and `keyline push`.");
     });
 
   program
     .command("link")
     .description("bind this directory to a workspace/project/environment")
-    .argument("<project>", "project name/slug to link")
+    .argument("[project]", "project name (defaults to this folder's name)")
     .option("-e, --env <env>", "environment name", "prod")
-    .action(async (project: string, opts: { env: string }) => {
+    .action(async (project: string | undefined, opts: { env: string }) => {
       try {
         const cfg = loadGlobalConfig();
         const result = await runLink(
@@ -76,7 +87,7 @@ export function buildProgram(): Command {
           { project, environment: opts.env },
         );
         console.log(`Linked this directory:`);
-        console.log(`  project:     ${result.projectSlug}`);
+        console.log(`  project:     ${result.projectSlug}${project ? "" : " (from the folder name)"}`);
         console.log(`  environment: ${result.environmentName}`);
         console.log("\nNext: `keyline push` to upload your .env, encrypted.");
       } catch (err) {
