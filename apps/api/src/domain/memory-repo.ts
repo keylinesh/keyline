@@ -29,6 +29,7 @@ import {
   GENESIS_HASH,
 } from "./audit.js";
 import type { Role } from "../auth/scope.js";
+import type { WebSessionGrant, WebSessionRecord, WebSessionRepo } from "./web-sessions.js";
 
 // A fixed clock keeps records ordering-stable in tests; real time isn't important here.
 const EPOCH = new Date("2026-01-01T00:00:00Z");
@@ -263,5 +264,49 @@ export class InMemoryAuditRepo implements AuditRepo {
 
   async list(workspaceId: string): Promise<AuditEvent[]> {
     return [...(this.byWs.get(workspaceId) ?? [])];
+  }
+}
+
+export class InMemoryWebSessionRepo implements WebSessionRepo {
+  private readonly byId = new Map<string, WebSessionRecord>();
+
+  async create(input: { codeHash: string; expiresAt: Date }): Promise<WebSessionRecord> {
+    const record: WebSessionRecord = {
+      id: randomUUID(),
+      codeHash: input.codeHash,
+      status: "pending",
+      memberId: null,
+      deviceId: null,
+      workspaceId: null,
+      role: null,
+      createdAt: EPOCH,
+      expiresAt: input.expiresAt,
+      approvedAt: null,
+    };
+    this.byId.set(record.id, record);
+    return record;
+  }
+
+  async findById(id: string): Promise<WebSessionRecord | null> {
+    return this.byId.get(id) ?? null;
+  }
+
+  async findByCodeHash(codeHash: string): Promise<WebSessionRecord | null> {
+    for (const s of this.byId.values()) if (s.codeHash === codeHash) return s;
+    return null;
+  }
+
+  async approve(id: string, grant: WebSessionGrant, when: Date): Promise<boolean> {
+    const s = this.byId.get(id);
+    if (!s || s.status !== "pending") return false;
+    Object.assign(s, { ...grant, status: "approved", approvedAt: when });
+    return true;
+  }
+
+  async claim(id: string): Promise<WebSessionRecord | null> {
+    const s = this.byId.get(id);
+    if (!s || s.status !== "approved") return null;
+    s.status = "claimed";
+    return { ...s, status: "approved" };
   }
 }
