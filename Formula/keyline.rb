@@ -21,7 +21,7 @@ class Keyline < Formula
 
   def install
     libexec.install Dir["*"]
-    (bin/"keyline").write_env_script Formula["node"].opt_bin/"node", libexec/"dist/keyline.js", {}
+    (bin/"keyline").write_env_script formula_opt_bin("node")/"node", libexec/"dist/keyline.js", {}
   end
 
   test do
