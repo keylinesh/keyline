@@ -31,12 +31,12 @@ command -v npm >/dev/null 2>&1 || fail "npm wasn't found next to node — instal
 
 # --- Install ----------------------------------------------------------------
 say "Installing keyline from npm..."
-if npm install -g keyline >/dev/null 2>&1; then
+if npm install -g @keyline/cli >/dev/null 2>&1; then
   :
 else
   say "npm install -g needs elevated permissions on this system; retrying with sudo."
   command -v sudo >/dev/null 2>&1 || fail "npm -g failed and sudo is unavailable. Try: npm config set prefix ~/.npm-global"
-  sudo npm install -g keyline >/dev/null
+  sudo npm install -g @keyline/cli >/dev/null
 fi
 
 command -v keyline >/dev/null 2>&1 || \

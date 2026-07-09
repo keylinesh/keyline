@@ -6,7 +6,7 @@ and the friction log behind it.
 ## The happy path
 
 ```bash
-curl -fsSL keyline.sh/install | sh   # or: npm i -g keyline
+curl -fsSL keyline.sh/install | sh   # or: npm i -g @keyline/cli
 keyline login           # two questions: workspace name, email
 cd my-app
 keyline link            # project = folder name

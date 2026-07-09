@@ -1,5 +1,5 @@
 {
-  "name": "keyline",
+  "name": "@keyline/cli",
   "version": "0.1.0",
   "description": "Share .env files securely with one command. Servers only ever hold ciphertext.",
   "type": "module",
