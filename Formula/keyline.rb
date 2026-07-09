@@ -12,7 +12,7 @@
 class Keyline < Formula
   desc "Share .env files securely with one command; servers only hold ciphertext"
   homepage "https://keyline.sh"
-  url "https://registry.npmjs.org/keyline/-/keyline-0.1.0.tgz"
+  url "https://registry.npmjs.org/@keylinesh/cli/-/cli-0.1.0.tgz"
   # Filled in per release: sha256 of the tarball above (see SHA256SUMS).
   sha256 "REPLACE_WITH_RELEASE_SHA256"
   license "MIT"
