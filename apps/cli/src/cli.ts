@@ -23,6 +23,7 @@ import { runRun } from "./commands/run.js";
 import { runRotate } from "./commands/rotate.js";
 import { runRevoke } from "./commands/revoke.js";
 import { runAudit, runAuditVerify } from "./commands/audit.js";
+import { runWebApprove } from "./commands/web.js";
 import { parseEnvRole, runGrant, runInvite, runMembersList } from "./commands/members.js";
 import { confirm, promptHidden, promptLine, readStdin } from "./prompt.js";
 
@@ -241,6 +242,20 @@ export function buildProgram(): Command {
             `${result.devicesRevoked} devices cut off, ${result.wrappedKeysDeleted} keys deleted.`,
         );
         console.log("They may still know current values — rotate the secrets that matter.");
+      } catch (err) {
+        throw new Error(explainLinkError(err));
+      }
+    });
+
+  program
+    .command("web")
+    .description("approve a dashboard sign-in shown in your browser")
+    .argument("<code>", "the code on the dashboard sign-in screen")
+    .action(async (code: string) => {
+      try {
+        const cfg = loadGlobalConfig();
+        await runWebApprove({ apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() }, code);
+        console.log("Browser session approved. Switch back to the dashboard.");
       } catch (err) {
         throw new Error(explainLinkError(err));
       }

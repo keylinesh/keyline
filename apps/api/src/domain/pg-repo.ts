@@ -30,6 +30,7 @@ import {
   computeEventHash,
   GENESIS_HASH,
 } from "./audit.js";
+import type { WebSessionGrant, WebSessionRecord, WebSessionRepo } from "./web-sessions.js";
 import type { Role } from "../auth/scope.js";
 
 export class PgWorkspaceRepo implements WorkspaceRepo {
@@ -556,5 +557,80 @@ export class PgAuditRepo implements AuditRepo {
       [workspaceId],
     );
     return rows.map(toAudit);
+  }
+}
+
+interface WebSessionRow {
+  id: string;
+  code_hash: string;
+  status: "pending" | "approved" | "claimed";
+  member_id: string | null;
+  device_id: string | null;
+  workspace_id: string | null;
+  role: Role | null;
+  created_at: Date;
+  expires_at: Date;
+  approved_at: Date | null;
+}
+
+const toWebSession = (r: WebSessionRow): WebSessionRecord => ({
+  id: r.id,
+  codeHash: r.code_hash,
+  status: r.status,
+  memberId: r.member_id,
+  deviceId: r.device_id,
+  workspaceId: r.workspace_id,
+  role: r.role,
+  createdAt: r.created_at,
+  expiresAt: r.expires_at,
+  approvedAt: r.approved_at,
+});
+
+export class PgWebSessionRepo implements WebSessionRepo {
+  constructor(private readonly pool: Pool) {}
+
+  async create(input: { codeHash: string; expiresAt: Date }): Promise<WebSessionRecord> {
+    const { rows } = await this.pool.query<WebSessionRow>(
+      `insert into web_sessions (code_hash, expires_at) values ($1, $2) returning *`,
+      [input.codeHash, input.expiresAt],
+    );
+    return toWebSession(rows[0]!);
+  }
+
+  async findById(id: string): Promise<WebSessionRecord | null> {
+    const { rows } = await this.pool.query<WebSessionRow>(
+      `select * from web_sessions where id = $1`,
+      [id],
+    );
+    return rows[0] ? toWebSession(rows[0]) : null;
+  }
+
+  async findByCodeHash(codeHash: string): Promise<WebSessionRecord | null> {
+    const { rows } = await this.pool.query<WebSessionRow>(
+      `select * from web_sessions where code_hash = $1`,
+      [codeHash],
+    );
+    return rows[0] ? toWebSession(rows[0]) : null;
+  }
+
+  async approve(id: string, grant: WebSessionGrant, when: Date): Promise<boolean> {
+    const res = await this.pool.query(
+      `update web_sessions
+          set status = 'approved', member_id = $2, device_id = $3,
+              workspace_id = $4, role = $5, approved_at = $6
+        where id = $1 and status = 'pending'`,
+      [id, grant.memberId, grant.deviceId, grant.workspaceId, grant.role, when],
+    );
+    return (res.rowCount ?? 0) > 0;
+  }
+
+  async claim(id: string): Promise<WebSessionRecord | null> {
+    const { rows } = await this.pool.query<WebSessionRow>(
+      `update web_sessions set status = 'claimed'
+        where id = $1 and status = 'approved'
+        returning *`,
+      [id],
+    );
+    return rows[0] ? toWebSession(rows[0]) : null;
   }
 }

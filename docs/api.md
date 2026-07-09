@@ -85,6 +85,13 @@ status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
 - `GET /v1/environments/:id/access` — list grants (env admin).
 - `DELETE /v1/environments/:id/access/:memberId` — revoke a grant (env admin).
 
+### Web sessions (dashboard sign-in, ADR-0003)
+- `POST /v1/web/sessions` — start (public) → `{ sessionId, code, expiresAt }`. The dashboard shows the code; it lives 10 minutes, stored hashed.
+- `POST /v1/web/sessions/approve` — approve by code (device-authenticated; the `keyline web <code>` command). Binds the caller's member/device/workspace/role to the session. Unknown, expired, or reused codes → 404.
+- `POST /v1/web/sessions/:id/claim` — poll (public) → `{ status: pending|expired|consumed }` or, exactly once after approval, `{ status: "ready", token, expiresAt, workspaceId }`. The 8-hour token is minted at claim time (never stored) and is bound to the approving device, so member/device revocation kills web sessions too.
+
+All `/v1/web/*` routes sit behind the tight per-IP auth rate limit.
+
 ### Audit log
 - `GET /v1/workspaces/:wid/audit` — list events (admin). Hash-chained, append-only.
 - `GET /v1/workspaces/:wid/audit/verify` — verify chain integrity (admin) → `{ ok, count }` or `{ ok: false, brokenSeq, reason }`.

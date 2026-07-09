@@ -20,9 +20,11 @@ import {
   PgBundleRepo,
   PgAuditRepo,
   PgMemberRepo,
+  PgWebSessionRepo,
   PgWrappedKeyRepo,
 } from "./pg-repo.js";
 import { PgDeviceRepo } from "../auth/pg-repo.js";
+import { hashSessionCode } from "./web-sessions.js";
 import { VersionConflictError } from "./bundles.js";
 import { verifyChain } from "./audit.js";
 
@@ -71,6 +73,23 @@ test("pg repos round-trip against Postgres", { skip: !dbUrl }, async () => {
     });
     assert.equal(await wk.existsForWorkspace(w.id), true);
     assert.equal((await wk.findForDevice(w.id, device.id))?.ct, "c");
+
+    // web sessions (#39): pending -> approved -> claimed exactly once
+    const wsess = new PgWebSessionRepo(pool);
+    const session = await wsess.create({
+      codeHash: hashSessionCode("TEST-CODE"),
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    assert.equal(session.status, "pending");
+    assert.equal((await wsess.findByCodeHash(hashSessionCode("test code")))?.id, session.id);
+    assert.equal(
+      await wsess.approve(session.id, { memberId: member.id, deviceId: device.id, workspaceId: w.id, role: "owner" }, new Date()),
+      true,
+    );
+    assert.equal(await wsess.approve(session.id, { memberId: member.id, deviceId: device.id, workspaceId: w.id, role: "owner" }, new Date()), false, "approve is single-shot");
+    const claimed = await wsess.claim(session.id);
+    assert.equal(claimed?.memberId, member.id);
+    assert.equal(await wsess.claim(session.id), null, "claim is single-shot");
 
     await au.append({ workspaceId: w.id, action: "a", outcome: "allowed" });
     await au.append({ workspaceId: w.id, action: "b", outcome: "denied", metadata: { reason: "x" } });

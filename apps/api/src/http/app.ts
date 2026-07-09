@@ -30,13 +30,15 @@ import { registerMemberRoutes } from "./routes/members.js";
 import { registerAuditRoutes } from "./routes/audit.js";
 import { registerOnboardingRoutes } from "./routes/onboarding.js";
 import { registerDeviceRoutes } from "./routes/devices.js";
+import { registerWebSessionRoutes, type WebSessionRouteDeps } from "./routes/web-sessions.js";
 
 export interface AppDeps
   extends ResourceDeps,
     BundleDeps,
     MemberRouteDeps,
     AuditRouteDeps,
-    DeviceRouteDeps {
+    DeviceRouteDeps,
+    WebSessionRouteDeps {
   tokens: TokenService;
   login: DeviceLoginService;
   devices: DeviceRepo;
@@ -88,6 +90,7 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   app.use("*", rateLimit({ ...rl, keyFn: tokenOrIpKey }));
   app.use("/v1/auth/*", rateLimit({ ...authRl, keyFn: ipKey }));
   app.use("/v1/devices", rateLimit({ ...authRl, keyFn: ipKey }));
+  app.use("/v1/web/*", rateLimit({ ...authRl, keyFn: ipKey }));
 
   app.onError((err, c) => {
     if (err instanceof ApiError) return c.json(err.body(), err.status as 400);
@@ -172,6 +175,7 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   registerBundleRoutes(app, deps, auth);
   registerDeviceRoutes(app, deps, auth);
   registerAuditRoutes(app, deps, auth);
+  registerWebSessionRoutes(app, deps, auth);
 
   return app;
 }

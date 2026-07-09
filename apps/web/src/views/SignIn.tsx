@@ -1,0 +1,65 @@
+/**
+ * Sign-in (ADR-0003): show a one-time code, wait for `keyline web <code>`.
+ */
+
+import { useEffect, useRef, useState } from "react";
+import { startSignIn, waitForApproval, type StartResponse, type WebSession } from "../session.js";
+
+export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => void }) {
+  const [start, setStart] = useState<StartResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
+  const active = useRef(true);
+
+  useEffect(() => {
+    active.current = true;
+    setError(null);
+    setStart(null);
+
+    (async () => {
+      try {
+        const started = await startSignIn();
+        if (!active.current) return;
+        setStart(started);
+        const session = await waitForApproval(started.sessionId);
+        if (!active.current) return;
+        if (session) onSignedIn(session);
+        else setError("That code expired. Get a fresh one.");
+      } catch {
+        if (active.current) setError("Can't reach the keyline API. Try again in a moment.");
+      }
+    })();
+
+    return () => {
+      active.current = false;
+    };
+  }, [attempt, onSignedIn]);
+
+  return (
+    <div className="center-page">
+      <div className="card">
+        <div className="brand" style={{ marginBottom: 18 }}>
+          <span className="mk">k_</span> Keyline
+        </div>
+        <h1>Sign in</h1>
+        <p className="sub">In your terminal, run:</p>
+        <div className="code-box">
+          <span className="pr">$</span> keyline web <b>{start ? start.code : "····-····"}</b>
+        </div>
+        <p className="hint">The dashboard shows metadata only. Secret values stay in the CLI.</p>
+        {error ? (
+          <>
+            <p className="error">{error}</p>
+            <button className="btn" onClick={() => setAttempt((n) => n + 1)}>
+              Get a new code
+            </button>
+          </>
+        ) : (
+          <p className="waiting">
+            waiting for approval <span className="dot">●</span>
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

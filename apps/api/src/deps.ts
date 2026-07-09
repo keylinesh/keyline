@@ -9,6 +9,7 @@ import type { Pool } from "pg";
 import { DeviceLoginService } from "./auth/device-login.js";
 import { TokenService } from "./auth/tokens.js";
 import { AuditService } from "./domain/audit.js";
+import { WebSessionService } from "./domain/web-sessions.js";
 import { RevokeService } from "./services/revoke.js";
 import {
   InMemoryChallengeRepo,
@@ -23,6 +24,7 @@ import {
   InMemoryEnvironmentRepo,
   InMemoryMemberRepo,
   InMemoryProjectRepo,
+  InMemoryWebSessionRepo,
   InMemoryWorkspaceRepo,
   InMemoryWrappedKeyRepo,
 } from "./domain/memory-repo.js";
@@ -33,6 +35,7 @@ import {
   PgEnvironmentRepo,
   PgMemberRepo,
   PgProjectRepo,
+  PgWebSessionRepo,
   PgWorkspaceRepo,
   PgWrappedKeyRepo,
 } from "./domain/pg-repo.js";
@@ -56,6 +59,7 @@ export function memoryDeps(): AppDeps {
     audit: new AuditService(new InMemoryAuditRepo()),
     devices,
     revoke: new RevokeService(devices, wrappedKeys, tokens),
+    webSessions: new WebSessionService(new InMemoryWebSessionRepo(), tokens),
   };
 }
 
@@ -77,5 +81,6 @@ export function pgDeps(pool: Pool): AppDeps {
     audit: new AuditService(new PgAuditRepo(pool)),
     devices,
     revoke: new RevokeService(devices, wrappedKeys, tokens),
+    webSessions: new WebSessionService(new PgWebSessionRepo(pool), tokens),
   };
 }
