@@ -8,6 +8,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import { relative } from "node:path";
 import { Command } from "commander";
 import { openKeyStore } from "./keystore.js";
 import { loadDeviceIdentity } from "./device.js";
@@ -130,9 +131,9 @@ export function buildProgram(): Command {
           { apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() },
           { file: opts.file },
         );
-        console.log(
-          `Pulled ${result.secretCount} secrets into ${result.envFile} (version ${result.version}).`,
-        );
+        const rel = relative(process.cwd(), result.envFile);
+        const shown = rel && !rel.startsWith("..") ? rel : result.envFile;
+        console.log(`Pulled ${result.secretCount} secrets into ${shown} (version ${result.version}).`);
         if (result.warning) console.log(result.warning);
       } catch (err) {
         throw new Error(explainLinkError(err));
