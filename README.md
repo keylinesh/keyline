@@ -15,10 +15,10 @@ Small teams share secrets in ways that are convenient and dangerous: keys pasted
 Three commands. No new format to learn. If your app reads env vars today, you're done.
 
 ```sh
-keyline link <project> --env prod   # bind a directory to a workspace/environment
-keyline push                        # encrypt local .env -> workspace
-keyline pull                        # decrypt workspace -> local .env
-keyline run -- <cmd>                # inject vars into a process, no file written
+keyline link             # bind this directory (project = folder name; --env to pick)
+keyline push             # encrypt local .env -> workspace
+keyline pull             # decrypt workspace -> local .env
+keyline run -- <cmd>     # inject vars into a process, no file written
 ```
 
 Goal: install → link → pull in **under two minutes**.
@@ -68,16 +68,25 @@ pnpm lint         # lint
 pnpm test         # run tests
 ```
 
+## Install
+
+```sh
+curl -fsSL keyline.sh/install | sh      # or: npm i -g @keylinesh/cli
+```
+
+Homebrew: `brew tap keyline/keyline https://gitlab.com/resim.boyadzhiev/homebrew-keyline && brew install keyline`.
+
 ## Project status
 
-**Backend built and deployed; CLI next.** Roadmap tracked as GitLab milestones M0–M6.
+**The CLI is shipped and published; web dashboard next.** Roadmap tracked as GitLab milestones M0–M6.
 
 - **M0 Foundations** — done (monorepo, CI, docs).
 - **M1 Crypto Core** — done. `packages/crypto`: AES-256-GCM bundles, scrypt KDF, X25519 device keypairs, sealed-box envelope wrap/unwrap, admin + sealed-file recovery; known-answer + property/fuzz tests. (External security review is the launch gate, still pending — backlog #18.)
 - **M2 Backend API & Data Model** — done. `apps/api` (Hono): device auth + scoped tokens, workspace/project/environment CRUD, push/pull encrypted bundles, per-environment RBAC, tamper-evident hash-chained audit log, revoke/rotate, rate-limiting/validation/security-headers/TLS, structured logs + metrics. Runs on **Neon** (Postgres) and is **live as a Vercel function** (`/api/health`). ~127 tests; CI includes a real-Postgres job.
-- **M3 CLI** — next. The `keyline` CLI that drives the live API.
+- **M3 CLI** — done. `apps/cli`, published as **`@keylinesh/cli`** (v0.1.0): login (interactive first run), link, push/pull (client-side crypto, optimistic concurrency), `run` (in-memory injection, exit/signal passthrough), rotate/revoke, audit/members (`--json`). Measured first run under a minute (docs/first-run.md). Distribution: npm + `curl | sh` + Homebrew tap, checksums per release, tag-driven release CI (docs/distribution.md). 44s demo on the landing page, re-recordable from `demo/demo.tape`. ~132 CLI+API+crypto tests.
+- **M4 Web Dashboard** — next. Metadata-only React app (never sees secret values).
 
-Docs: [encryption design](docs/encryption-design.md) · [API reference](docs/api.md) · [infra/deploy](docs/infra.md) · [observability](docs/observability.md) · [ADRs](docs/decisions/) · [security review packet](docs/security-review/). Full positioning + risk list in `keyline-context.md`.
+Docs: [encryption design](docs/encryption-design.md) · [API reference](docs/api.md) · [first run](docs/first-run.md) · [distribution](docs/distribution.md) · [infra/deploy](docs/infra.md) · [observability](docs/observability.md) · [ADRs](docs/decisions/) · [security review packet](docs/security-review/). Full positioning + risk list in `keyline-context.md`.
 
 ## License
 
