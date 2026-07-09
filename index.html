@@ -356,6 +356,7 @@
     <a class="brand" href="#"><span class="mk">k_</span> Keyline</a>
     <div class="nav-links">
       <a href="#how">How it works</a>
+      <a href="#agents">Agents</a>
       <a href="#security">Security</a>
       <a href="#features">Features</a>
       <a href="#pricing">Pricing</a>
@@ -479,6 +480,32 @@
         <source src="/demo.webm" type="video/webm">
         <source src="/demo.mp4" type="video/mp4">
       </video>
+    </div>
+  </div>
+</section>
+
+<!-- AI AGENTS -->
+<section id="agents">
+  <div class="wrap">
+    <div class="eyebrow">Built for agents</div>
+    <h2>Agents run your code. They don't need your keys.</h2>
+    <p class="lead">Claude Code, Cursor, CI bots. An agent needs your app to run, not your secrets to read. <span class="mono" style="color:var(--amber)">keyline run</span> keeps values out of prompts, logs, and diffs.</p>
+    <div class="steps">
+      <div class="step rv">
+        <h3>Out of the context window</h3>
+        <p>The agent starts your app through Keyline. Secrets are injected in memory, into the app process. Never into the prompt.</p>
+        <code><span class="pr">$</span> keyline run -- npm test</code>
+      </div>
+      <div class="step rv">
+        <h3>Scoped like any teammate</h3>
+        <p>Give an agent read on dev and nothing on prod. Tokens expire on their own. Revoke in one command.</p>
+        <code><span class="pr">$</span> keyline members grant agent@ci --env dev --role read</code>
+      </div>
+      <div class="step rv">
+        <h3>Audited like production</h3>
+        <p>Every pull an agent makes lands in the tamper-evident log. Who, what, when.</p>
+        <code><span class="pr">$</span> keyline audit --env dev</code>
+      </div>
     </div>
   </div>
 </section>
