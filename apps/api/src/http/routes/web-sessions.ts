@@ -69,6 +69,8 @@ export function registerWebSessionRoutes(
         token: result.token,
         expiresAt: result.expiresAt.toISOString(),
         workspaceId: result.workspaceId,
+        memberId: result.memberId,
+        role: result.role,
       });
     }
     return c.json({ status: result.status });
