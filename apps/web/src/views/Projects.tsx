@@ -66,21 +66,35 @@ export function Projects({ session }: { session: WebSession }) {
     [reload],
   );
 
-  if (rows === null && !error) return <p className="hint">Loading…</p>;
+  if (rows === null && !error) {
+    return (
+      <div aria-hidden>
+        <div className="skel" />
+        <div className="skel" />
+      </div>
+    );
+  }
 
   return (
     <div>
       {error && <p className="error" role="alert">{error}</p>}
       {admin && (
-        <InlineCreate
-          placeholder="new project name"
-          label="New project"
-          onCreate={(name) => act(() => createProject(session, name))}
-        />
+        <div style={{ marginBottom: 20 }}>
+          <InlineCreate
+            placeholder="new project name"
+            label="New project"
+            onCreate={(name) => act(() => createProject(session, name))}
+          />
+        </div>
       )}
       {rows && rows.length === 0 && (
         <div className="placeholder">
-          No projects yet. {admin ? "Create one above, or run `keyline link` in a repo." : "Ask an admin to create one."}
+          No projects yet.{" "}
+          {admin ? (
+            <>Create one above, or run <code>keyline link</code> in a repo.</>
+          ) : (
+            "Ask an admin to create one."
+          )}
         </div>
       )}
       {rows?.map((project) => (
@@ -175,7 +189,7 @@ function InlineCreate({
         aria-label={placeholder}
         onChange={(e) => setName(e.target.value)}
       />
-      <button className="btn mini-btn" type="submit">
+      <button className={small ? "btn" : "btn primary"} type="submit">
         {label}
       </button>
     </form>
