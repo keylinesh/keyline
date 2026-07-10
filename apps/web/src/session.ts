@@ -9,6 +9,14 @@ export interface WebSession {
   token: string;
   expiresAt: string;
   workspaceId: string;
+  /** Present on sessions claimed after #40; older stored sessions lack them. */
+  memberId?: string;
+  role?: "owner" | "admin" | "member";
+}
+
+/** Admin-capable sessions may create/rename/delete; members read. */
+export function isAdmin(session: WebSession): boolean {
+  return session.role === "owner" || session.role === "admin";
 }
 
 const STORAGE_KEY = "keyline.web.session";
@@ -52,7 +60,8 @@ export async function waitForApproval(
   for (let i = 0; i < maxAttempts; i++) {
     const res = await claimSession(sessionId, opts.fetchImpl);
     if (res.status === "ready") {
-      return { token: res.token, expiresAt: res.expiresAt, workspaceId: res.workspaceId };
+      const { token, expiresAt, workspaceId, memberId, role } = res;
+      return { token, expiresAt, workspaceId, memberId, role };
     }
     if (res.status === "expired" || res.status === "consumed") return null;
     await sleep(interval);

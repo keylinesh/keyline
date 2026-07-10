@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { ApiError, request } from "../api.js";
 import type { WebSession } from "../session.js";
+import { Projects } from "./Projects.js";
 
 interface Workspace {
   id: string;
@@ -67,9 +68,10 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
         </p>
         {error ? (
           <p className="error">{error}</p>
+        ) : section === "Projects" ? (
+          <Projects session={session} />
         ) : (
           <div className="placeholder">
-            {section === "Projects" && "Project management lands with #40."}
             {section === "Members" && "Member management lands with #41."}
             {section === "Audit" && "The audit viewer lands with #42."}
             {section === "Settings" && "Settings and onboarding land with #43."}

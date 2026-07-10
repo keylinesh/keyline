@@ -73,7 +73,15 @@ export interface WebSessionRepo {
 
 export type ClaimResult =
   | { status: "pending" | "expired" | "consumed" }
-  | { status: "ready"; token: string; expiresAt: Date; workspaceId: string };
+  | {
+      status: "ready";
+      token: string;
+      expiresAt: Date;
+      workspaceId: string;
+      /** Who the session belongs to — lets the dashboard render role-aware UI. */
+      memberId: string;
+      role: Role;
+    };
 
 export class WebSessionService {
   constructor(
@@ -124,6 +132,13 @@ export class WebSessionService {
       ttlMs: WEB_TOKEN_TTL_MS,
       now,
     });
-    return { status: "ready", token, expiresAt, workspaceId: won.workspaceId };
+    return {
+      status: "ready",
+      token,
+      expiresAt,
+      workspaceId: won.workspaceId,
+      memberId: won.memberId,
+      role: won.role,
+    };
   }
 }

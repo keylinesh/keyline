@@ -65,6 +65,8 @@ test("web session: start -> CLI approve -> claim releases a working token once",
   poll = await readJson(await client(app)("POST", `/v1/web/sessions/${start.sessionId}/claim`));
   assert.equal(poll.status, "ready");
   assert.equal(poll.workspaceId, onboard.workspaceId);
+  assert.equal(poll.memberId, onboard.memberId);
+  assert.equal(poll.role, "owner");
   const web = client(app, poll.token);
   const ws = await readJson(await web("GET", `/v1/workspaces/${onboard.workspaceId}`));
   assert.equal(ws.id, onboard.workspaceId);
