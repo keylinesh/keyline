@@ -9,6 +9,7 @@ import { ApiError, request } from "../api.js";
 import type { WebSession } from "../session.js";
 import { Projects } from "./Projects.js";
 import { Members } from "./Members.js";
+import { Audit } from "./Audit.js";
 
 interface Workspace {
   id: string;
@@ -91,11 +92,10 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
             <Projects session={session} />
           ) : section === "Members" ? (
             <Members session={session} />
+          ) : section === "Audit" ? (
+            <Audit session={session} />
           ) : (
-            <div className="placeholder">
-              {section === "Audit" && "The audit viewer lands with #42."}
-              {section === "Settings" && "Settings and onboarding land with #43."}
-            </div>
+            <div className="placeholder">Settings and onboarding land with #43.</div>
           )}
         </main>
       </div>
