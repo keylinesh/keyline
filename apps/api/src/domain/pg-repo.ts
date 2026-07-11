@@ -397,6 +397,14 @@ export class PgMemberRepo implements MemberRepo {
     );
     return rows.map(toMember);
   }
+  async updateDisplayName(id: string, displayName: string | null): Promise<Member | null> {
+    const { rows } = await this.pool.query<MemberRow>(
+      `update members set display_name = $2 where id = $1
+       returning id, workspace_id, email, display_name, role, created_at`,
+      [id, displayName],
+    );
+    return rows[0] ? toMember(rows[0]) : null;
+  }
   async delete(id: string): Promise<boolean> {
     const res = await this.pool.query(`delete from members where id = $1`, [id]);
     return (res.rowCount ?? 0) > 0;

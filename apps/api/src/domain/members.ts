@@ -23,5 +23,7 @@ export interface MemberRepo {
   findById(id: string): Promise<Member | null>;
   findByEmail(workspaceId: string, email: string): Promise<Member | null>;
   listByWorkspace(workspaceId: string): Promise<Member[]>;
+  /** Update the display name (profile settings, #43). Null clears it. */
+  updateDisplayName(id: string, displayName: string | null): Promise<Member | null>;
   delete(id: string): Promise<boolean>;
 }

@@ -204,6 +204,12 @@ export class InMemoryMemberRepo implements MemberRepo {
   async listByWorkspace(workspaceId: string): Promise<Member[]> {
     return [...this.byId.values()].filter((m) => m.workspaceId === workspaceId);
   }
+  async updateDisplayName(id: string, displayName: string | null): Promise<Member | null> {
+    const m = this.byId.get(id);
+    if (!m) return null;
+    m.displayName = displayName;
+    return m;
+  }
   async delete(id: string): Promise<boolean> {
     return this.byId.delete(id);
   }
