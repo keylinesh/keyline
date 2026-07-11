@@ -10,6 +10,7 @@ import type { WebSession } from "../session.js";
 import { Projects } from "./Projects.js";
 import { Members } from "./Members.js";
 import { Audit } from "./Audit.js";
+import { Settings } from "./Settings.js";
 
 interface Workspace {
   id: string;
@@ -95,7 +96,7 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
           ) : section === "Audit" ? (
             <Audit session={session} />
           ) : (
-            <div className="placeholder">Settings and onboarding land with #43.</div>
+            <Settings session={session} />
           )}
         </main>
       </div>

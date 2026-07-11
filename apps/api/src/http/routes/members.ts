@@ -106,6 +106,26 @@ export function registerMemberRoutes(
     return c.json({ members: list.map(memberView) });
   });
 
+  // Profile settings (#43): a member edits their own display name; admins can
+  // edit anyone's. Email and role are NOT editable here (role changes are a
+  // deliberate future decision; email is the identity).
+  app.patch("/v1/members/:id", auth, async (c) => {
+    const member = await members.findById(c.req.param("id"));
+    if (!member) throw notFound("member not found");
+    const principal = c.get("principal");
+    requireWorkspace(principal, member.workspaceId);
+    const isSelf = principal.memberId === member.id;
+    const isAdmin = principal.scope.role === "admin" || principal.scope.role === "owner";
+    if (!isSelf && !isAdmin) throw forbidden("you can only edit your own profile");
+    const input = await parseBody(
+      c,
+      z.object({ displayName: z.string().min(1).max(120).nullable() }),
+    );
+    const updated = await members.updateDisplayName(member.id, input.displayName);
+    if (!updated) throw notFound("member not found");
+    return c.json(memberView(updated));
+  });
+
   app.delete("/v1/members/:id", auth, async (c) => {
     const member = await members.findById(c.req.param("id"));
     if (!member) throw notFound("member not found");

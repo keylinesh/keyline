@@ -376,6 +376,50 @@ select:focus { outline: none; border-color: var(--mint); }
 .audit-table .target { color: var(--amber); }
 .audit-table .detail { color: var(--faint); max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+/* ---- settings + onboarding (#43) ---- */
+
+.card-title {
+  font-family: "Bricolage Grotesque", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: 14px;
+}
+
+.kv { display: flex; align-items: center; gap: 14px; padding: 6px 0; font-size: 14.5px; }
+.kv .k {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+  color: var(--faint);
+  width: 110px;
+  flex-shrink: 0;
+}
+.kv .faint { color: var(--faint); font-size: 12.5px; }
+
+.steps-list { list-style: none; display: flex; flex-direction: column; gap: 16px; margin-top: 4px; }
+.step-item { display: flex; gap: 13px; }
+.step-item .tick {
+  font-family: "JetBrains Mono", monospace;
+  color: var(--faint);
+  width: 18px;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+.step-item.done .tick { color: var(--mint); }
+.step-item.done b { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line-2); }
+.step-item .cmd {
+  display: block;
+  background: var(--bg-inset);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  padding: 7px 12px;
+  margin-top: 7px;
+  font-size: 12.5px;
+  color: var(--amber);
+  width: fit-content;
+}
+.step-hint { display: block; margin-top: 4px; }
+
 /* ---- states ---- */
 
 .placeholder {

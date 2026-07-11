@@ -103,11 +103,23 @@ describe("Projects view", () => {
     expect((await screen.findByRole("alert")).textContent).toMatch(/admin access/);
   });
 
-  test("empty workspace explains next steps", async () => {
+  test("empty workspace shows the guided onboarding for admins", async () => {
+    stubFetch([
+      { match: (m, u) => m === "GET" && u.includes("/workspaces/w1/projects"), body: { projects: [] } },
+      { match: (m, u) => m === "GET" && u.includes("/workspaces/w1/members"), body: { members: [{ id: "m1" }] } },
+    ]);
+    render(<Projects session={admin} />);
+    expect(await screen.findByText("Get started")).toBeDefined();
+    expect(screen.getByText(/keyline link/)).toBeDefined();
+    expect(screen.getByText(/keyline push/)).toBeDefined();
+    expect(screen.getByText(/done — that's how you got here/)).toBeDefined();
+  });
+
+  test("empty workspace shows a plain note for members", async () => {
     stubFetch([
       { match: (m, u) => m === "GET" && u.includes("/workspaces/w1/projects"), body: { projects: [] } },
     ]);
-    render(<Projects session={admin} />);
-    expect((await screen.findByText(/No projects yet/)).textContent).toMatch(/keyline link/);
+    render(<Projects session={member} />);
+    expect((await screen.findByText(/No projects yet/)).textContent).toMatch(/Ask an admin/);
   });
 });

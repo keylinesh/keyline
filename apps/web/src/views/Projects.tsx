@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { explainError } from "../api.js";
 import { isAdmin, type WebSession } from "../session.js";
+import { GettingStarted } from "./GettingStarted.js";
 import {
   createEnvironment,
   createProject,
@@ -80,16 +81,11 @@ export function Projects({ session }: { session: WebSession }) {
           />
         </div>
       )}
-      {rows && rows.length === 0 && (
-        <div className="placeholder">
-          No projects yet.{" "}
-          {admin ? (
-            <>Create one above, or run <code>keyline link</code> in a repo.</>
-          ) : (
-            "Ask an admin to create one."
-          )}
-        </div>
-      )}
+      {rows && rows.length === 0 && (admin ? (
+        <GettingStarted session={session} />
+      ) : (
+        <div className="placeholder">No projects yet. Ask an admin to create one.</div>
+      ))}
       {rows?.map((project) => (
         <div className="res-card" key={project.id}>
           <div className="res-head">

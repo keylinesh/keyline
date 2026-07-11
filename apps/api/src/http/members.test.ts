@@ -124,3 +124,23 @@ test("granting access to a member outside the workspace is 404", async () => {
   });
   assert.equal(res.status, 404);
 });
+
+test("profile patch (#43): self and admin can set displayName; others cannot", async () => {
+  const { deps, ws, token, req } = await setup();
+  const dev = await deps.members.create({ workspaceId: ws.id, email: "dev@acme.test", role: "member" });
+  const other = await deps.members.create({ workspaceId: ws.id, email: "other@acme.test", role: "member" });
+
+  // self-edit
+  const devTok = await token("member", dev.id, "dev-d");
+  const res = await req("PATCH", `/v1/members/${dev.id}`, devTok, { displayName: "Dev Eloper" });
+  assert.equal(res.status, 200);
+  assert.equal(((await res.json()) as { displayName: string }).displayName, "Dev Eloper");
+
+  // admin edits someone else; null clears
+  const adminTok = await token("admin");
+  const cleared = await req("PATCH", `/v1/members/${dev.id}`, adminTok, { displayName: null });
+  assert.equal(((await cleared.json()) as { displayName: null }).displayName, null);
+
+  // a plain member cannot edit another member
+  assert.equal((await req("PATCH", `/v1/members/${other.id}`, devTok, { displayName: "x" })).status, 403);
+});

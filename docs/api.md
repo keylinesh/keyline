@@ -76,6 +76,7 @@ status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
 ### Members & access control
 - `POST /v1/workspaces/:wid/members` — invite (admin). Body: `{ email, role, displayName? }`.
 - `GET /v1/workspaces/:wid/members` — list (member).
+- `PATCH /v1/members/:id` — profile update (self, or admin). Body: `{ displayName: string | null }`. Email and role are not editable.
 - `DELETE /v1/members/:id` — remove (admin).
 - `POST /v1/members/:id/revoke` — cut access immediately (admin): revokes the member's tokens, deletes each device's wrapped key, marks devices revoked → `{ tokensRevoked, devicesRevoked, wrappedKeysDeleted }`.
 - `PUT /v1/devices/:id/wrapped-key` — issue a wrapped workspace key to a device (admin, or the device's own member). Body: `{ wrappedKey: { v, eph, nonce, ct, tag } }`. The client wraps the workspace key to the device's public key; the server stores the blob so the device can decrypt on pull. The inverse of revoke; server never sees the workspace key.
