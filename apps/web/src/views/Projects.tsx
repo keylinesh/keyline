@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { ApiError } from "../api.js";
+import { explainError } from "../api.js";
 import { isAdmin, type WebSession } from "../session.js";
 import {
   createEnvironment,
@@ -23,14 +23,7 @@ interface ProjectRow extends Project {
   environments: Environment[];
 }
 
-function explain(err: unknown): string {
-  if (err instanceof ApiError) {
-    if (err.status === 403) return "You need admin access for that.";
-    if (err.status === 409) return "That name is already taken.";
-    return err.message;
-  }
-  return err instanceof Error ? err.message : String(err);
-}
+const explain = explainError;
 
 export function Projects({ session }: { session: WebSession }) {
   const [rows, setRows] = useState<ProjectRow[] | null>(null);
