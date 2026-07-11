@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { ApiError, request } from "../api.js";
 import type { WebSession } from "../session.js";
 import { Projects } from "./Projects.js";
+import { Members } from "./Members.js";
 
 interface Workspace {
   id: string;
@@ -23,10 +24,16 @@ const SECTIONS = [
 
 type SectionName = (typeof SECTIONS)[number]["name"];
 
+/** Sections deep-link via the hash: /app/#members opens Members. */
+function sectionFromHash(): SectionName {
+  const hash = window.location.hash.slice(1).toLowerCase();
+  return SECTIONS.find((s) => s.name.toLowerCase() === hash)?.name ?? "Projects";
+}
+
 export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: () => void }) {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [section, setSection] = useState<SectionName>("Projects");
+  const [section, setSection] = useState<SectionName>(sectionFromHash);
 
   useEffect(() => {
     request<Workspace>("GET", `/v1/workspaces/${session.workspaceId}`, { token: session.token })
@@ -55,10 +62,7 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
               key={name}
               href={`#${name.toLowerCase()}`}
               className={section === name ? "active" : ""}
-              onClick={(e) => {
-                e.preventDefault();
-                setSection(name);
-              }}
+              onClick={() => setSection(name)}
             >
               <span className="glyph">{glyph}</span>
               {name}
@@ -85,9 +89,10 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
             <p className="error">{error}</p>
           ) : section === "Projects" ? (
             <Projects session={session} />
+          ) : section === "Members" ? (
+            <Members session={session} />
           ) : (
             <div className="placeholder">
-              {section === "Members" && "Member management lands with #41."}
               {section === "Audit" && "The audit viewer lands with #42."}
               {section === "Settings" && "Settings and onboarding land with #43."}
             </div>

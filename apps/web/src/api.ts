@@ -20,6 +20,16 @@ export class ApiError extends Error {
 /** Same-origin `/api` in production; vite proxies it to a local API in dev. */
 export const API_BASE: string = import.meta.env.VITE_API_URL ?? "/api";
 
+/** Human-readable message for a failed call. */
+export function explainError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.status === 403) return "You need admin access for that.";
+    if (err.status === 409) return "That name is already taken.";
+    return err.message;
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
 export async function request<T>(
   method: string,
   path: string,
