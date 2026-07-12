@@ -7,7 +7,8 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { buildApp } from "@keyline/api/app";
+import { buildApp, memoryDeps } from "@keyline/api/app";
+import { loadAccount } from "./account.js";
 import type { KeyStore } from "./keystore.js";
 import { runLogin } from "./commands/login.js";
 import { runLink } from "./commands/link.js";
@@ -39,7 +40,8 @@ export interface Harness {
 
 /** Logged-in + linked CLI deps against a fresh in-memory API, with an .env. */
 export async function harness(): Promise<Harness> {
-  const app = buildApp();
+  const apiDeps = memoryDeps();
+  const app = buildApp(apiDeps);
   const fetchImpl = ((url: string, init?: RequestInit) =>
     app.request(url, init)) as unknown as typeof fetch;
   const dir = mkdtempSync(join(tmpdir(), "keyline-sync-"));
@@ -51,6 +53,10 @@ export async function harness(): Promise<Harness> {
   };
   await runLogin(deps, { workspaceName: "Acme", email: "founder@acme.test" });
   await runLink(deps, { project: "api", environment: "prod", dir });
+  // Team plan: these tests exercise invites and audit history, which solo's
+  // entitlements (1 member, 7-day audit window) would block (#49).
+  const account = loadAccount(deps.store)!;
+  await apiDeps.workspaces.update(account.workspaceId, { plan: "team" });
   writeFileSync(join(dir, ".env"), TEST_ENV);
   return { deps, dir, fetchImpl, cleanup: () => rmSync(dir, { recursive: true, force: true }) };
 }

@@ -9,6 +9,7 @@ import type {
   Project,
   ProjectRepo,
   Workspace,
+  WorkspacePlan,
   WorkspaceRepo,
 } from "./resources.js";
 import {
@@ -38,17 +39,18 @@ export class InMemoryWorkspaceRepo implements WorkspaceRepo {
   private readonly byId = new Map<string, Workspace>();
 
   async create(input: { name: string; kdfSalt: string }): Promise<Workspace> {
-    const w: Workspace = { id: randomUUID(), createdAt: EPOCH, ...input };
+    const w: Workspace = { id: randomUUID(), plan: "solo", createdAt: EPOCH, ...input };
     this.byId.set(w.id, w);
     return w;
   }
   async findById(id: string): Promise<Workspace | null> {
     return this.byId.get(id) ?? null;
   }
-  async update(id: string, patch: { name?: string }): Promise<Workspace | null> {
+  async update(id: string, patch: { name?: string; plan?: WorkspacePlan }): Promise<Workspace | null> {
     const w = this.byId.get(id);
     if (!w) return null;
     if (patch.name !== undefined) w.name = patch.name;
+    if (patch.plan !== undefined) w.plan = patch.plan;
     return w;
   }
   async delete(id: string): Promise<boolean> {

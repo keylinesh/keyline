@@ -12,7 +12,7 @@ import type { Hono } from "hono";
 import { connectionConfig } from "./db/connection.js";
 import { appDatabaseUrl } from "./db/database-url.js";
 import { memoryDeps, pgDeps } from "./deps.js";
-import { type AppConfig, createApp } from "./http/app.js";
+import { type AppConfig, type AppDeps, createApp } from "./http/app.js";
 import type { AppEnv } from "./http/authz.js";
 
 /**
@@ -55,14 +55,19 @@ export function resolveRuntimeConfig(env: NodeJS.ProcessEnv = process.env): {
   return { environment, requireHttps: environment !== "development" };
 }
 
-export function buildApp(): Hono<AppEnv> {
+export function buildApp(deps?: AppDeps): Hono<AppEnv> {
   const databaseUrl = appDatabaseUrl();
-  const deps = databaseUrl ? pgDeps(buildPool(databaseUrl)) : memoryDeps();
+  const resolved = deps ?? (databaseUrl ? pgDeps(buildPool(databaseUrl)) : memoryDeps());
   const { environment, requireHttps } = resolveRuntimeConfig();
   const config: AppConfig = { environment, requireHttps };
-  return createApp(deps, config);
+  return createApp(resolved, config);
 }
 
 export function storageLabel(): string {
   return appDatabaseUrl() ? "postgres" : "in-memory (no database url)";
 }
+
+// Re-exported so out-of-package tests (the CLI harness) can build an app around
+// deps they hold a reference to — e.g. to put a test workspace on the team plan.
+export { memoryDeps };
+export type { AppDeps };

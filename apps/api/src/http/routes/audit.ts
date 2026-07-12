@@ -6,10 +6,12 @@
 
 import type { Hono, MiddlewareHandler } from "hono";
 import type { AuditEvent, AuditService } from "../../domain/audit.js";
+import type { EntitlementsService } from "../../domain/entitlements.js";
 import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
 
 export interface AuditRouteDeps {
   audit: AuditService;
+  entitlements: EntitlementsService;
 }
 
 const view = (e: AuditEvent) => ({
@@ -35,8 +37,14 @@ export function registerAuditRoutes(
     const wid = c.req.param("wid");
     requireWorkspace(c.get("principal"), wid);
     requireRole(c.get("principal"), "admin");
+    // Plan retention windows what is RETURNED, not what is stored: solo shows
+    // the last 7 days, team the full history. /verify below always walks the
+    // complete stored chain, so retention never breaks integrity checks.
+    const since = await deps.entitlements.auditWindowStart(wid);
     const events = await deps.audit.list(wid);
-    return c.json({ events: events.map(view) });
+    const visible = since ? events.filter((e) => e.createdAt >= since) : events;
+    const { limits } = await deps.entitlements.limitsFor(wid);
+    return c.json({ events: visible.map(view), retentionDays: limits.auditRetentionDays });
   });
 
   app.get("/v1/workspaces/:wid/audit/verify", auth, async (c) => {

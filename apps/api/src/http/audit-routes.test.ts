@@ -11,6 +11,9 @@ async function setup() {
   const deps: AppDeps = memoryDeps();
   const app = createApp(deps);
   const ws = await deps.workspaces.create({ name: "Acme", kdfSalt: SALT });
+  // Team plan: solo's 7-day retention window would hide the memory repo's
+  // fixed-epoch timestamps (#49); these tests are about audit content.
+  await deps.workspaces.update(ws.id, { plan: "team" });
   const project = await deps.projects.create({ workspaceId: ws.id, name: "API", slug: "api" });
   const env = await deps.environments.create({ projectId: project.id, name: "prod" });
   const adminTok = (await deps.tokens.issue({

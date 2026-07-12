@@ -12,6 +12,7 @@ export type ErrorCode =
   | "not_found"
   | "validation_error"
   | "conflict"
+  | "plan_limit"
   | "payload_too_large"
   | "rate_limited"
   | "internal";
@@ -43,5 +44,8 @@ export const unauthorized = (m = "authentication required") =>
 export const forbidden = (m = "not allowed") => new ApiError(403, "forbidden", m);
 export const notFound = (m = "not found") => new ApiError(404, "not_found", m);
 export const conflict = (m = "conflict") => new ApiError(409, "conflict", m);
+/** A plan limit was hit; details carry { plan, limit, current } for UIs. */
+export const planLimit = (m: string, details?: unknown) =>
+  new ApiError(402, "plan_limit", m, details);
 export const validationError = (details: unknown, m = "invalid request") =>
   new ApiError(422, "validation_error", m, details);

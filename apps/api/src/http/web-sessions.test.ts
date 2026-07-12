@@ -76,7 +76,9 @@ test("web session: start -> CLI approve -> claim releases a working token once",
   assert.equal(again.status, "consumed");
   assert.equal(again.token, undefined);
 
-  // Approval landed in the audit log.
+  // Approval landed in the audit log. Team plan: solo's 7-day retention window
+  // would hide the memory repo's fixed-epoch timestamps (#49).
+  await deps.workspaces.update(onboard.workspaceId, { plan: "team" });
   const { events } = await readJson(await c("GET", `/v1/workspaces/${onboard.workspaceId}/audit`));
   assert.ok(events.some((e: { action: string }) => e.action === "web.session.approve"));
 });
