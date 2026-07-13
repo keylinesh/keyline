@@ -2,7 +2,7 @@
 --
 -- Every workspace is on a plan; limits are enforced in the API (entitlements.ts),
 -- not in the schema, so they can change without a migration. Plan changes are
--- made by the billing layer (Stripe webhooks, M5) — never directly by members.
+-- made by the billing layer (Paddle webhooks, M5 / ADR-0004) — never by members.
 --
 --   solo: 1 member, 2 environments, 7-day audit history (free)
 --   team: 10 members, unlimited environments + audit ($19/mo flat)
