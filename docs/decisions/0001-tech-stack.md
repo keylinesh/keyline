@@ -16,7 +16,7 @@ Use **TypeScript everywhere**:
 - **API** — Node + TypeScript, **PostgreSQL** for storage.
 - **Dashboard** — React + TypeScript.
 - **Crypto** — a shared `packages/crypto` library consumed by both the CLI and (within the zero-knowledge boundary) the web app.
-- **Payments** — Stripe via the official Node SDK.
+- **Payments** — ~~Stripe via the official Node SDK~~ superseded by [ADR-0004](0004-paddle-merchant-of-record.md): Paddle as Merchant of Record.
 
 The repo is a single **pnpm workspaces monorepo** so types and the crypto library are shared without publishing.
 

@@ -22,7 +22,7 @@ If those three hold, the wedge is validated. Everything else is in service of th
 | **API** (M2) | Device auth + scoped tokens; push/pull ciphertext; workspace/project/env CRUD; per-env RBAC; tamper-evident audit log; server-side revoke/rotate; rate limiting |
 | **CLI** (M3) | `login · link · push · pull · run · rotate · revoke · audit · members`; sub-2-min first run; npm + Homebrew + curl\|sh distribution |
 | **Dashboard** (M4) | Auth; workspace/project/env management; member management; audit viewer; onboarding. **Metadata only** (see [ADR-0002](decisions/0002-zero-knowledge-boundary.md)) |
-| **Payments** (M5) | Stripe Solo ($0) + Team ($19 flat); 14-day trial; billing portal; webhooks (verified + idempotent); subscription state machine; entitlement enforcement; tax/invoices; dunning; reconciliation |
+| **Payments** (M5) | Paddle as Merchant of Record ([ADR-0004](decisions/0004-paddle-merchant-of-record.md)): Solo ($0) + Team ($19 flat); 14-day trial; customer portal; webhooks (verified + idempotent); subscription state machine; entitlement enforcement; dunning; reconciliation. Tax/invoices are Paddle's |
 | **Trust/Launch** (M6) | Public encryption doc; security posture + vuln disclosure; ToS/Privacy/DPA; SOC 2 readiness started; observability; private beta → public launch |
 
 ## Non-goals (explicitly NOT in v1)

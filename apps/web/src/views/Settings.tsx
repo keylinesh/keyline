@@ -3,7 +3,7 @@
  *
  * Profile: display name (PATCH /v1/members/:id, self). Workspace: rename
  * (admin). Billing: the current plan and where the upgrade will live once
- * M5 wires Stripe — an honest placeholder, not a dead button pretending.
+ * M5 wires Paddle — an honest placeholder, not a dead button pretending.
  */
 
 import { useCallback, useEffect, useState } from "react";
