@@ -52,7 +52,7 @@
   <ul>
     <li><strong>Account data:</strong> email, optional display name, workspace role.</li>
     <li><strong>Device keys:</strong> the public half of each enrolled device's keypair. Private keys never leave your machine.</li>
-    <li><strong>Metadata:</strong> workspace, project, and environment names. Secret <em>names</em> appear in audit events when you rotate one; values never do.</li>
+    <li><strong>Metadata:</strong> workspace, project, and environment names. Secret <em>names</em> appear in audit events when you rotate one. Values never do.</li>
     <li><strong>Encrypted bundles:</strong> your secrets as ciphertext, versioned.</li>
     <li><strong>Audit events:</strong> who did what and when (pushes, pulls, invites, revokes), kept tamper-evident for your team.</li>
     <li><strong>Logs:</strong> short-lived technical logs (IPs, request paths) for security and debugging.</li>
@@ -69,15 +69,15 @@
     <li><strong>Vercel</strong> (hosting, USA/EU)</li>
     <li><strong>Neon</strong> (database hosting)</li>
     <li><strong>Paddle</strong> (payments, merchant of record)</li>
-    <li><strong>Google Fonts</strong> (web fonts on this site; your browser requests them from Google)</li>
+    <li><strong>Google Fonts</strong> (web fonts on this site, loaded from Google's servers)</li>
   </ul>
   <p>We do not sell your data. We share it only with the processors above, or if the law requires it.</p>
 
   <h2>6. Retention</h2>
-  <p>Account and workspace data stays while your account is active. Delete your workspace and we delete its data from our systems; backups expire on a rolling basis. Technical logs are kept briefly.</p>
+  <p>Account and workspace data stays while your account is active. Delete your workspace and we delete its data from our systems. Backups expire on a rolling basis. Technical logs are kept briefly.</p>
 
   <h2>7. Your rights (GDPR)</h2>
-  <p>You can ask for access, correction, export, or deletion of your personal data. Your secrets you can export yourself at any time with <code>keyline pull</code>. Email <a href="mailto:hello@keyline.sh">hello@keyline.sh</a>. You can also complain to your local data protection authority; ours is the Bulgarian CPDP.</p>
+  <p>You can ask for access, correction, export, or deletion of your personal data. Your secrets you can export yourself at any time with <code>keyline pull</code>. Email <a href="mailto:hello@keyline.sh">hello@keyline.sh</a>. You can also complain to your local data protection authority. Ours is the Bulgarian CPDP.</p>
 
   <h2>8. Security</h2>
   <p>Client-side AES-256-GCM encryption, TLS everywhere, hashed access tokens, per-environment access control, and a tamper-evident audit log. The <a href="https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md">encryption design is public</a> so you can verify the claims instead of trusting them.</p>
