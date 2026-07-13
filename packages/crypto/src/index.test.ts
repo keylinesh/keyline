@@ -4,7 +4,7 @@ import { sealBundle, openBundle, generateWorkspaceKey } from "./index.js";
 
 test("round-trips a secret bundle", () => {
   const key = generateWorkspaceKey();
-  const plaintext = "STRIPE_SECRET_KEY=sk_live_example\nDATABASE_URL=postgres://x";
+  const plaintext = "OPENAI_API_KEY=sk-proj-example\nDATABASE_URL=postgres://x";
   const sealed = sealBundle(plaintext, key);
   assert.equal(openBundle(sealed, key).toString("utf8"), plaintext);
 });

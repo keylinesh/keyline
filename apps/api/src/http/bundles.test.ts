@@ -43,7 +43,7 @@ async function setup(opts: { role?: Role; environmentIds?: string[]; deviceId?: 
 test("push then pull round-trips the ciphertext (server only stores ciphertext)", async () => {
   const { env, req } = await setup();
   const key = generateWorkspaceKey();
-  const sealed = sealBundle("STRIPE_KEY=sk_live_x\nDB_URL=postgres://h/db", key);
+  const sealed = sealBundle("OPENAI_API_KEY=sk-proj-x\nDB_URL=postgres://h/db", key);
 
   const push = await req("PUT", `/v1/environments/${env.id}/bundle`, { bundle: sealed });
   assert.equal(push.status, 201);
@@ -57,7 +57,7 @@ test("push then pull round-trips the ciphertext (server only stores ciphertext)"
     { v: body.bundle.v, nonce: body.bundle.nonce, ciphertext: body.bundle.ciphertext, tag: body.bundle.tag },
     key,
   );
-  assert.match(decrypted.toString("utf8"), /STRIPE_KEY=sk_live_x/);
+  assert.match(decrypted.toString("utf8"), /OPENAI_API_KEY=sk-proj-x/);
 });
 
 test("pull returns this device's wrapped key (decryptable end to end)", async () => {

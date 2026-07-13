@@ -53,9 +53,9 @@ test("countSecrets counts distinct keys", () => {
 });
 
 test("replaceEnvValue swaps one value and leaves every other byte alone", () => {
-  const content = "# payment keys\nSTRIPE_KEY=sk_old # inline note\nOTHER=keep\n\nexport SPACED = also-old\n";
-  const rotated = replaceEnvValue(content, "STRIPE_KEY", "sk_new")!;
-  assert.equal(rotated, "# payment keys\nSTRIPE_KEY=sk_new\nOTHER=keep\n\nexport SPACED = also-old\n");
+  const content = "# payment keys\nOPENAI_API_KEY=sk-old # inline note\nOTHER=keep\n\nexport SPACED = also-old\n";
+  const rotated = replaceEnvValue(content, "OPENAI_API_KEY", "sk-new")!;
+  assert.equal(rotated, "# payment keys\nOPENAI_API_KEY=sk-new\nOTHER=keep\n\nexport SPACED = also-old\n");
   // export-prefixed and space-padded assignments are found too
   assert.match(replaceEnvValue(content, "SPACED", "x")!, /export SPACED =x\n/);
 });

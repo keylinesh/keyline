@@ -99,7 +99,7 @@ create_milestone "M1 · Crypto Core"              "The riskiest assumption: zero
 create_milestone "M2 · Backend API & Data Model" "Data model, device auth, push/pull ciphertext, RBAC, tamper-evident audit log, infra."
 create_milestone "M3 · CLI"                       "The simplicity wedge: login/link/push/pull/run/rotate/revoke/audit, sub-2-min DX, distribution."
 create_milestone "M4 · Web Dashboard"             "Auth, workspace/project/env management, members, audit viewer, onboarding."
-create_milestone "M5 · Payments & Billing"        "Stripe products, trials, billing portal, webhooks, subscription state machine, entitlements."
+create_milestone "M5 · Payments (Paddle MoR)"      "Paddle as Merchant of Record (ADR-0004): catalog, trials, customer portal, webhooks, subscription state machine, entitlements."
 create_milestone "M6 · Trust, Compliance & Launch" "Public crypto doc, legal, SOC 2 readiness, observability, beta, public launch."
 echo
 
@@ -166,7 +166,7 @@ Create `docs/decisions/` and capture key architecture decisions as ADRs.
 
 **Acceptance criteria**
 - [ ] ADR template added
-- [ ] ADR-001: Full TypeScript stack (Node CLI, Node API, React dashboard, Postgres, Stripe)
+- [ ] ADR-001: Full TypeScript stack (Node CLI, Node API, React dashboard, Postgres)
 - [ ] ADR-002: zero-knowledge boundary (does plaintext ever touch the browser?)
 DESC
 
@@ -584,59 +584,59 @@ First-time setup + account management.
 - [ ] Entry point to billing (M5)
 DESC
 
-# ========================= M5 · Payments & Billing =========================
-issue "Stripe setup: products + prices (Solo \$0, Team \$19 flat)" \
-  "M5 · Payments & Billing" "type::feature,area::payments,priority::high" <<'DESC'
-Model the catalog in Stripe (test mode first).
+# ==================== M5 · Payments (Paddle MoR) — ADR-0004 ====================
+issue "Paddle setup: products + prices (Solo \$0, Team \$19 flat)" \
+  "M5 · Payments (Paddle MoR)" "type::feature,area::payments,priority::high" <<'DESC'
+Model the catalog in Paddle (sandbox first). Paddle is our Merchant of Record (ADR-0004).
 
 **Acceptance criteria**
-- [ ] Products + prices: Solo (\$0), Team (\$19/mo flat)
-- [ ] Test + live keys handled via secrets manager
-- [ ] Plan metadata mapped to internal entitlements
+- [ ] Paddle sandbox: product + price for Team (\$19/mo flat); Solo stays free (no checkout)
+- [ ] Sandbox + live API keys handled via env (never committed)
+- [ ] Paddle product/price ids mapped to internal plans (entitlements)
 DESC
 
-issue "Checkout + 14-day trial subscription creation" \
-  "M5 · Payments & Billing" "type::feature,area::payments,priority::high" <<'DESC'
-Let a team start a Team subscription with a trial.
+issue "Paddle checkout + 14-day trial subscription creation" \
+  "M5 · Payments (Paddle MoR)" "type::feature,area::payments,priority::high" <<'DESC'
+Let a team start a Team subscription with a trial via Paddle checkout.
 
 **Acceptance criteria**
-- [ ] Checkout session creates a subscription with a 14-day trial
-- [ ] Trial start/end reflected internally
+- [ ] Paddle checkout (hosted/overlay) creates a Team subscription with a 14-day trial
+- [ ] Trial start/end reflected internally (workspace.plan flips via webhooks)
 - [ ] No card required for Solo
 DESC
 
-issue "Stripe billing portal integration" \
-  "M5 · Payments & Billing" "type::feature,area::payments,priority::medium" <<'DESC'
-Self-serve billing management.
+issue "Paddle customer portal integration" \
+  "M5 · Payments (Paddle MoR)" "type::feature,area::payments,priority::medium" <<'DESC'
+Self-serve billing management via Paddle's customer portal.
 
 **Acceptance criteria**
-- [ ] Customers can upgrade/cancel + update card via the portal
-- [ ] Return URL back into the dashboard
+- [ ] Customers can cancel + update payment method via the Paddle portal
+- [ ] Portal link surfaced in dashboard Settings (billing section)
 - [ ] Portal changes reconcile via webhooks
 DESC
 
-issue "Webhook handler: signature verification + idempotency" \
-  "M5 · Payments & Billing" "type::feature,type::security,area::payments,priority::high" <<'DESC'
+issue "Paddle webhook handler: signature verification + idempotency" \
+  "M5 · Payments (Paddle MoR)" "type::feature,type::security,area::payments,priority::high" <<'DESC'
 The backbone of payment correctness.
 
 **Acceptance criteria**
-- [ ] Verify Stripe signatures on every event
-- [ ] Idempotency keys so retried events don't double-apply
-- [ ] Handles checkout.session.completed, customer.subscription.*, invoice.*
+- [ ] Verify Paddle webhook signatures (Paddle-Signature) on every event
+- [ ] Idempotent processing so retried events don't double-apply
+- [ ] Handles subscription.created/activated/updated/canceled + transaction.completed/payment_failed
 DESC
 
-issue "Subscription state machine + dunning / grace period" \
-  "M5 · Payments & Billing" "type::feature,area::payments,priority::high" <<'DESC'
-The deep payment logic: model the lifecycle explicitly.
+issue "Subscription state machine + grace period" \
+  "M5 · Payments (Paddle MoR)" "type::feature,area::payments,priority::high" <<'DESC'
+Model the lifecycle explicitly, driven by Paddle events. Dunning emails + retries are Paddle's job.
 
 **Acceptance criteria**
-- [ ] States: trialing -> active -> past_due -> canceled (+ transitions)
-- [ ] Dunning emails + grace period on failed payment
+- [ ] States: trialing -> active -> past_due -> canceled (+ transitions from Paddle events)
+- [ ] Grace period on past_due before downgrade
 - [ ] Access consequences per state are explicit + tested
 DESC
 
 issue "Entitlements service: enforce seats, env caps, audit retention" \
-  "M5 · Payments & Billing" "type::feature,area::payments,priority::high" <<'DESC'
+  "M5 · Payments (Paddle MoR)" "type::feature,area::payments,priority::high" <<'DESC'
 Gate plan limits at the API, not just the UI.
 
 **Acceptance criteria**
@@ -645,34 +645,45 @@ Gate plan limits at the API, not just the UI.
 - [ ] Limits enforced server-side with clear errors
 DESC
 
-issue "Stripe Tax / VAT, invoices and receipts" \
-  "M5 · Payments & Billing" "type::feature,area::payments,priority::medium" <<'DESC'
-Get billing compliant + professional.
+issue "MoR tax + invoicing: verify Paddle handles VAT/receipts end-to-end" \
+  "M5 · Payments (Paddle MoR)" "type::feature,area::payments,priority::medium" <<'DESC'
+As Merchant of Record, Paddle charges and remits VAT/sales tax and issues invoices — verify it.
 
 **Acceptance criteria**
-- [ ] Stripe Tax / VAT handling enabled
-- [ ] Invoices + receipts delivered to customers
-- [ ] Tax fields captured at checkout where required
+- [ ] Correct Paddle tax category configured for SaaS
+- [ ] Test purchases confirm invoices/receipts reach the customer (EU VAT + US cases)
+- [ ] Payout reports archived as the income trail for personal tax filing
 DESC
 
-issue "Failed-payment retries + downgrade-on-cancel logic" \
-  "M5 · Payments & Billing" "type::feature,area::payments,priority::high" <<'DESC'
+issue "Payment lapse: dunning config + downgrade-on-cancel logic" \
+  "M5 · Payments (Paddle MoR)" "type::feature,area::payments,priority::high" <<'DESC'
 Decide what happens to data + access when payment lapses.
 
 **Acceptance criteria**
-- [ ] Smart retry schedule for failed invoices
+- [ ] Paddle payment retry / dunning configured
 - [ ] On cancel/expiry: downgrade to Solo limits (don't destroy data silently)
 - [ ] Member experience + notifications documented
 DESC
 
 issue "Billing reconciliation + internal admin tooling" \
-  "M5 · Payments & Billing" "type::chore,area::payments,priority::medium" <<'DESC'
-Detect + fix drift between Stripe and your DB.
+  "M5 · Payments (Paddle MoR)" "type::chore,area::payments,priority::medium" <<'DESC'
+Detect + fix drift between Paddle and our DB.
 
 **Acceptance criteria**
-- [ ] Periodic reconciliation job (Stripe state vs internal state)
+- [ ] Periodic reconciliation job (Paddle subscription state vs workspace.plan)
 - [ ] Internal admin view of a customer's subscription + entitlements
 - [ ] Alert on mismatches
+DESC
+
+issue "keyline.sh legal pages: terms, privacy, refund policy (Paddle verification)" \
+  "M5 · Payments (Paddle MoR)" "type::feature,area::web,priority::high" <<'DESC'
+Paddle domain verification requires the site to show what is sold and under which terms.
+
+**Acceptance criteria**
+- [ ] Terms of service page
+- [ ] Privacy policy page
+- [ ] Refund policy page (Paddle requires a stated policy)
+- [ ] Footer links from keyline.sh + /app
 DESC
 
 # ==================== M6 · Trust, Compliance & Launch ====================
@@ -731,7 +742,7 @@ issue "Public launch: pricing page wired to live checkout" \
 Flip from waitlist to live product.
 
 **Acceptance criteria**
-- [ ] Pricing page connected to live Stripe checkout
+- [ ] Pricing page connected to live Paddle checkout
 - [ ] Launch announcement + channels ready
 - [ ] On-call + monitoring in place for launch day
 DESC
