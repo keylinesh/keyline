@@ -40,7 +40,7 @@ See also: [MVP scope](mvp-scope.md), [ICP](icp.md), [ADR-0002 zero-knowledge bou
 ## 6. Someone leaves or a key leaks
 
 1. Run `keyline revoke teammate@co.com`. Their access is cut at once.
-2. Run `keyline rotate STRIPE_KEY` to replace a single secret.
+2. Run `keyline rotate OPENAI_API_KEY` to replace a single secret.
 3. Every action is logged.
 
 ## 7. See who did what

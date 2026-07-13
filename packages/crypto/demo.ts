@@ -27,7 +27,7 @@ show("key length", `${workspaceKey.length} bytes`);
 
 line();
 line("2. Seal a .env on the laptop. The server only ever stores this:");
-const envFile = "STRIPE_SECRET_KEY=sk_live_abc123\nDATABASE_URL=postgres://admin:hunter2@db/app";
+const envFile = "OPENAI_API_KEY=sk-proj-abc123\nDATABASE_URL=postgres://admin:hunter2@db/app";
 const sealed = sealBundle(envFile, workspaceKey);
 show("ciphertext", sealed.ciphertext.slice(0, 48) + "…");
 show("nonce", sealed.nonce);

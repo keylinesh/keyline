@@ -21,7 +21,7 @@ mkdir -p "$DEMO_DIR/home" "$DEMO_DIR/npm-prefix" "$DEMO_DIR/acme-api"
 cat > "$DEMO_DIR/acme-api/.env" <<'EOF'
 # acme-api secrets
 DATABASE_URL=postgres://db.internal:5432/acme
-STRIPE_KEY=sk_live_51DemoNotARealKey
+OPENAI_API_KEY=sk-proj-DemoNotARealKey
 JWT_SECRET=change-me-in-prod
 EOF
 
@@ -30,7 +30,7 @@ cat > "$DEMO_DIR/acme-api/server.js" <<'EOF'
 const ok = (v) => (v ? "ok" : "MISSING");
 console.log("acme-api starting...");
 console.log("  db:     " + ok(process.env.DATABASE_URL));
-console.log("  stripe: " + ok(process.env.STRIPE_KEY));
+console.log("  openai: " + ok(process.env.OPENAI_API_KEY));
 console.log("  jwt:    " + ok(process.env.JWT_SECRET));
 console.log("listening on :3000");
 setTimeout(() => process.exit(0), 2200);

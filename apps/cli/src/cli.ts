@@ -191,7 +191,7 @@ export function buildProgram(): Command {
   program
     .command("rotate")
     .description("replace one secret's value (re-encrypted on this machine)")
-    .argument("<name>", "the secret to rotate, e.g. STRIPE_KEY")
+    .argument("<name>", "the secret to rotate, e.g. OPENAI_API_KEY")
     .option("--value <value>", "the new value (omit to be prompted, or pipe it in)")
     .option("-f, --file <path>", "local env file to keep in sync")
     .action(async (name: string, opts: { value?: string; file?: string }) => {

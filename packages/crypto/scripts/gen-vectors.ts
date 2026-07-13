@@ -60,7 +60,7 @@ const kdfKey = b64(deriveWorkspaceKeyWithSalt(kdfSecret, kdfSalt));
 // --- 3. Bundle decrypt vector (fixed key + nonce -> fixed ct/tag) ---
 const bundleKey = Buffer.alloc(32, 7);
 const bundleNonce = Buffer.alloc(12, 9);
-const bundlePlaintext = "STRIPE_SECRET_KEY=sk_live_x\nDATABASE_URL=postgres://h/db";
+const bundlePlaintext = "OPENAI_API_KEY=sk-proj-x\nDATABASE_URL=postgres://h/db";
 const bc = createCipheriv("aes-256-gcm", bundleKey, bundleNonce);
 const bundleCt = Buffer.concat([bc.update(bundlePlaintext, "utf8"), bc.final()]);
 const bundle: SealedBundle = {
