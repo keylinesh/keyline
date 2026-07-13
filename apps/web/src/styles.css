@@ -217,6 +217,11 @@ input::placeholder { color: var(--faint); }
 }
 .side-foot .btn { margin-top: 14px; width: 100%; justify-content: center; padding: 6px 12px; font-size: 13.5px; }
 
+.legal-links { display: flex; gap: 14px; margin-top: 14px; }
+.legal-links a { color: var(--faint); font-size: 12px; text-decoration: none; }
+.legal-links a:hover { color: var(--ink); }
+.center-page .legal-links { justify-content: center; margin-top: 22px; }
+
 .content { flex: 1; min-width: 0; }
 
 .page { max-width: 880px; margin: 0 auto; padding: 44px 36px 80px; }
@@ -456,7 +461,7 @@ select:focus { outline: none; border-color: var(--mint); }
   .side-nav { flex-direction: row; }
   .side-nav .glyph { display: none; }
   .side-foot { margin: 0 0 0 auto; border: none; padding: 0; display: flex; align-items: center; gap: 10px; }
-  .side-foot .ws-name, .role-pill { display: none; }
+  .side-foot .ws-name, .role-pill, .side-foot .legal-links { display: none; }
   .side-foot .btn { margin: 0; width: auto; }
   .page { padding: 28px 18px 60px; }
 }

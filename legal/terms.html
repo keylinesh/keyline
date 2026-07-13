@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terms of Service · Keyline</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="description" content="Keyline terms of service.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://keyline.sh/terms">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0b0d;--ink:#e9ebee;--muted:#878d97;--faint:#5b616b;--line:rgba(255,255,255,.08);--mint:#5eead4}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:22px 0}
+  .brand{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
+  .brand .mk{color:var(--mint);font-family:'JetBrains Mono'}
+  main{padding:56px 0 40px}
+  h1{font-family:'Bricolage Grotesque';font-size:36px;line-height:1.15;margin-bottom:10px}
+  .date{color:var(--faint);font-size:14px;margin-bottom:40px}
+  h2{font-family:'Bricolage Grotesque';font-size:21px;margin:38px 0 10px}
+  p,ul{color:var(--muted);margin-bottom:14px}
+  ul{padding-left:22px}
+  li{margin-bottom:6px}
+  strong{color:var(--ink);font-weight:600}
+  a{color:var(--mint);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:'JetBrains Mono';font-size:14px;color:var(--ink)}
+  footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:14px}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .foot-links a{color:var(--faint)}
+  .foot-links a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/"><span class="mk">k_</span> Keyline</a></div></header>
+<main class="wrap">
+  <h1>Terms of Service</h1>
+  <p class="date">Effective July 13, 2026</p>
+
+  <p>These terms cover your use of Keyline, the hosted zero-knowledge secrets manager at keyline.sh. By creating a workspace or using the CLI, you agree to them.</p>
+
+  <h2>1. Who we are</h2>
+  <p>Keyline is operated by a sole proprietor based in Bulgaria ("we"). Contact: <a href="mailto:support@keyline.sh">support@keyline.sh</a>. When Keyline moves to a company, we will update this page.</p>
+
+  <h2>2. What Keyline does</h2>
+  <p>Keyline stores your team's environment secrets. Encryption and decryption happen on your machines. Our servers hold ciphertext, wrapped keys, metadata, and audit events. We cannot read your secret values. See the <a href="https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md">encryption design</a> for how this works.</p>
+
+  <h2>3. Your account and devices</h2>
+  <ul>
+    <li>Access is tied to device keys created by the CLI. Keep your devices secure.</li>
+    <li>You are responsible for who you invite and what access you grant them.</li>
+    <li>Give us accurate account information, and keep your email reachable.</li>
+  </ul>
+
+  <h2>4. Zero-knowledge and recovery</h2>
+  <p><strong>We cannot reset or recover your secrets.</strong> Recovery works through any active admin device or a sealed recovery file you keep yourself. If you lose all devices and the recovery file, your encrypted data is unrecoverable. That is by design, not a bug.</p>
+
+  <h2>5. Acceptable use</h2>
+  <ul>
+    <li>Don't store or distribute illegal content.</li>
+    <li>Don't probe, overload, or attempt to break the service or other workspaces.</li>
+    <li>Don't resell the service without our written consent.</li>
+  </ul>
+  <p>We may suspend accounts that break these rules. Where possible, we warn first.</p>
+
+  <h2>6. Plans and billing</h2>
+  <ul>
+    <li><strong>Solo</strong> is free: 1 member, 2 environments, 7-day audit history.</li>
+    <li><strong>Team</strong> is $19/month flat for up to 10 members, with a 14-day free trial.</li>
+  </ul>
+  <p>Paid plans are sold through <a href="https://www.paddle.com">Paddle</a>, our merchant of record. Paddle handles checkout, invoices, and applicable taxes. Their <a href="https://www.paddle.com/legal/checkout-buyer-terms">buyer terms</a> apply to the purchase itself. See our <a href="/refunds">refund policy</a>.</p>
+
+  <h2>7. Cancellation and downgrade</h2>
+  <p>Cancel anytime. Team features stay active until the end of the paid period. After that your workspace drops to Solo limits. We do not delete your data on downgrade.</p>
+
+  <h2>8. Your data</h2>
+  <p>Your secrets are yours. You can export them at any time with <code>keyline pull</code>. If you delete your workspace, we delete its data from our systems. See the <a href="/privacy">privacy policy</a> for details.</p>
+
+  <h2>9. Availability and changes</h2>
+  <p>Keyline is a young product under active development. It is provided "as is", without warranty. We work hard on reliability but do not offer an SLA yet. We may change features, and will give notice before removing anything significant.</p>
+
+  <h2>10. Liability</h2>
+  <p>To the extent permitted by law, our total liability is capped at the fees you paid us in the 12 months before the claim. We are not liable for indirect or consequential damages. Nothing here limits rights that consumer law gives you and that cannot be waived.</p>
+
+  <h2>11. Changes to these terms</h2>
+  <p>We may update these terms. For material changes we will notify you by email or in the dashboard before they take effect.</p>
+
+  <h2>12. Governing law</h2>
+  <p>These terms are governed by the laws of Bulgaria. EU consumers keep the protections of their home country's law.</p>
+</main>
+<footer><div class="wrap">
+  <div class="foot-links"><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/refunds">Refunds</a><a href="/">keyline.sh</a></div>
+  <span>© 2026 Keyline. Sealed before it leaves your laptop.</span>
+</div></footer>
+</body>
+</html>
