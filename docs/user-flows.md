@@ -60,7 +60,7 @@ For people who do not live in the terminal:
 ## 9. Billing
 
 1. Solo is free. Limit: 1 dev, 2 environments, 7-day audit history.
-2. Click upgrade. Stripe Checkout opens. A 14-day trial starts.
+2. Click upgrade. Paddle checkout opens (Paddle is the merchant of record and handles VAT + invoices). A 14-day trial starts.
 3. Team is $19 flat for up to 10 members. No per-seat math.
 4. If a payment fails, you get a grace period and reminders, not an instant lockout.
 5. If you cancel, you drop back to Solo limits. Your data is not deleted.

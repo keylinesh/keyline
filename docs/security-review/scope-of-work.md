@@ -25,7 +25,7 @@ implementation match, and surface any weakness that breaks that promise.
 ## Out of scope (for this round)
 
 - Server-side auth, RBAC, and the tamper-evident audit log (milestone M2 — review later).
-- Billing / Stripe (M5).
+- Billing / Paddle (M5).
 - Web dashboard, which by design never handles secret values (see [ADR-0002](../decisions/0002-zero-knowledge-boundary.md)).
 
 ## Questions we want answered
