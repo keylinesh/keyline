@@ -77,6 +77,11 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
           <button className="btn" onClick={onSignOut}>
             Sign out
           </button>
+          <nav className="legal-links" aria-label="Legal">
+            <a href="/terms">Terms</a>
+            <a href="/privacy">Privacy</a>
+            <a href="/refunds">Refunds</a>
+          </nav>
         </div>
       </aside>
       <div className="content">

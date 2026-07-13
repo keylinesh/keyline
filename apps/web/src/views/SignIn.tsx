@@ -60,6 +60,11 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
           </p>
         )}
       </div>
+      <nav className="legal-links" aria-label="Legal">
+        <a href="/terms">Terms</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/refunds">Refunds</a>
+      </nav>
     </div>
   );
 }

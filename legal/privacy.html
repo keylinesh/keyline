@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Privacy Policy · Keyline</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="description" content="Keyline privacy policy. We hold ciphertext, not your secrets.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://keyline.sh/privacy">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0b0d;--ink:#e9ebee;--muted:#878d97;--faint:#5b616b;--line:rgba(255,255,255,.08);--mint:#5eead4}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:22px 0}
+  .brand{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
+  .brand .mk{color:var(--mint);font-family:'JetBrains Mono'}
+  main{padding:56px 0 40px}
+  h1{font-family:'Bricolage Grotesque';font-size:36px;line-height:1.15;margin-bottom:10px}
+  .date{color:var(--faint);font-size:14px;margin-bottom:40px}
+  h2{font-family:'Bricolage Grotesque';font-size:21px;margin:38px 0 10px}
+  p,ul{color:var(--muted);margin-bottom:14px}
+  ul{padding-left:22px}
+  li{margin-bottom:6px}
+  strong{color:var(--ink);font-weight:600}
+  a{color:var(--mint);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:'JetBrains Mono';font-size:14px;color:var(--ink)}
+  footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:14px}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .foot-links a{color:var(--faint)}
+  .foot-links a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/"><span class="mk">k_</span> Keyline</a></div></header>
+<main class="wrap">
+  <h1>Privacy Policy</h1>
+  <p class="date">Effective July 13, 2026</p>
+
+  <p>Keyline is built so we know as little as possible. This page lists what we do hold, why, and your rights. The controller is Keyline, operated by a sole proprietor based in Bulgaria. Contact: <a href="mailto:hello@keyline.sh">hello@keyline.sh</a>.</p>
+
+  <h2>1. What we never see</h2>
+  <p><strong>Your secret values.</strong> Encryption happens on your machine before upload. Our servers store ciphertext and per-device wrapped keys. We hold no key that can decrypt them. A breach of us is not a breach of you.</p>
+
+  <h2>2. What we store</h2>
+  <ul>
+    <li><strong>Account data:</strong> email, optional display name, workspace role.</li>
+    <li><strong>Device keys:</strong> the public half of each enrolled device's keypair. Private keys never leave your machine.</li>
+    <li><strong>Metadata:</strong> workspace, project, and environment names. Secret <em>names</em> appear in audit events when you rotate one; values never do.</li>
+    <li><strong>Encrypted bundles:</strong> your secrets as ciphertext, versioned.</li>
+    <li><strong>Audit events:</strong> who did what and when (pushes, pulls, invites, revokes), kept tamper-evident for your team.</li>
+    <li><strong>Logs:</strong> short-lived technical logs (IPs, request paths) for security and debugging.</li>
+  </ul>
+
+  <h2>3. Billing</h2>
+  <p>Paid plans are sold through <a href="https://www.paddle.com">Paddle</a>, our merchant of record. Paddle collects your payment and billing details under <a href="https://www.paddle.com/legal/privacy">its own privacy policy</a>. We never see your card number. From Paddle we receive subscription status and what's needed for accounting.</p>
+
+  <h2>4. Cookies and analytics</h2>
+  <p>No tracking cookies. No ad tech. The dashboard keeps a short-lived session token in your browser's localStorage. If we add analytics to the marketing site it will be Plausible, which is cookieless, and we will update this page.</p>
+
+  <h2>5. Who processes data for us</h2>
+  <ul>
+    <li><strong>Vercel</strong> (hosting, USA/EU)</li>
+    <li><strong>Neon</strong> (database hosting)</li>
+    <li><strong>Paddle</strong> (payments, merchant of record)</li>
+    <li><strong>Google Fonts</strong> (web fonts on this site; your browser requests them from Google)</li>
+  </ul>
+  <p>We do not sell your data. We share it only with the processors above, or if the law requires it.</p>
+
+  <h2>6. Retention</h2>
+  <p>Account and workspace data stays while your account is active. Delete your workspace and we delete its data from our systems; backups expire on a rolling basis. Technical logs are kept briefly.</p>
+
+  <h2>7. Your rights (GDPR)</h2>
+  <p>You can ask for access, correction, export, or deletion of your personal data. Your secrets you can export yourself at any time with <code>keyline pull</code>. Email <a href="mailto:hello@keyline.sh">hello@keyline.sh</a>. You can also complain to your local data protection authority; ours is the Bulgarian CPDP.</p>
+
+  <h2>8. Security</h2>
+  <p>Client-side AES-256-GCM encryption, TLS everywhere, hashed access tokens, per-environment access control, and a tamper-evident audit log. The <a href="https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md">encryption design is public</a> so you can verify the claims instead of trusting them.</p>
+
+  <h2>9. Changes</h2>
+  <p>We may update this policy. For material changes we will notify you by email or in the dashboard.</p>
+</main>
+<footer><div class="wrap">
+  <div class="foot-links"><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/refunds">Refunds</a><a href="/">keyline.sh</a></div>
+  <span>© 2026 Keyline. Sealed before it leaves your laptop.</span>
+</div></footer>
+</body>
+</html>

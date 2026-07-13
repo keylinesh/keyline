@@ -1,11 +1,14 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "pnpm -r build && mkdir -p public && cp index.html favicon.svg og-image.png og-image.svg robots.txt sitemap.xml install.sh public/ && cp demo/keyline-demo.mp4 public/demo.mp4 && cp demo/keyline-demo.webm public/demo.webm && cp -r apps/web/dist public/app",
+  "buildCommand": "pnpm -r build && mkdir -p public && cp index.html favicon.svg og-image.png og-image.svg robots.txt sitemap.xml install.sh public/ && cp legal/*.html public/ && cp demo/keyline-demo.mp4 public/demo.mp4 && cp demo/keyline-demo.webm public/demo.webm && cp -r apps/web/dist public/app",
   "outputDirectory": "public",
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/[[...route]]" },
     { "source": "/install", "destination": "/install.sh" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/refunds", "destination": "/refunds.html" },
     { "source": "/app/:path*", "destination": "/app/index.html" }
   ],
   "headers": [
