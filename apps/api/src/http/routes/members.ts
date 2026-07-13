@@ -16,12 +16,13 @@ import type { Context, Hono, MiddlewareHandler } from "hono";
 import { z } from "zod";
 import type { EnvironmentAccessRepo, EnvAccess } from "../../domain/access.js";
 import type { AuditService } from "../../domain/audit.js";
+import type { EntitlementsService } from "../../domain/entitlements.js";
 import type { Member, MemberRepo } from "../../domain/members.js";
 import type { EnvironmentRepo, ProjectRepo } from "../../domain/resources.js";
 import type { RevokeService } from "../../services/revoke.js";
 import { effectiveEnvRole } from "../access-control.js";
 import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
-import { conflict, forbidden, notFound } from "../errors.js";
+import { conflict, forbidden, notFound, planLimit } from "../errors.js";
 import { parseBody } from "../validate.js";
 
 export interface MemberRouteDeps {
@@ -31,6 +32,7 @@ export interface MemberRouteDeps {
   environments: EnvironmentRepo;
   audit: AuditService;
   revoke: RevokeService;
+  entitlements: EntitlementsService;
 }
 
 const workspaceRole = z.enum(["owner", "admin", "member"]);
@@ -62,7 +64,7 @@ export function registerMemberRoutes(
   deps: MemberRouteDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { members, access, projects, environments, audit, revoke } = deps;
+  const { members, access, projects, environments, audit, revoke, entitlements } = deps;
 
   // Resolve env -> workspace and require the caller to be an env admin there.
   async function requireEnvAdmin(c: Context<AppEnv>, envId: string) {
@@ -84,6 +86,10 @@ export function registerMemberRoutes(
     requireRole(c.get("principal"), "admin");
     const input = await parseBody(c, inviteSchema);
     if (await members.findByEmail(wid, input.email)) throw conflict("email already a member");
+    const seat = await entitlements.canAddMember(wid);
+    if (!seat.allowed) {
+      throw planLimit(seat.message, { plan: seat.plan, limit: seat.limit, current: seat.current });
+    }
     const m = await members.create({ workspaceId: wid, ...input });
     await audit.record({
       workspaceId: wid,

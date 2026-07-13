@@ -10,6 +10,7 @@ import type {
   Project,
   ProjectRepo,
   Workspace,
+  WorkspacePlan,
   WorkspaceRepo,
 } from "./resources.js";
 import {
@@ -33,33 +34,48 @@ import {
 import type { WebSessionGrant, WebSessionRecord, WebSessionRepo } from "./web-sessions.js";
 import type { Role } from "../auth/scope.js";
 
+interface WorkspaceRow {
+  id: string;
+  name: string;
+  kdf_salt: string;
+  plan: WorkspacePlan;
+  created_at: Date;
+}
+const toWorkspace = (r: WorkspaceRow): Workspace => ({
+  id: r.id,
+  name: r.name,
+  kdfSalt: r.kdf_salt,
+  plan: r.plan,
+  createdAt: r.created_at,
+});
+
 export class PgWorkspaceRepo implements WorkspaceRepo {
   constructor(private readonly pool: Pool) {}
 
   async create(input: { name: string; kdfSalt: string }): Promise<Workspace> {
-    const { rows } = await this.pool.query<{ id: string; created_at: Date }>(
-      `insert into workspaces (name, kdf_salt) values ($1, $2) returning id, created_at`,
+    const { rows } = await this.pool.query<{ id: string; plan: WorkspacePlan; created_at: Date }>(
+      `insert into workspaces (name, kdf_salt) values ($1, $2) returning id, plan, created_at`,
       [input.name, input.kdfSalt],
     );
     const r = rows[0]!;
-    return { id: r.id, name: input.name, kdfSalt: input.kdfSalt, createdAt: r.created_at };
+    return { id: r.id, name: input.name, kdfSalt: input.kdfSalt, plan: r.plan, createdAt: r.created_at };
   }
   async findById(id: string): Promise<Workspace | null> {
-    const { rows } = await this.pool.query<{ id: string; name: string; kdf_salt: string; created_at: Date }>(
-      `select id, name, kdf_salt, created_at from workspaces where id = $1`,
+    const { rows } = await this.pool.query<WorkspaceRow>(
+      `select id, name, kdf_salt, plan, created_at from workspaces where id = $1`,
       [id],
     );
     const r = rows[0];
-    return r ? { id: r.id, name: r.name, kdfSalt: r.kdf_salt, createdAt: r.created_at } : null;
+    return r ? toWorkspace(r) : null;
   }
-  async update(id: string, patch: { name?: string }): Promise<Workspace | null> {
-    const { rows } = await this.pool.query<{ id: string; name: string; kdf_salt: string; created_at: Date }>(
-      `update workspaces set name = coalesce($2, name), updated_at = now()
-       where id = $1 returning id, name, kdf_salt, created_at`,
-      [id, patch.name ?? null],
+  async update(id: string, patch: { name?: string; plan?: WorkspacePlan }): Promise<Workspace | null> {
+    const { rows } = await this.pool.query<WorkspaceRow>(
+      `update workspaces set name = coalesce($2, name), plan = coalesce($3, plan), updated_at = now()
+       where id = $1 returning id, name, kdf_salt, plan, created_at`,
+      [id, patch.name ?? null, patch.plan ?? null],
     );
     const r = rows[0];
-    return r ? { id: r.id, name: r.name, kdfSalt: r.kdf_salt, createdAt: r.created_at } : null;
+    return r ? toWorkspace(r) : null;
   }
   async delete(id: string): Promise<boolean> {
     const res = await this.pool.query(`delete from workspaces where id = $1`, [id]);

@@ -6,11 +6,15 @@
  * workspace carries only its (non-secret) KDF salt.
  */
 
+/** Set by the billing layer only (M5); limits per plan live in entitlements.ts. */
+export type WorkspacePlan = "solo" | "team";
+
 export interface Workspace {
   id: string;
   name: string;
   /** base64 scrypt salt (not secret). */
   kdfSalt: string;
+  plan: WorkspacePlan;
   createdAt: Date;
 }
 
@@ -30,9 +34,10 @@ export interface Environment {
 }
 
 export interface WorkspaceRepo {
+  /** New workspaces start on the free solo plan. */
   create(input: { name: string; kdfSalt: string }): Promise<Workspace>;
   findById(id: string): Promise<Workspace | null>;
-  update(id: string, patch: { name?: string }): Promise<Workspace | null>;
+  update(id: string, patch: { name?: string; plan?: WorkspacePlan }): Promise<Workspace | null>;
   delete(id: string): Promise<boolean>;
 }
 

@@ -17,14 +17,16 @@ import type {
   Workspace,
   WorkspaceRepo,
 } from "../../domain/resources.js";
+import type { EntitlementsService } from "../../domain/entitlements.js";
 import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
-import { conflict, notFound } from "../errors.js";
+import { conflict, notFound, planLimit } from "../errors.js";
 import { parseBody } from "../validate.js";
 
 export interface ResourceDeps {
   workspaces: WorkspaceRepo;
   projects: ProjectRepo;
   environments: EnvironmentRepo;
+  entitlements: EntitlementsService;
 }
 
 const name = z.string().min(1).max(120);
@@ -48,6 +50,7 @@ const wsView = (w: Workspace) => ({
   id: w.id,
   name: w.name,
   kdfSalt: w.kdfSalt,
+  plan: w.plan,
   createdAt: w.createdAt.toISOString(),
 });
 const projView = (p: Project) => ({
@@ -69,7 +72,7 @@ export function registerResourceRoutes(
   deps: ResourceDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { workspaces, projects, environments } = deps;
+  const { workspaces, projects, environments, entitlements } = deps;
 
   // Load a project and assert the caller's token covers its workspace.
   async function loadProject(c: Context<AppEnv>, id: string) {
@@ -176,6 +179,10 @@ export function registerResourceRoutes(
     const input = await parseBody(c, envCreate);
     if (await environments.findByName(project.id, input.name)) {
       throw conflict("environment name already in use");
+    }
+    const cap = await entitlements.canCreateEnvironment(project.workspaceId);
+    if (!cap.allowed) {
+      throw planLimit(cap.message, { plan: cap.plan, limit: cap.limit, current: cap.current });
     }
     const e = await environments.create({ projectId: project.id, name: input.name });
     return c.json(envView(e), 201);

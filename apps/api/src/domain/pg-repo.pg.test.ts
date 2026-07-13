@@ -40,6 +40,8 @@ test("pg repos round-trip against Postgres", { skip: !dbUrl }, async () => {
   const au = new PgAuditRepo(pool);
   try {
     const w = await ws.create({ name: "pgtest", kdfSalt: "c2FsdA==" });
+    assert.equal(w.plan, "solo", "workspaces default to the solo plan (#49)");
+    assert.equal((await ws.update(w.id, { plan: "team" }))?.plan, "team");
     const p = await pr.create({ workspaceId: w.id, name: "api", slug: "api" });
     const e = await en.create({ projectId: p.id, name: "prod" });
 

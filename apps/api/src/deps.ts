@@ -9,6 +9,7 @@ import type { Pool } from "pg";
 import { DeviceLoginService } from "./auth/device-login.js";
 import { TokenService } from "./auth/tokens.js";
 import { AuditService } from "./domain/audit.js";
+import { EntitlementsService } from "./domain/entitlements.js";
 import { WebSessionService } from "./domain/web-sessions.js";
 import { RevokeService } from "./services/revoke.js";
 import {
@@ -46,20 +47,25 @@ export function memoryDeps(): AppDeps {
   const devices = new InMemoryDeviceRepo();
   const wrappedKeys = new InMemoryWrappedKeyRepo();
   const login = new DeviceLoginService(devices, new InMemoryChallengeRepo(), tokens);
+  const workspaces = new InMemoryWorkspaceRepo();
+  const projects = new InMemoryProjectRepo();
+  const environments = new InMemoryEnvironmentRepo();
+  const members = new InMemoryMemberRepo();
   return {
     tokens,
     login,
-    workspaces: new InMemoryWorkspaceRepo(),
-    projects: new InMemoryProjectRepo(),
-    environments: new InMemoryEnvironmentRepo(),
+    workspaces,
+    projects,
+    environments,
     bundles: new InMemoryBundleRepo(),
     wrappedKeys,
-    members: new InMemoryMemberRepo(),
+    members,
     access: new InMemoryEnvironmentAccessRepo(),
     audit: new AuditService(new InMemoryAuditRepo()),
     devices,
     revoke: new RevokeService(devices, wrappedKeys, tokens),
     webSessions: new WebSessionService(new InMemoryWebSessionRepo(), tokens),
+    entitlements: new EntitlementsService(workspaces, projects, environments, members),
   };
 }
 
@@ -68,19 +74,24 @@ export function pgDeps(pool: Pool): AppDeps {
   const devices = new PgDeviceRepo(pool);
   const wrappedKeys = new PgWrappedKeyRepo(pool);
   const login = new DeviceLoginService(devices, new PgChallengeRepo(pool), tokens);
+  const workspaces = new PgWorkspaceRepo(pool);
+  const projects = new PgProjectRepo(pool);
+  const environments = new PgEnvironmentRepo(pool);
+  const members = new PgMemberRepo(pool);
   return {
     tokens,
     login,
-    workspaces: new PgWorkspaceRepo(pool),
-    projects: new PgProjectRepo(pool),
-    environments: new PgEnvironmentRepo(pool),
+    workspaces,
+    projects,
+    environments,
     bundles: new PgBundleRepo(pool),
     wrappedKeys,
-    members: new PgMemberRepo(pool),
+    members,
     access: new PgEnvironmentAccessRepo(pool),
     audit: new AuditService(new PgAuditRepo(pool)),
     devices,
     revoke: new RevokeService(devices, wrappedKeys, tokens),
     webSessions: new WebSessionService(new PgWebSessionRepo(pool), tokens),
+    entitlements: new EntitlementsService(workspaces, projects, environments, members),
   };
 }

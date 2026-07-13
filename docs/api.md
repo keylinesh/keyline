@@ -27,9 +27,22 @@ Status: built across **M2** (#19–#26). Persistence runs against Postgres when
 ## Error format
 
 All errors are `{ "error": { "code", "message", "details?" } }` with a matching
-status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
-`conflict` (409), `payload_too_large` (413), `validation_error` (422),
-`rate_limited` (429), `internal` (500).
+status. Codes: `unauthorized` (401), `plan_limit` (402), `forbidden` (403),
+`not_found` (404), `conflict` (409), `payload_too_large` (413),
+`validation_error` (422), `rate_limited` (429), `internal` (500).
+
+## Plans & entitlements (#49)
+
+Every workspace has a `plan` (`solo` default, or `team`), set only by the
+billing layer — there is no API route to change it. Limits are enforced
+server-side; hitting one returns `402 plan_limit` with
+`details: { plan, limit, current }`.
+
+| | solo (free) | team ($19/mo) |
+|---|---|---|
+| Members | 1 | 10 |
+| Environments (per workspace) | 2 | unlimited |
+| Audit history | 7 days | unlimited |
 
 ## Hardening (#26)
 
@@ -54,7 +67,7 @@ status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
 ### Workspaces
 - `POST /v1/workspaces` — create. Body: `{ name, kdfSalt }`. (Onboarding seam.)
 - `GET /v1/workspaces` — the token's workspace.
-- `GET /v1/workspaces/:id` — read (in-scope).
+- `GET /v1/workspaces/:id` — read (in-scope). Includes `plan`.
 - `PATCH /v1/workspaces/:id` — rename (admin). Body: `{ name }`.
 - `DELETE /v1/workspaces/:id` — delete (owner).
 
@@ -94,8 +107,8 @@ status. Codes: `unauthorized` (401), `forbidden` (403), `not_found` (404),
 All `/v1/web/*` routes sit behind the tight per-IP auth rate limit.
 
 ### Audit log
-- `GET /v1/workspaces/:wid/audit` — list events (admin). Hash-chained, append-only.
-- `GET /v1/workspaces/:wid/audit/verify` — verify chain integrity (admin) → `{ ok, count }` or `{ ok: false, brokenSeq, reason }`.
+- `GET /v1/workspaces/:wid/audit` — list events (admin). Hash-chained, append-only. → `{ events, retentionDays }` — on solo, only the last 7 days are returned (`retentionDays: 7`); events are never deleted.
+- `GET /v1/workspaces/:wid/audit/verify` — verify chain integrity (admin) → `{ ok, count }` or `{ ok: false, brokenSeq, reason }`. Always walks the full stored chain, regardless of plan retention.
 
 Recorded actions include `bundle.push`, `bundle.pull` (allowed and denied),
 `secret.rotate`, `member.invite`, `member.remove`, `member.revoke`,
