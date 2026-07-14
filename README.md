@@ -78,14 +78,15 @@ Homebrew: `brew tap keyline/keyline https://gitlab.com/resim.boyadzhiev/homebrew
 
 ## Project status
 
-**CLI and web dashboard shipped; payments next.** Roadmap tracked as GitLab milestones M0–M6.
+**CLI, dashboard, and payments shipped; trust and launch next.** Roadmap tracked as GitLab milestones M0–M6.
 
 - **M0 Foundations** — done (monorepo, CI, docs).
 - **M1 Crypto Core** — done. `packages/crypto`: AES-256-GCM bundles, scrypt KDF, X25519 device keypairs, sealed-box envelope wrap/unwrap, admin + sealed-file recovery; known-answer + property/fuzz tests. (External security review is the launch gate, still pending — backlog #18.)
 - **M2 Backend API & Data Model** — done. `apps/api` (Hono): device auth + scoped tokens, workspace/project/environment CRUD, push/pull encrypted bundles, per-environment RBAC, tamper-evident hash-chained audit log, revoke/rotate, rate-limiting/validation/security-headers/TLS, structured logs + metrics. Runs on **Neon** (Postgres) and is **live as a Vercel function** (`/api/health`). ~127 tests; CI includes a real-Postgres job.
 - **M3 CLI** — done. `apps/cli`, published as **`@keylinesh/cli`** (v0.1.0): login (interactive first run), link, push/pull (client-side crypto, optimistic concurrency), `run` (in-memory injection, exit/signal passthrough), rotate/revoke, audit/members (`--json`). Measured first run under a minute (docs/first-run.md). Distribution: npm + `curl | sh` + Homebrew tap, checksums per release, tag-driven release CI (docs/distribution.md). 44s demo on the landing page, re-recordable from `demo/demo.tape`. ~132 CLI+API+crypto tests.
 - **M4 Web Dashboard** — done. `apps/web` (React + Vite), live at **keyline.sh/app**, metadata-only (never sees secret values). Sign-in via CLI-approved sessions (`keyline web <code>`, ADR-0003). Projects/environments with role-aware CRUD, member management (invite/grant/revoke), audit viewer (chain verify, filters, CSV/JSON export), settings + guided onboarding. ~30 web tests; screenshots attached to every UI MR.
-- **M5 Payments** — in progress. Paddle as Merchant of Record (ADR-0004): Solo free / Team $19 flat, 14-day trial. Server-side plan entitlements shipped first.
+- **M5 Payments** — done. Paddle as Merchant of Record (ADR-0004): Solo free / Team $19 flat with a 14-day trial, verified end to end against production with a real sandbox charge (checkout → webhook → plan flip, VAT computed, invoice issued). Server-side entitlements (seats, environments, audit retention), signed + idempotent webhooks, explicit subscription state machine with a past_due grace period, customer portal, daily Paddle↔DB reconciliation, and legal pages. Billing internals in docs/billing.md. ~129 API tests, 39 web tests.
+- **M6 Trust, Compliance & Launch** — next. Public encryption doc, security posture, external review (#18), beta → launch.
 
 Docs: [encryption design](docs/encryption-design.md) · [API reference](docs/api.md) · [first run](docs/first-run.md) · [distribution](docs/distribution.md) · [infra/deploy](docs/infra.md) · [billing](docs/billing.md) · [observability](docs/observability.md) · [ADRs](docs/decisions/) · [security review packet](docs/security-review/). Full positioning + risk list in `keyline-context.md`.
 
