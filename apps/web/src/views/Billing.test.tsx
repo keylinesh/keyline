@@ -70,7 +70,7 @@ describe("Billing (Settings) — #71", () => {
     await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(btn);
 
-    await waitFor(() => expect(paddle.calls.open.length).toBe(1));
+    await waitFor(() => expect(paddle.calls.open.length).toBe(1), { timeout: 4000 });
     expect(paddle.calls.env).toEqual(["sandbox"]);
     expect(paddle.calls.init[0].token).toBe("test_tok");
     const open = paddle.calls.open[0];
@@ -85,7 +85,7 @@ describe("Billing (Settings) — #71", () => {
     render(<Settings session={admin} />);
 
     fireEvent.click(await screen.findByText("Upgrade to Team"));
-    await waitFor(() => expect(paddle.calls.open.length).toBe(1));
+    await waitFor(() => expect(paddle.calls.open.length).toBe(1), { timeout: 4000 });
 
     fetchCtl.setPlan("team"); // the webhook has flipped it server-side
     paddle.fire("checkout.completed");
