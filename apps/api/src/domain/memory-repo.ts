@@ -206,6 +206,11 @@ export class InMemoryMemberRepo implements MemberRepo {
   async listByWorkspace(workspaceId: string): Promise<Member[]> {
     return [...this.byId.values()].filter((m) => m.workspaceId === workspaceId);
   }
+  async findByEmailAnywhere(email: string): Promise<Member[]> {
+    return [...this.byId.values()]
+      .filter((m) => m.email === email)
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
   async updateDisplayName(id: string, displayName: string | null): Promise<Member | null> {
     const m = this.byId.get(id);
     if (!m) return null;

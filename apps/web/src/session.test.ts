@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, it, test } from "vitest";
 import { ApiError, request } from "./api.js";
 import {
   claimSession,
@@ -107,5 +107,15 @@ describe("session storage", () => {
     const storage = memStorage();
     storage.setItem("keyline.web.session", "{not json");
     expect(loadSession(storage)).toBeNull();
+  });
+});
+
+describe("magic links (#68)", () => {
+  it("extracts the #ml= token from the hash and ignores everything else", async () => {
+    const { magicTokenFromLocation } = await import("./session.js");
+    expect(magicTokenFromLocation("#ml=abcdefghijklmnop123")).toBe("abcdefghijklmnop123");
+    expect(magicTokenFromLocation("#settings")).toBeNull();
+    expect(magicTokenFromLocation("#ml=short")).toBeNull();
+    expect(magicTokenFromLocation("")).toBeNull();
   });
 });

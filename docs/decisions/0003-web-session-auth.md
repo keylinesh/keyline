@@ -35,6 +35,15 @@ Email magic links for non-terminal users are deliberately deferred
 
 - **Email magic links now** — external provider + cost + deliverability, and
   email compromise would open metadata sessions. Deferred, not rejected (#68).
+
+## Addendum (2026-07-14, #68 shipped)
+
+Magic links exist now, scoped tighter than originally feared: only members
+with at least one ACTIVE device can request one, and the minted 8h session is
+bound to that device, so member/device revocation kills magic sessions like
+CLI-approved ones. Enrollment stays join-code-only (#66); email is a re-entry
+factor, never a root for new access. Requests never reveal whether an email
+exists. Links are hashed at rest, single-use, 15-minute.
 - **Browser as a device (X25519 in the browser)** — needs browser crypto +
   key storage, and normalizes browsers holding device keys; rejected for v1.
 - **Password accounts** — a second auth system to secure and audit; rejected.

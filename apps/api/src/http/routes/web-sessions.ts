@@ -12,6 +12,7 @@
 import type { Hono, MiddlewareHandler } from "hono";
 import { z } from "zod";
 import type { AuditService } from "../../domain/audit.js";
+import type { MagicLinkService } from "../../domain/magic-links.js";
 import type { WebSessionService } from "../../domain/web-sessions.js";
 import type { AppEnv } from "../authz.js";
 import { notFound } from "../errors.js";
@@ -20,15 +21,33 @@ import { parseBody } from "../validate.js";
 export interface WebSessionRouteDeps {
   webSessions: WebSessionService;
   audit: AuditService;
+  magicLinks: MagicLinkService;
 }
 
 const approveSchema = z.object({ code: z.string().min(4).max(32) });
+const magicStartSchema = z.object({ email: z.string().email() });
+const magicClaimSchema = z.object({ token: z.string().min(16).max(128) });
 
 export function registerWebSessionRoutes(
   app: Hono<AppEnv>,
   deps: WebSessionRouteDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
+  // Magic links (#68): a sign-in link by email, for members with a device.
+  // The response NEVER reveals whether the email exists.
+  app.post("/v1/web/magic", async (c) => {
+    const { email } = await parseBody(c, magicStartSchema);
+    await deps.magicLinks.start(email);
+    return c.json({ ok: true }, 202);
+  });
+
+  app.post("/v1/web/magic/claim", async (c) => {
+    const { token } = await parseBody(c, magicClaimSchema);
+    const claim = await deps.magicLinks.claim(token);
+    if (!claim) throw notFound("that sign-in link is unknown, used, or expired");
+    return c.json({ ...claim, expiresAt: claim.expiresAt.toISOString() });
+  });
+
   app.post("/v1/web/sessions", async (c) => {
     const { sessionId, code, expiresAt } = await deps.webSessions.start();
     return c.json({ sessionId, code, expiresAt: expiresAt.toISOString() }, 201);

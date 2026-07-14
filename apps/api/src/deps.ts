@@ -11,6 +11,7 @@ import { TokenService } from "./auth/tokens.js";
 import { AuditService } from "./domain/audit.js";
 import { AnchorService, GitLabWitness, InMemoryAnchorRepo, PgAnchorRepo } from "./domain/anchors.js";
 import { ResendEmailSender, resendConfigFromEnv } from "./email/sender.js";
+import { InMemoryMagicLinkRepo, MagicLinkService, PgMagicLinkRepo } from "./domain/magic-links.js";
 import { EntitlementsService } from "./domain/entitlements.js";
 import { InMemoryJoinCodeRepo, JoinService, PgJoinCodeRepo } from "./domain/join-codes.js";
 import { WebSessionService } from "./domain/web-sessions.js";
@@ -63,6 +64,10 @@ export function memoryDeps(): AppDeps {
   const auditRepo = new InMemoryAuditRepo();
   const anchorRepo = new InMemoryAnchorRepo();
   const audit = new AuditService(auditRepo, anchorRepo);
+  const emailSender = (() => {
+    const cfg = resendConfigFromEnv();
+    return cfg ? new ResendEmailSender(cfg) : null;
+  })();
   const subscriptions = new InMemorySubscriptionRepo();
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   return {
@@ -81,10 +86,11 @@ export function memoryDeps(): AppDeps {
     webSessions: new WebSessionService(new InMemoryWebSessionRepo(), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
     join: new JoinService(new InMemoryJoinCodeRepo(), members, workspaces, login, audit),
-    email: (() => {
-      const cfg = resendConfigFromEnv();
-      return cfg ? new ResendEmailSender(cfg) : null;
-    })(),
+    email: emailSender,
+    magicLinks: new MagicLinkService(
+      new InMemoryMagicLinkRepo(), members, devices, workspaces, tokens, emailSender, audit,
+      process.env.APP_BASE_URL ?? "https://keyline.sh/app",
+    ),
     billingWebhook: webhookSecret
       ? new BillingWebhookService(webhookSecret, new InMemoryBillingEventRepo(), workspaces, audit, subscriptions)
       : null,
@@ -123,6 +129,10 @@ export function pgDeps(pool: Pool): AppDeps {
   const auditRepo = new PgAuditRepo(pool);
   const anchorRepo = new PgAnchorRepo(pool);
   const audit = new AuditService(auditRepo, anchorRepo);
+  const emailSender = (() => {
+    const cfg = resendConfigFromEnv();
+    return cfg ? new ResendEmailSender(cfg) : null;
+  })();
   const subscriptions = new PgSubscriptionRepo(pool);
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   return {
@@ -141,10 +151,11 @@ export function pgDeps(pool: Pool): AppDeps {
     webSessions: new WebSessionService(new PgWebSessionRepo(pool), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
     join: new JoinService(new PgJoinCodeRepo(pool), members, workspaces, login, audit),
-    email: (() => {
-      const cfg = resendConfigFromEnv();
-      return cfg ? new ResendEmailSender(cfg) : null;
-    })(),
+    email: emailSender,
+    magicLinks: new MagicLinkService(
+      new PgMagicLinkRepo(pool), members, devices, workspaces, tokens, emailSender, audit,
+      process.env.APP_BASE_URL ?? "https://keyline.sh/app",
+    ),
     billingWebhook: webhookSecret
       ? new BillingWebhookService(webhookSecret, new PgBillingEventRepo(pool), workspaces, audit, subscriptions)
       : null,
