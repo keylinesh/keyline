@@ -17,7 +17,7 @@ one artifact.
 | curl \| sh | `curl -fsSL keyline.sh/install | sh` | `install.sh` in this repo, served at `/install` (vercel.json) |
 | npm | `npm i -g @keylinesh/cli` | published by CI on version tags |
 | Homebrew | `brew tap keyline/keyline <tap-repo> && brew install keyline` | formula in `Formula/keyline.rb`; needs the tap repo (one-time, below) |
-| Signed native binaries | — | deferred: backlog #67 (needs signing certs); checksums ship today |
+| Native binaries | GitLab release → build-binaries artifacts | linux-x64/arm64 + win-x64 per release, UNSIGNED (#67); checksums attached. macOS + signing wait for certs (below) |
 
 ## Cutting a release
 
@@ -40,6 +40,23 @@ one artifact.
   `Formula/keyline.rb` in it.
 - The `/install` route ships with the next Vercel deploy of main — nothing to
   configure.
+
+## Native binaries (#67)
+
+`apps/cli/build-sea.mjs` assembles single-file executables with Node SEA: a
+CJS esbuild bundle becomes a SEA blob, injected (postject) into each target's
+official Node binary. CI (`build-binaries`) runs it on every version tag and
+keeps the binaries + SHA256SUMS as permanent artifacts.
+
+Current targets: linux-x64, linux-arm64, win-x64 — **unsigned**. Windows shows
+a SmartScreen warning; verify the checksum. Inside a SEA binary the native
+keychain can't load, so the keystore uses the 0600 file store.
+
+**Signing (when certificates exist):** hooks go in build-sea.mjs after
+injection. macOS: Apple Developer Program ($99/yr) → `codesign` +
+`notarytool`, then darwin-x64/arm64 join the target list. Windows: an
+Authenticode cert or Azure Trusted Signing (~$10/mo) → `signtool`/`osslsigncode`.
+Until then, npm + Homebrew + curl|sh stay the first-class channels.
 
 ## Verifying an install
 

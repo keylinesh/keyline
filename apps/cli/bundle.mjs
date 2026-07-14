@@ -7,6 +7,9 @@
 
 import { chmodSync } from "node:fs";
 import { build } from "esbuild";
+import { readFileSync as readPkg } from "node:fs";
+
+const pkgVersion = JSON.parse(readPkg("package.json", "utf8")).version;
 
 await build({
   entryPoints: ["src/index.ts"],
@@ -25,6 +28,7 @@ await build({
       "const require = __cr(import.meta.url);",
     ].join("\n"),
   },
+  define: { __KEYLINE_VERSION__: JSON.stringify(pkgVersion) },
   logLevel: "warning",
 });
 

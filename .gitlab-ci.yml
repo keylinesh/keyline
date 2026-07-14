@@ -110,6 +110,27 @@ publish-npm:
       - apps/cli/*.tgz
     expire_in: never
 
+# Native single-file executables (#67): linux-x64/arm64 + win-x64, unsigned,
+# checksums attached. macOS waits for an Apple Developer certificate
+# (Gatekeeper makes unsigned Mac binaries useless); signing hooks live in
+# apps/cli/build-sea.mjs.
+build-binaries:
+  stage: release
+  needs: ["publish-npm"]
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+  <<: *setup
+  script:
+    - apt-get update -qq && apt-get install -y -qq unzip
+    - pnpm build
+    - cd apps/cli
+    - node build-sea.mjs
+    - cat dist-bin/SHA256SUMS
+  artifacts:
+    paths:
+      - apps/cli/dist-bin/
+    expire_in: never
+
 gitlab-release:
   stage: release
   needs: ["publish-npm"]
@@ -125,4 +146,6 @@ gitlab-release:
       Install: `curl -fsSL keyline.sh/install | sh` or `npm i -g @keylinesh/cli`.
 
       SHA-256 checksums for this release are in the publish-npm job's
-      SHA256SUMS artifact.
+      SHA256SUMS artifact. Native binaries (linux-x64, linux-arm64,
+      win-x64; unsigned, #67) are in the build-binaries job's artifacts
+      with their own SHA256SUMS.

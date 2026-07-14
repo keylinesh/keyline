@@ -28,7 +28,11 @@ import { runWebApprove } from "./commands/web.js";
 import { parseEnvRole, runGrant, runInvite, runMembersList } from "./commands/members.js";
 import { confirm, promptHidden, promptLine, readStdin } from "./prompt.js";
 
+// Injected by the bundlers (esbuild define); absent when running from source.
+declare const __KEYLINE_VERSION__: string | undefined;
+
 function version(): string {
+  if (typeof __KEYLINE_VERSION__ === "string") return __KEYLINE_VERSION__;
   try {
     const pkg = JSON.parse(
       readFileSync(new URL("../package.json", import.meta.url), "utf8"),
