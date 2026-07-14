@@ -47,6 +47,7 @@ export async function ensureWebhookDestination(
     description: "Keyline billing webhooks",
     destination: url,
     type: "url",
+    traffic_source: "all",
     subscribed_events: [...SUBSCRIBED_EVENTS],
   });
   return { id: created.id, secret: created.endpoint_secret_key, created: true };

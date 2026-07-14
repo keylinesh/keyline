@@ -144,6 +144,31 @@ test("the endpoint is 503 until a webhook secret is configured", async () => {
   assert.equal(res.status, 503);
 });
 
+test("billing config: auth required, 404 unconfigured, public values when set (#71)", async () => {
+  const deps = memoryDeps();
+  deps.billingConfig = null;
+  const app = createApp(deps);
+  const ws = await deps.workspaces.create({ name: "Acme", kdfSalt: SALT });
+  const tok = (await deps.tokens.issue({
+    deviceId: "dev-a", memberId: "mem-a", scope: { workspaceId: ws.id, role: "member" },
+  })).token;
+
+  assert.equal((await app.request("/v1/billing/config")).status, 401);
+  assert.equal(
+    (await app.request("/v1/billing/config", { headers: { authorization: `Bearer ${tok}` } })).status,
+    404,
+  );
+
+  deps.billingConfig = { environment: "sandbox", clientToken: "test_t", teamPriceId: "pri_1" };
+  const res = await app.request("/v1/billing/config", { headers: { authorization: `Bearer ${tok}` } });
+  assert.equal(res.status, 200);
+  assert.deepEqual(await readJson(res), {
+    environment: "sandbox",
+    clientToken: "test_t",
+    teamPriceId: "pri_1",
+  });
+});
+
 test("verifyPaddleSignature handles rotation (two h1 values) and malformed headers", () => {
   const body = '{"a":1}';
   const ts = Math.floor(Date.now() / 1000);

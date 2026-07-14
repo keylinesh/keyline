@@ -178,7 +178,7 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   registerDeviceRoutes(app, deps, auth);
   registerAuditRoutes(app, deps, auth);
   registerWebSessionRoutes(app, deps, auth);
-  registerBillingRoutes(app, deps);
+  registerBillingRoutes(app, deps, auth);
 
   return app;
 }

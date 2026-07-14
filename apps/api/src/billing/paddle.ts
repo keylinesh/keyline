@@ -22,6 +22,25 @@ export function paddleConfigFromEnv(env: NodeJS.ProcessEnv = process.env): Paddl
   return { baseUrl: BASE_URLS[mode], apiKey };
 }
 
+/**
+ * What the dashboard needs to open a checkout (#71). All public by nature:
+ * the client token ships to browsers and the price id appears in checkouts.
+ */
+export interface BillingPublicConfig {
+  environment: "sandbox" | "live";
+  clientToken: string;
+  teamPriceId: string;
+}
+
+export function billingPublicConfigFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+): BillingPublicConfig | null {
+  const clientToken = env.PADDLE_CLIENT_TOKEN;
+  const teamPriceId = env.PADDLE_TEAM_PRICE_ID;
+  if (!clientToken || !teamPriceId) return null;
+  return { environment: env.PADDLE_ENV === "live" ? "live" : "sandbox", clientToken, teamPriceId };
+}
+
 export class PaddleApiError extends Error {
   constructor(
     readonly status: number,

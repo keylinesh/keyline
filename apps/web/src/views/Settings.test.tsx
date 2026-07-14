@@ -19,10 +19,12 @@ function stubFetch() {
     if (method === "PATCH" && url.includes("/members/m1"))
       return new Response(JSON.stringify({ id: "m1", email: "founder@acme.test", displayName: "Resi", role: "owner", createdAt: "" }), { status: 200 });
     if (method === "PATCH" && url.includes("/workspaces/w1"))
-      return new Response(JSON.stringify({ id: "w1", name: "Acme Corp" }), { status: 200 });
+      return new Response(JSON.stringify({ id: "w1", name: "Acme Corp", plan: "solo" }), { status: 200 });
+    if (url.includes("/billing/config"))
+      return new Response(JSON.stringify({ error: { code: "not_found", message: "billing not configured" } }), { status: 404 });
     if (url.includes("/members"))
       return new Response(JSON.stringify({ members: [{ id: "m1", email: "founder@acme.test", displayName: null, role: "owner", createdAt: "" }] }), { status: 200 });
-    return new Response(JSON.stringify({ id: "w1", name: "Acme Inc" }), { status: 200 });
+    return new Response(JSON.stringify({ id: "w1", name: "Acme Inc", plan: "solo" }), { status: 200 });
   });
   return calls;
 }
@@ -38,8 +40,8 @@ describe("Settings view", () => {
     render(<Settings session={admin} />);
     expect(await screen.findByText("founder@acme.test")).toBeDefined();
     expect(screen.getByText("Billing")).toBeDefined();
-    expect(screen.getByText("Solo · $0")).toBeDefined();
-    expect(screen.getByText(/arrives with billing \(M5\)/)).toBeDefined();
+    expect(await screen.findByText("Solo · $0")).toBeDefined();
+    expect(screen.getByText(/14-day free trial/)).toBeDefined();
   });
 
   test("saving the display name PATCHes the member", async () => {
