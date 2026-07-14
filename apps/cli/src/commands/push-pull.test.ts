@@ -98,11 +98,10 @@ test("a device without a wrapped key is told to ask an admin (no key regeneratio
 
     const kp = generateDeviceKeyPair();
     const anon = new ApiClient({ baseUrl: "", fetchImpl });
-    const reg = await anon.post<{ deviceId: string }>("/v1/devices", {
-      memberId: members[0]!.id,
-      workspaceId: account.workspaceId,
+    // #64: adding a second device is self-service on an authed session.
+    const reg = await owner.post<{ deviceId: string }>("/v1/devices", {
       publicKey: kp.publicKey,
-      role: "owner",
+      name: "second-device",
     });
     const ch = await anon.post<{ challengeId: string; sealed: never }>(
       "/v1/auth/device/challenge",

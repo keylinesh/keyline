@@ -17,6 +17,7 @@ import { z } from "zod";
 import type { EnvironmentAccessRepo, EnvAccess } from "../../domain/access.js";
 import type { AuditService } from "../../domain/audit.js";
 import type { EntitlementsService } from "../../domain/entitlements.js";
+import type { JoinService } from "../../domain/join-codes.js";
 import type { Member, MemberRepo } from "../../domain/members.js";
 import type { EnvironmentRepo, ProjectRepo } from "../../domain/resources.js";
 import type { RevokeService } from "../../services/revoke.js";
@@ -33,6 +34,7 @@ export interface MemberRouteDeps {
   audit: AuditService;
   revoke: RevokeService;
   entitlements: EntitlementsService;
+  join: JoinService;
 }
 
 const workspaceRole = z.enum(["owner", "admin", "member"]);
@@ -64,7 +66,7 @@ export function registerMemberRoutes(
   deps: MemberRouteDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { members, access, projects, environments, audit, revoke, entitlements } = deps;
+  const { members, access, projects, environments, audit, revoke, entitlements, join } = deps;
 
   // Resolve env -> workspace and require the caller to be an env admin there.
   async function requireEnvAdmin(c: Context<AppEnv>, envId: string) {
@@ -91,6 +93,8 @@ export function registerMemberRoutes(
       throw planLimit(seat.message, { plan: seat.plan, limit: seat.limit, current: seat.current });
     }
     const m = await members.create({ workspaceId: wid, ...input });
+    // The invite's join code (#66): shown once to the admin, stored hashed.
+    const joinCode = await join.issue(m.id);
     await audit.record({
       workspaceId: wid,
       actorMemberId: c.get("principal").memberId,
@@ -101,7 +105,31 @@ export function registerMemberRoutes(
       outcome: "allowed",
       metadata: { email: m.email, role: m.role },
     });
-    return c.json(memberView(m), 201);
+    return c.json(
+      { ...memberView(m), joinCode: joinCode.code, joinCodeExpiresAt: joinCode.expiresAt.toISOString() },
+      201,
+    );
+  });
+
+  // Regenerate an invited member's join code (#66). Admin-only; the new code
+  // replaces the old one, so a leaked code is one click from dead.
+  app.post("/v1/members/:id/join-code", auth, async (c) => {
+    const member = await members.findById(c.req.param("id"));
+    if (!member) throw notFound("member not found");
+    requireWorkspace(c.get("principal"), member.workspaceId);
+    requireRole(c.get("principal"), "admin");
+    const issued = await join.issue(member.id);
+    await audit.record({
+      workspaceId: member.workspaceId,
+      actorMemberId: c.get("principal").memberId,
+      actorDeviceId: c.get("principal").deviceId,
+      action: "member.join_code",
+      targetType: "member",
+      targetId: member.id,
+      outcome: "allowed",
+      metadata: { email: member.email },
+    });
+    return c.json({ joinCode: issued.code, joinCodeExpiresAt: issued.expiresAt.toISOString() });
   });
 
   app.get("/v1/workspaces/:wid/members", auth, async (c) => {

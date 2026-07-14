@@ -143,3 +143,36 @@ describe("Members view", () => {
     expect(revokes.length).toBe(2);
   });
 });
+
+describe("join codes (#66)", () => {
+  test("inviting shows the one-time join command with a copy button", async () => {
+    stubFetch([
+      {
+        match: (m, u) => m === "POST" && u.includes("/workspaces/w1/members"),
+        status: 201,
+        body: { id: "m-x", email: "mate@acme.test", displayName: null, role: "member", createdAt: "", joinCode: "ABCD-EFGH-JKMN", joinCodeExpiresAt: "2026-07-21T00:00:00Z" },
+      },
+      ...baseRoutes,
+    ]);
+    vi.stubGlobal("navigator", { clipboard: { writeText: vi.fn(async () => {}) } });
+    render(<Members session={admin} />);
+    fireEvent.change(await screen.findByLabelText("invite email"), { target: { value: "mate@acme.test" } });
+    fireEvent.submit(screen.getByLabelText("invite email").closest("form")!);
+
+    expect(await screen.findByText("keyline join ABCD-EFGH-JKMN")).toBeDefined();
+    expect(screen.getByLabelText("copy join command for mate@acme.test")).toBeDefined();
+  });
+
+  test("invited members get a regenerate button that surfaces a fresh code", async () => {
+    stubFetch([
+      {
+        match: (m, u) => m === "POST" && u.includes("/members/m-new/join-code"),
+        body: { joinCode: "WXYZ-WXYZ-WXYZ", joinCodeExpiresAt: "2026-07-21T00:00:00Z" },
+      },
+      ...baseRoutes,
+    ]);
+    render(<Members session={admin} />);
+    fireEvent.click(await screen.findByText("join code"));
+    expect(await screen.findByText("keyline join WXYZ-WXYZ-WXYZ")).toBeDefined();
+  });
+});

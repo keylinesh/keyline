@@ -16,6 +16,7 @@ import { loadAccount } from "./account.js";
 import { findProjectConfig, loadGlobalConfig } from "./config.js";
 import { isCredentialValid, loadCredentials } from "./credentials.js";
 import { runLogin } from "./commands/login.js";
+import { runJoin } from "./commands/join.js";
 import { explainLinkError, runLink } from "./commands/link.js";
 import { runPush } from "./commands/push.js";
 import { runPull } from "./commands/pull.js";
@@ -74,6 +75,23 @@ export function buildProgram(): Command {
       console.log(`  device id:   ${result.deviceId}`);
       console.log(`  key storage: ${result.keyStorage}`);
       console.log("\nNext: cd into your project, then `keyline link` and `keyline push`.");
+    });
+
+  program
+    .command("join")
+    .description("join a workspace you were invited to, with a join code")
+    .argument("<code>", "the one-time join code from your admin, e.g. ABCD-EFGH-JKMN")
+    .action(async (code: string) => {
+      const cfg = loadGlobalConfig();
+      const result = await runJoin({ apiBaseUrl: cfg.apiBaseUrl, store: openKeyStore() }, code);
+      console.log(`Joined ${result.workspaceName} as ${result.email} (${result.role}).`);
+      console.log(`  device id:   ${result.deviceId}`);
+      console.log(`  key storage: ${result.keyStorage}`);
+      console.log(
+        "\nNext: ask an admin to run `keyline members grant " +
+          result.email +
+          " --env <env>` so this device gets the workspace key. Then `keyline link` and `keyline pull`.",
+      );
     });
 
   program

@@ -25,6 +25,7 @@ import {
 } from "./pg-repo.js";
 import { PgDeviceRepo } from "../auth/pg-repo.js";
 import { PgSubscriptionRepo } from "../billing/subscriptions.js";
+import { PgJoinCodeRepo } from "./join-codes.js";
 import { hashSessionCode } from "./web-sessions.js";
 import { VersionConflictError } from "./bundles.js";
 import { verifyChain } from "./audit.js";
@@ -121,6 +122,17 @@ test("pg repos round-trip against Postgres", { skip: !dbUrl }, async () => {
     });
     assert.equal(stale, null, "older event ignored");
     assert.equal((await subs.findByWorkspace(w.id))?.status, "past_due");
+
+    // Join codes (#66): upsert-replace semantics + one-time use.
+    const jc = new PgJoinCodeRepo(pool);
+    const mem = await new PgMemberRepo(pool).create({ workspaceId: w.id, email: "join@pg.test", role: "member" });
+    await jc.upsertForMember({ memberId: mem.id, codeHash: "h1", expiresAt: new Date("2027-01-01T00:00:00Z") });
+    assert.equal((await jc.findByCodeHash("h1"))?.memberId, mem.id);
+    await jc.markUsed(mem.id, new Date("2026-07-14T00:00:00Z"));
+    assert.ok((await jc.findByCodeHash("h1"))?.usedAt, "used_at set");
+    await jc.upsertForMember({ memberId: mem.id, codeHash: "h2", expiresAt: new Date("2027-01-01T00:00:00Z") });
+    assert.equal(await jc.findByCodeHash("h1"), null, "old code replaced");
+    assert.equal((await jc.findByCodeHash("h2"))?.usedAt, null, "replacement resets used_at");
 
     assert.ok(await ws.delete(w.id)); // cascade removes children + audit
   } finally {

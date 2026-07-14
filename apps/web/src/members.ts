@@ -51,11 +51,24 @@ export async function listMembers(s: WebSession): Promise<Member[]> {
   return members;
 }
 
-export function invite(s: WebSession, email: string, role: "member" | "admin"): Promise<Member> {
-  return request<Member>("POST", `/v1/workspaces/${s.workspaceId}/members`, {
+export interface Invited extends Member {
+  joinCode: string;
+  joinCodeExpiresAt: string;
+}
+
+export function invite(s: WebSession, email: string, role: "member" | "admin"): Promise<Invited> {
+  return request<Invited>("POST", `/v1/workspaces/${s.workspaceId}/members`, {
     ...auth(s),
     body: { email: email.trim(), role },
   });
+}
+
+/** Mint a fresh join code for an invited member; the old one dies (#66). */
+export function regenerateJoinCode(
+  s: WebSession,
+  memberId: string,
+): Promise<{ joinCode: string; joinCodeExpiresAt: string }> {
+  return request("POST", `/v1/members/${memberId}/join-code`, { ...auth(s), body: {} });
 }
 
 export interface RevokeCounts {
