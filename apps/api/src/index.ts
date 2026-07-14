@@ -10,10 +10,16 @@
 
 import { serve } from "@hono/node-server";
 import { buildApp, resolveRuntimeConfig, storageLabel } from "./server.js";
+import { initSentry } from "./observability/sentry.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const { environment } = resolveRuntimeConfig();
 
+const tracking = initSentry({ environment });
+
 serve({ fetch: buildApp().fetch, port: PORT }, () => {
-  console.log(`keyline-api [${environment}] listening on :${PORT} — storage: ${storageLabel()}`);
+  console.log(
+    `keyline-api [${environment}] listening on :${PORT} — storage: ${storageLabel()}` +
+      (tracking ? " — error tracking: on" : ""),
+  );
 });
