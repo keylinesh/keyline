@@ -40,15 +40,37 @@ export class ApiClient {
     if (this.token) headers.authorization = `Bearer ${this.token}`;
     if (body !== undefined) headers["content-type"] = "application/json";
 
+    // Follow redirects ourselves. fetch's automatic follow strips the
+    // Authorization header on any cross-origin hop (per spec), which turned an
+    // apex→www 308 into a baffling 401 "session expired". We re-attach auth
+    // only when the host differs by a www. prefix; anything else fails loudly.
+    let url = `${this.baseUrl}${path}`;
     let res: Response;
-    try {
-      res = await this.fetchImpl(`${this.baseUrl}${path}`, {
-        method,
-        headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
-      });
-    } catch (cause) {
-      throw new ApiError(0, "network_error", `cannot reach ${this.baseUrl}`, cause);
+    for (let hop = 0; ; hop++) {
+      try {
+        res = await this.fetchImpl(url, {
+          method,
+          headers,
+          redirect: "manual",
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+      } catch (cause) {
+        throw new ApiError(0, "network_error", `cannot reach ${this.baseUrl}`, cause);
+      }
+      if (![301, 302, 307, 308].includes(res.status)) break;
+      const location = res.headers.get("location");
+      if (!location || hop >= 2) {
+        throw new ApiError(0, "redirect_error", `too many redirects at ${url}`);
+      }
+      const target = new URL(location, url);
+      if (!sameSiteHost(new URL(url).host, target.host)) {
+        throw new ApiError(
+          0,
+          "redirect_error",
+          `the API redirected to ${target.host}. Set KEYLINE_API_URL to the right address.`,
+        );
+      }
+      url = target.toString();
     }
 
     const text = await res.text();
@@ -84,6 +106,12 @@ export class ApiClient {
   health(): Promise<{ status: string; service: string; environment: string }> {
     return this.get("/health");
   }
+}
+
+/** Same host up to a leading "www." — the only redirect worth trusting with auth. */
+export function sameSiteHost(a: string, b: string): boolean {
+  const strip = (h: string) => h.toLowerCase().replace(/^www\./, "");
+  return strip(a) === strip(b);
 }
 
 function safeJson(text: string): unknown {

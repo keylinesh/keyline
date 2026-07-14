@@ -68,3 +68,53 @@ test("wraps network failures as a network_error ApiError", async () => {
     },
   );
 });
+
+test("follows an apex→www 308 and keeps the auth header (the redirect that broke prod)", async () => {
+  const captured: Captured[] = [];
+  const fetchImpl = (async (url: string | URL, init?: RequestInit) => {
+    captured.push({ url: String(url), init: init ?? {} });
+    if (String(url).startsWith("https://keyline.sh/")) {
+      return new Response(null, {
+        status: 308,
+        headers: { location: String(url).replace("https://keyline.sh/", "https://www.keyline.sh/") },
+      });
+    }
+    return json({ ok: true });
+  }) as unknown as typeof fetch;
+
+  const client = new ApiClient({ baseUrl: "https://keyline.sh/api", token: "klk_t", fetchImpl });
+  const out = await client.get<{ ok: boolean }>("/v1/workspaces/w1");
+  assert.deepEqual(out, { ok: true });
+  assert.equal(captured.length, 2);
+  assert.equal(captured[1]!.url, "https://www.keyline.sh/api/v1/workspaces/w1");
+  assert.equal((captured[1]!.init.headers as Record<string, string>).authorization, "Bearer klk_t");
+});
+
+test("a redirect to a foreign host fails loudly instead of leaking or dropping auth", async () => {
+  const fetchImpl = (async () =>
+    new Response(null, { status: 308, headers: { location: "https://evil.example.com/api" } })) as unknown as typeof fetch;
+  const client = new ApiClient({ baseUrl: "https://keyline.sh/api", token: "klk_t", fetchImpl });
+  await assert.rejects(
+    () => client.get("/health"),
+    (err: ApiError) => {
+      assert.equal(err.code, "redirect_error");
+      assert.match(err.message, /evil\.example\.com/);
+      assert.match(err.message, /KEYLINE_API_URL/);
+      return true;
+    },
+  );
+});
+
+test("redirect loops give up after a few hops", async () => {
+  const fetchImpl = (async (url: string | URL) =>
+    new Response(null, { status: 308, headers: { location: String(url) } })) as unknown as typeof fetch;
+  const client = new ApiClient({ baseUrl: "https://keyline.sh/api", fetchImpl });
+  await assert.rejects(
+    () => client.get("/health"),
+    (err: ApiError) => {
+      assert.equal(err.code, "redirect_error");
+      assert.match(err.message, /too many redirects/);
+      return true;
+    },
+  );
+});
