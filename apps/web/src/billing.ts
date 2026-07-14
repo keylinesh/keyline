@@ -35,6 +35,19 @@ export async function getSubscription(s: WebSession): Promise<SubscriptionInfo |
   return res.subscription;
 }
 
+export interface PortalLinks {
+  overviewUrl: string;
+  cancelUrl: string | null;
+  updatePaymentMethodUrl: string | null;
+}
+
+/** Short-lived Paddle portal session for cancel/card changes (#72). Admin-only. */
+export function createPortalSession(s: WebSession): Promise<PortalLinks> {
+  return request<PortalLinks>("POST", `/v1/workspaces/${s.workspaceId}/billing/portal`, {
+    token: s.token,
+  });
+}
+
 export interface PaddleJs {
   Environment: { set: (env: string) => void };
   Initialize: (opts: { token: string; eventCallback?: (event: { name: string }) => void }) => void;

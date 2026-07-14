@@ -30,6 +30,13 @@ checkout with `customData.workspaceId`. Paddle collects payment. The webhook
 flips the plan, and the dashboard polls the workspace until it lands.
 Sandbox test card: 4242 4242 4242 4242, any future expiry, any CVC.
 
+## Customer portal (#72)
+
+Settings → Billing → **Manage billing** (team admins). The API creates a
+short-lived Paddle portal session (`POST /v1/workspaces/:wid/billing/portal`)
+for the stored customer and the browser opens it. Cancel and card changes
+happen in Paddle; the resulting webhooks land in the state machine below.
+
 ## Subscription lifecycle (#74)
 
 One `workspace_subscriptions` row per subscribed workspace, upserted from

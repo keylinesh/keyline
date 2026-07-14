@@ -203,6 +203,50 @@ test("an out-of-order older event never regresses newer state", async () => {
   assert.equal((await deps.subscriptions.findByWorkspace(ws.id))?.status, "canceled");
 });
 
+test("portal endpoint: creates a Paddle portal session for the workspace's customer (#72)", async () => {
+  const { BillingPortalService } = await import("../billing/portal.js");
+  const { PaddleApi } = await import("../billing/paddle.js");
+  const { deps, ws, post, app } = await setup();
+  const adminTok = (await deps.tokens.issue({
+    deviceId: "d-a", memberId: "m-a", scope: { workspaceId: ws.id, role: "admin" },
+  })).token;
+  const portal = (t: string) =>
+    app.request(`/v1/workspaces/${ws.id}/billing/portal`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${t}` },
+    });
+
+  // Unconfigured → 503; configured but no subscription → 404.
+  deps.billingPortal = null;
+  assert.equal((await portal(adminTok)).status, 503);
+
+  const calls: string[] = [];
+  const fakeFetch = (async (url: string) => {
+    calls.push(new URL(url).pathname);
+    return new Response(JSON.stringify({ data: { urls: {
+      general: { overview: "https://p.example/overview" },
+      subscriptions: [{ id: "sub_lc", cancel_subscription: "https://p.example/cancel", update_subscription_payment_method: "https://p.example/card" }],
+    } } }), { status: 200 });
+  }) as unknown as typeof fetch;
+  deps.billingPortal = new BillingPortalService(
+    new PaddleApi({ baseUrl: "https://sandbox-api.paddle.com", apiKey: "k" }, fakeFetch),
+    deps.subscriptions,
+  );
+  assert.equal((await portal(adminTok)).status, 404);
+
+  // With a live subscription: returns the mapped links.
+  const ev = lifecycleEvent(ws.id, "active", "2026-07-14T17:00:00Z");
+  await post(ev, sign(ev));
+  const res = await portal(adminTok);
+  assert.equal(res.status, 200);
+  assert.deepEqual(await readJson(res), {
+    overviewUrl: "https://p.example/overview",
+    cancelUrl: "https://p.example/cancel",
+    updatePaymentMethodUrl: "https://p.example/card",
+  });
+  assert.deepEqual(calls, ["/customers/ctm_1/portal-sessions"]);
+});
+
 test("subscription endpoint: admin sees status, member is 403, empty is null", async () => {
   const { deps, ws, post, app } = await setup();
   const adminTok = (await deps.tokens.issue({
