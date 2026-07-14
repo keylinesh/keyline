@@ -103,8 +103,8 @@ issues invoices. Verified in sandbox with a real charge (2026-07-14):
 - Invoice number issued (`113548-10001`) and PDF retrievable
   (`GET /transactions/:id/invoice`). Paddle emails the receipt to the
   customer. Tax category: `saas`.
-- US sales tax: Paddle registers and remits where it has obligations —
-  nothing on our side. Spot-check a US-address test purchase at go-live.
+- US sales tax: Paddle registers and remits where it has obligations.
+  Nothing on our side. Spot-check a US-address test purchase at go-live.
 
 **Income trail (personal tax filing, ADR-0004):** Paddle pays out net
 revenue. Monthly: download the transactions + payouts CSVs (Paddle →
@@ -118,7 +118,7 @@ What happens when a card stops working, end to end:
 
 1. Renewal fails → Paddle moves the subscription to `past_due` and starts
    its retry schedule + dunning emails to the customer (configure under
-   **Paddle → Checkout settings → Payment retries / dunning** — on by
+   **Paddle → Checkout settings → Payment retries / dunning**. On by
    default; review wording at go-live).
 2. Our webhook records `past_due`: the workspace **stays on Team** (grace),
    Settings shows the payment-issue banner, `past_due_since` is tracked.
@@ -132,7 +132,7 @@ What happens when a card stops working, end to end:
 ## Going live (the swap)
 
 1. `PADDLE_ENV=live PADDLE_API_KEY=<live key> pnpm --filter @keyline/api paddle:setup` and `paddle:webhook`.
-2. In the live Paddle dashboard: **Checkout → Checkout settings → set the Default payment link** (e.g. `https://keyline.sh/app`). Without it every checkout 400s with `transaction_default_checkout_url_not_set` — found the hard way in sandbox.
+2. In the live Paddle dashboard: **Checkout → Checkout settings → set the Default payment link** (e.g. `https://keyline.sh/app`). Without it every checkout 400s with `transaction_default_checkout_url_not_set`. Found the hard way in sandbox.
 3. Replace in Vercel: `PADDLE_ENV=live`, the live API key + client token, and the printed live `PADDLE_TEAM_PRICE_ID` + `PADDLE_WEBHOOK_SECRET`.
 
 No code changes.
