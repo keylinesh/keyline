@@ -17,7 +17,7 @@ if (!config) {
   process.exit(1);
 }
 
-const url = process.argv[2] ?? "https://keyline.sh/api/v1/billing/webhook";
+const url = process.argv[2] ?? "https://www.keyline.sh/api/v1/billing/webhook";
 const mode = config.baseUrl.includes("sandbox") ? "sandbox" : "LIVE";
 const result = await ensureWebhookDestination(new PaddleApi(config), url);
 

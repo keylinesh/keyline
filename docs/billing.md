@@ -21,6 +21,15 @@ PADDLE_API_KEY=... PADDLE_ENV=sandbox pnpm --filter @keyline/api paddle:setup
 
 Idempotent. Re-run any time. It prints the product and price ids.
 
+## Checkout (#71)
+
+Settings → Billing. A solo admin gets an "Upgrade to Team" button: the
+dashboard fetches `GET /v1/billing/config` (environment + client token +
+price id, all public by nature), loads Paddle.js, and opens the overlay
+checkout with `customData.workspaceId`. Paddle collects payment. The webhook
+flips the plan, and the dashboard polls the workspace until it lands.
+Sandbox test card: 4242 4242 4242 4242, any future expiry, any CVC.
+
 ## Webhooks (#73)
 
 Paddle drives our subscription state via `POST /v1/billing/webhook` (public,

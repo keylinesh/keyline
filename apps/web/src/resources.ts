@@ -21,6 +21,7 @@ export interface Environment {
 export interface Workspace {
   id: string;
   name: string;
+  plan: "solo" | "team";
 }
 
 /** lowercase, hyphen-separated slug (same rules as the CLI). */

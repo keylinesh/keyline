@@ -12,6 +12,7 @@ import { AuditService } from "./domain/audit.js";
 import { EntitlementsService } from "./domain/entitlements.js";
 import { WebSessionService } from "./domain/web-sessions.js";
 import { InMemoryBillingEventRepo, PgBillingEventRepo } from "./billing/events.js";
+import { billingPublicConfigFromEnv } from "./billing/paddle.js";
 import { BillingWebhookService } from "./billing/webhook.js";
 import { RevokeService } from "./services/revoke.js";
 import {
@@ -73,6 +74,7 @@ export function memoryDeps(): AppDeps {
     billingWebhook: webhookSecret
       ? new BillingWebhookService(webhookSecret, new InMemoryBillingEventRepo(), workspaces, audit)
       : null,
+    billingConfig: billingPublicConfigFromEnv(),
   };
 }
 
@@ -105,5 +107,6 @@ export function pgDeps(pool: Pool): AppDeps {
     billingWebhook: webhookSecret
       ? new BillingWebhookService(webhookSecret, new PgBillingEventRepo(pool), workspaces, audit)
       : null,
+    billingConfig: billingPublicConfigFromEnv(),
   };
 }

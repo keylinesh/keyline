@@ -1,16 +1,18 @@
 /**
- * Settings (#43) — account/profile, workspace, and the billing entry point.
+ * Settings (#43, #71) — account/profile, workspace, and billing.
  *
  * Profile: display name (PATCH /v1/members/:id, self). Workspace: rename
- * (admin). Billing: the current plan and where the upgrade will live once
- * M5 wires Paddle — an honest placeholder, not a dead button pretending.
+ * (admin). Billing: current plan + upgrade to Team via Paddle's overlay
+ * checkout; the webhook (#73) flips the plan, and we poll the workspace
+ * until it lands.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { explainError, request } from "../api.js";
 import { isAdmin, type WebSession } from "../session.js";
 import { getWorkspace, renameWorkspace, type Workspace } from "../resources.js";
 import { listMembers, type Member } from "../members.js";
+import { ensurePaddle, getBillingConfig, openTeamCheckout, type BillingConfig } from "../billing.js";
 
 export function Settings({ session }: { session: WebSession }) {
   const [self, setSelf] = useState<Member | null>(null);
@@ -113,19 +115,126 @@ export function Settings({ session }: { session: WebSession }) {
         </div>
       </div>
 
-      <div className="res-card">
-        <h3 className="card-title">Billing</h3>
-        <div className="kv">
-          <span className="k">plan</span>
-          <span>
-            <span className="status-pill active">Solo · $0</span>
-          </span>
-        </div>
-        <p className="hint" style={{ marginTop: 10 }}>
-          Team is $19 flat for up to 10 members: unlimited environments, per-environment access,
-          full audit history. Upgrading arrives with billing (M5) — this is where it will live.
-        </p>
+      {workspace && (
+        <BillingCard
+          session={session}
+          workspace={workspace}
+          email={self?.email ?? null}
+          admin={admin}
+          onPlanChange={setWorkspace}
+        />
+      )}
+    </div>
+  );
+}
+
+function BillingCard({
+  session,
+  workspace,
+  email,
+  admin,
+  onPlanChange,
+}: {
+  session: WebSession;
+  workspace: Workspace;
+  email: string | null;
+  admin: boolean;
+  onPlanChange: (ws: Workspace) => void;
+}) {
+  const [config, setConfig] = useState<BillingConfig | null | "unavailable">(null);
+  const [error, setError] = useState<string | null>(null);
+  const [activating, setActivating] = useState(false);
+  const alive = useRef(true);
+
+  useEffect(() => {
+    alive.current = true;
+    if (workspace.plan === "solo" && admin) {
+      getBillingConfig(session)
+        .then((c) => alive.current && setConfig(c))
+        .catch(() => alive.current && setConfig("unavailable"));
+    }
+    return () => {
+      alive.current = false;
+    };
+  }, [session, workspace.plan, admin]);
+
+  // After Paddle reports checkout.completed, the webhook flips the plan
+  // server-side. Poll until it lands (usually seconds).
+  const awaitUpgrade = useCallback(async () => {
+    setActivating(true);
+    for (let i = 0; i < 30 && alive.current; i++) {
+      try {
+        const ws = await getWorkspace(session);
+        if (ws.plan === "team") {
+          if (alive.current) {
+            onPlanChange(ws);
+            setActivating(false);
+          }
+          return;
+        }
+      } catch {
+        // transient; keep polling
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    if (alive.current) {
+      setActivating(false);
+      setError("Payment received, still activating. Refresh in a minute.");
+    }
+  }, [session, onPlanChange]);
+
+  const upgrade = useCallback(async () => {
+    if (config === null || config === "unavailable") return;
+    setError(null);
+    try {
+      const paddle = await ensurePaddle(config, (name) => {
+        if (name === "checkout.completed") void awaitUpgrade();
+      });
+      openTeamCheckout(paddle, config, { workspaceId: session.workspaceId, email });
+    } catch (err) {
+      setError(explainError(err));
+    }
+  }, [config, session.workspaceId, email, awaitUpgrade]);
+
+  const team = workspace.plan === "team";
+  return (
+    <div className="res-card">
+      <h3 className="card-title">Billing</h3>
+      {error && <p className="error" role="alert">{error}</p>}
+      <div className="kv">
+        <span className="k">plan</span>
+        <span>
+          <span className="status-pill active">{team ? "Team · $19/mo" : "Solo · $0"}</span>
+        </span>
       </div>
+      {team ? (
+        <p className="hint" style={{ marginTop: 10 }}>
+          Up to 10 members, unlimited environments, full audit history. Cancel and card changes
+          arrive with the customer portal.
+        </p>
+      ) : activating ? (
+        <p className="notice" role="status" style={{ marginTop: 10 }}>
+          Payment received. Activating your Team plan…
+        </p>
+      ) : (
+        <>
+          <p className="hint" style={{ marginTop: 10 }}>
+            Team is $19 flat for up to 10 members: unlimited environments, per-environment access,
+            full audit history. 14-day free trial.
+          </p>
+          {admin ? (
+            config === "unavailable" ? (
+              <p className="hint">Billing isn't configured in this environment.</p>
+            ) : (
+              <button className="btn primary" style={{ marginTop: 10 }} disabled={config === null} onClick={() => void upgrade()}>
+                Upgrade to Team
+              </button>
+            )
+          ) : (
+            <p className="hint">Ask an owner or admin to upgrade.</p>
+          )}
+        </>
+      )}
     </div>
   );
 }

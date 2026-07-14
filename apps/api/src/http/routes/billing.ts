@@ -1,19 +1,29 @@
 /**
- * Billing webhook route (M5 #73). Public: Paddle authenticates by signing the
- * body, not with a bearer token. 503 until PADDLE_WEBHOOK_SECRET is set.
+ * Billing routes (M5 #71/#73).
+ *
+ * The webhook is public: Paddle authenticates by signing the body, not with a
+ * bearer token; 503 until PADDLE_WEBHOOK_SECRET is set. The config endpoint
+ * gives a signed-in dashboard what it needs to open a Paddle checkout.
  */
 
-import type { Hono } from "hono";
+import type { Hono, MiddlewareHandler } from "hono";
+import type { BillingPublicConfig } from "../../billing/paddle.js";
 import type { BillingWebhookService } from "../../billing/webhook.js";
 import type { AppEnv } from "../authz.js";
-import { ApiError } from "../errors.js";
+import { ApiError, notFound } from "../errors.js";
 
 export interface BillingRouteDeps {
   /** null when billing webhooks aren't configured (no PADDLE_WEBHOOK_SECRET). */
   billingWebhook: BillingWebhookService | null;
+  /** null when checkout isn't configured (no client token / price id). */
+  billingConfig: BillingPublicConfig | null;
 }
 
-export function registerBillingRoutes(app: Hono<AppEnv>, deps: BillingRouteDeps): void {
+export function registerBillingRoutes(
+  app: Hono<AppEnv>,
+  deps: BillingRouteDeps,
+  auth: MiddlewareHandler<AppEnv>,
+): void {
   app.post("/v1/billing/webhook", async (c) => {
     if (!deps.billingWebhook) {
       throw new ApiError(503, "internal", "billing webhooks not configured");
@@ -22,5 +32,10 @@ export function registerBillingRoutes(app: Hono<AppEnv>, deps: BillingRouteDeps)
     const outcome = await deps.billingWebhook.handle(raw, c.req.header("paddle-signature"));
     if (!outcome.ok) throw new ApiError(outcome.status, "unauthorized", outcome.error);
     return c.json({ ok: true, result: outcome.result });
+  });
+
+  app.get("/v1/billing/config", auth, async (c) => {
+    if (!deps.billingConfig) throw notFound("billing not configured");
+    return c.json(deps.billingConfig);
   });
 }
