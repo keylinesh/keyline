@@ -3,7 +3,7 @@
 > A simple, hosted, zero-knowledge secrets manager for small dev teams.
 > Working doc — captures positioning, decisions, risks, and next steps so you can continue locally.
 
-_Last updated: 2026-07-11. Status: M0–M4 shipped (crypto, API, CLI on npm/brew, web dashboard at keyline.sh/app); M5 payments next. Live status in README._
+_Last updated: 2026-07-14. Status: M0–M5 shipped (crypto, API, CLI on npm/brew, dashboard at keyline.sh/app, Paddle billing live-verified). M6 trust + launch next. Live status in README._
 
 ---
 
