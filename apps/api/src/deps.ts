@@ -13,6 +13,7 @@ import { EntitlementsService } from "./domain/entitlements.js";
 import { WebSessionService } from "./domain/web-sessions.js";
 import { InMemoryBillingEventRepo, PgBillingEventRepo } from "./billing/events.js";
 import { billingPublicConfigFromEnv } from "./billing/paddle.js";
+import { InMemorySubscriptionRepo, PgSubscriptionRepo } from "./billing/subscriptions.js";
 import { BillingWebhookService } from "./billing/webhook.js";
 import { RevokeService } from "./services/revoke.js";
 import {
@@ -55,6 +56,7 @@ export function memoryDeps(): AppDeps {
   const environments = new InMemoryEnvironmentRepo();
   const members = new InMemoryMemberRepo();
   const audit = new AuditService(new InMemoryAuditRepo());
+  const subscriptions = new InMemorySubscriptionRepo();
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   return {
     tokens,
@@ -72,9 +74,10 @@ export function memoryDeps(): AppDeps {
     webSessions: new WebSessionService(new InMemoryWebSessionRepo(), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
     billingWebhook: webhookSecret
-      ? new BillingWebhookService(webhookSecret, new InMemoryBillingEventRepo(), workspaces, audit)
+      ? new BillingWebhookService(webhookSecret, new InMemoryBillingEventRepo(), workspaces, audit, subscriptions)
       : null,
     billingConfig: billingPublicConfigFromEnv(),
+    subscriptions,
   };
 }
 
@@ -88,6 +91,7 @@ export function pgDeps(pool: Pool): AppDeps {
   const environments = new PgEnvironmentRepo(pool);
   const members = new PgMemberRepo(pool);
   const audit = new AuditService(new PgAuditRepo(pool));
+  const subscriptions = new PgSubscriptionRepo(pool);
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   return {
     tokens,
@@ -105,8 +109,9 @@ export function pgDeps(pool: Pool): AppDeps {
     webSessions: new WebSessionService(new PgWebSessionRepo(pool), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
     billingWebhook: webhookSecret
-      ? new BillingWebhookService(webhookSecret, new PgBillingEventRepo(pool), workspaces, audit)
+      ? new BillingWebhookService(webhookSecret, new PgBillingEventRepo(pool), workspaces, audit, subscriptions)
       : null,
     billingConfig: billingPublicConfigFromEnv(),
+    subscriptions,
   };
 }

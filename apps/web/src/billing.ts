@@ -19,6 +19,22 @@ export function getBillingConfig(s: WebSession): Promise<BillingConfig> {
   return request<BillingConfig>("GET", "/v1/billing/config", { token: s.token });
 }
 
+export interface SubscriptionInfo {
+  status: "trialing" | "active" | "past_due" | "paused" | "canceled";
+  currentPeriodEnd: string | null;
+  pastDueSince: string | null;
+}
+
+/** Subscription state for the billing card (#74). Admin-only. */
+export async function getSubscription(s: WebSession): Promise<SubscriptionInfo | null> {
+  const res = await request<{ subscription: SubscriptionInfo | null }>(
+    "GET",
+    `/v1/workspaces/${s.workspaceId}/billing/subscription`,
+    { token: s.token },
+  );
+  return res.subscription;
+}
+
 export interface PaddleJs {
   Environment: { set: (env: string) => void };
   Initialize: (opts: { token: string; eventCallback?: (event: { name: string }) => void }) => void;

@@ -14,10 +14,12 @@ const admin: WebSession = {
 
 const CONFIG = { environment: "sandbox", clientToken: "test_tok", teamPriceId: "pri_team" };
 
-function stubFetch(opts: { plan?: string; config?: boolean; planAfterCheckout?: string } = {}) {
+function stubFetch(opts: { plan?: string; config?: boolean; subscription?: unknown } = {}) {
   const plan = { value: opts.plan ?? "solo" };
   vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
     const method = init?.method ?? "GET";
+    if (url.includes("/billing/subscription"))
+      return new Response(JSON.stringify({ subscription: opts.subscription ?? null }), { status: 200 });
     if (url.includes("/billing/config")) {
       return opts.config === false
         ? new Response(JSON.stringify({ error: { code: "not_found", message: "billing not configured" } }), { status: 404 })
@@ -95,6 +97,23 @@ describe("Billing (Settings) — #71", () => {
     render(<Settings session={admin} />);
     expect(await screen.findByText("Team · $19/mo")).toBeDefined();
     expect(screen.queryByText("Upgrade to Team")).toBeNull();
+  });
+
+  test("past_due shows the payment-issue warning; trialing shows the trial end (#74)", async () => {
+    stubFetch({
+      plan: "team",
+      subscription: { status: "past_due", currentPeriodEnd: null, pastDueSince: "2026-07-14T16:00:00Z" },
+    });
+    const { unmount } = render(<Settings session={admin} />);
+    expect(await screen.findByText(/Payment issue/)).toBeDefined();
+    unmount();
+
+    stubFetch({
+      plan: "team",
+      subscription: { status: "trialing", currentPeriodEnd: "2026-07-28T00:00:00Z", pastDueSince: null },
+    });
+    render(<Settings session={admin} />);
+    expect(await screen.findByText(/Free trial until 2026-07-28/)).toBeDefined();
   });
 
   test("non-admins are told to ask an admin", async () => {
