@@ -24,7 +24,7 @@
     "@hono/node-server": "^1.13.0",
     "@keyline/crypto": "workspace:*",
     "@keyline/shared": "workspace:*",
-    "@sentry/node": "^8",
+    "@sentry/node": "^10",
     "@vercel/postgres": "^0.10.0",
     "hono": "^4.6.0",
     "pg": "^8.13.0",
