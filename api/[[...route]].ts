@@ -53,11 +53,18 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   const h = await getHandler();
-  // Vercel's Node runtime parses the JSON body and CONSUMES the request stream.
+  // Vercel's Node HELPERS parse the JSON body and CONSUME the request stream.
   // @hono/node-server/vercel then falls back to re-reading that (already ended)
   // stream, so `c.req.json()` awaits data that never comes and every POST hangs
-  // to a FUNCTION_INVOCATION_TIMEOUT. Re-attach the parsed body as `rawBody`
-  // (a Buffer) — the adapter uses that directly instead of the dead stream.
+  // to a FUNCTION_INVOCATION_TIMEOUT.
+  //
+  // The project sets NODEJS_HELPERS=0, which disables that parsing: the stream
+  // stays raw, the adapter reads it normally, and — critically — the Paddle
+  // webhook (#73) verifies its HMAC over the TRUE wire bytes. Reconstructed
+  // JSON (below) is byte-identical only by luck, so the env var is required
+  // for billing. The fallback keeps every other POST working if the helpers
+  // are ever on again: re-attach the parsed body as `rawBody` (a Buffer),
+  // which the adapter uses instead of the dead stream.
   const r = req as IncomingMessage & { body?: unknown; rawBody?: Buffer };
   if (r.body !== undefined && !(r.rawBody instanceof Buffer)) {
     r.rawBody = Buffer.isBuffer(r.body)

@@ -11,6 +11,8 @@ import { TokenService } from "./auth/tokens.js";
 import { AuditService } from "./domain/audit.js";
 import { EntitlementsService } from "./domain/entitlements.js";
 import { WebSessionService } from "./domain/web-sessions.js";
+import { InMemoryBillingEventRepo, PgBillingEventRepo } from "./billing/events.js";
+import { BillingWebhookService } from "./billing/webhook.js";
 import { RevokeService } from "./services/revoke.js";
 import {
   InMemoryChallengeRepo,
@@ -51,6 +53,8 @@ export function memoryDeps(): AppDeps {
   const projects = new InMemoryProjectRepo();
   const environments = new InMemoryEnvironmentRepo();
   const members = new InMemoryMemberRepo();
+  const audit = new AuditService(new InMemoryAuditRepo());
+  const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   return {
     tokens,
     login,
@@ -61,11 +65,14 @@ export function memoryDeps(): AppDeps {
     wrappedKeys,
     members,
     access: new InMemoryEnvironmentAccessRepo(),
-    audit: new AuditService(new InMemoryAuditRepo()),
+    audit,
     devices,
     revoke: new RevokeService(devices, wrappedKeys, tokens),
     webSessions: new WebSessionService(new InMemoryWebSessionRepo(), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
+    billingWebhook: webhookSecret
+      ? new BillingWebhookService(webhookSecret, new InMemoryBillingEventRepo(), workspaces, audit)
+      : null,
   };
 }
 
@@ -78,6 +85,8 @@ export function pgDeps(pool: Pool): AppDeps {
   const projects = new PgProjectRepo(pool);
   const environments = new PgEnvironmentRepo(pool);
   const members = new PgMemberRepo(pool);
+  const audit = new AuditService(new PgAuditRepo(pool));
+  const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   return {
     tokens,
     login,
@@ -88,10 +97,13 @@ export function pgDeps(pool: Pool): AppDeps {
     wrappedKeys,
     members,
     access: new PgEnvironmentAccessRepo(pool),
-    audit: new AuditService(new PgAuditRepo(pool)),
+    audit,
     devices,
     revoke: new RevokeService(devices, wrappedKeys, tokens),
     webSessions: new WebSessionService(new PgWebSessionRepo(pool), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
+    billingWebhook: webhookSecret
+      ? new BillingWebhookService(webhookSecret, new PgBillingEventRepo(pool), workspaces, audit)
+      : null,
   };
 }
