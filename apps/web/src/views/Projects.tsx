@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { explainError } from "../api.js";
 import { isAdmin, type WebSession } from "../session.js";
+import { CopyButton } from "./CopyButton.js";
 import { GettingStarted } from "./GettingStarted.js";
 import {
   createEnvironment,
@@ -90,7 +91,8 @@ export function Projects({ session }: { session: WebSession }) {
         <div className="res-card" key={project.id}>
           <div className="res-head">
             <div>
-              <b>{project.name}</b> <span className="mono slug">{project.slug}</span>
+              <b>{project.name}</b> <span className="mono slug">{project.slug}</span>{" "}
+              <CopyButton text={`keyline link ${project.slug}`} label={`copy link command for ${project.slug}`} />
             </div>
             {admin && (
               <div className="res-actions">
