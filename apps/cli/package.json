@@ -1,6 +1,6 @@
 {
   "name": "@keylinesh/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Share .env files securely with one command. Servers only ever hold ciphertext.",
   "type": "module",
   "bin": {
