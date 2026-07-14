@@ -84,6 +84,21 @@ pg-test:
     - pnpm --filter @keyline/api db:migrate
     - pnpm --filter @keyline/api exec node --import tsx --test src/domain/pg-repo.pg.test.ts
 
+# Dependency audit (SOC 2 readiness, CC7 in docs/compliance/gap-assessment.md).
+# Runs on scheduled pipelines (weekly schedule set in GitLab UI) and can be
+# started by hand. Gates on production dependencies; dev-chain advisories
+# (@vercel/node build tooling) are tracked in the gap assessment instead.
+dep-audit:
+  stage: verify
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+      allow_failure: true
+  <<: *setup
+  script:
+    - pnpm audit --prod --audit-level moderate
+
 # ---- Release (#37) ----------------------------------------------------------
 # Runs only on version tags (vX.Y.Z). Publishes the single-file CLI to npm and
 # creates a GitLab release with SHA-256 checksums attached. Requires the
