@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Processing Agreement · Keyline</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="description" content="Keyline's Data Processing Agreement. GDPR Article 28 terms for teams that use Keyline.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://keyline.sh/dpa">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0b0d;--ink:#e9ebee;--muted:#878d97;--faint:#5b616b;--line:rgba(255,255,255,.08);--mint:#5eead4}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:22px 0}
+  .brand{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
+  .brand .mk{color:var(--mint);font-family:'JetBrains Mono'}
+  main{padding:56px 0 40px}
+  h1{font-family:'Bricolage Grotesque';font-size:36px;line-height:1.15;margin-bottom:10px}
+  .date{color:var(--faint);font-size:14px;margin-bottom:40px}
+  h2{font-family:'Bricolage Grotesque';font-size:21px;margin:38px 0 10px}
+  p,ul{color:var(--muted);margin-bottom:14px}
+  ul{padding-left:22px}
+  li{margin-bottom:6px}
+  strong{color:var(--ink);font-weight:600}
+  a{color:var(--mint);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:'JetBrains Mono';font-size:14px;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:15px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+  th{color:var(--ink);font-weight:600}
+  footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:14px}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .foot-links a{color:var(--faint)}
+  .foot-links a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/"><span class="mk">k_</span> Keyline</a></div></header>
+<main class="wrap">
+  <h1>Data Processing Agreement</h1>
+  <p class="date">Effective July 14, 2026</p>
+
+  <p>This DPA is part of the <a href="/terms">Terms of Service</a> and applies automatically to every customer. No signature needed. If your compliance process requires a countersigned copy, email <a href="mailto:support@keyline.sh">support@keyline.sh</a> and we will provide one.</p>
+  <p><strong>You</strong> (the customer) are the controller of the personal data in your workspace. <strong>We</strong> (Keyline, operated by a sole proprietor based in Bulgaria) are your processor under Article 28 GDPR.</p>
+
+  <h2>1. What processing looks like here</h2>
+  <p>Keyline is zero-knowledge by design. Secret values are encrypted on your devices before upload; we hold ciphertext we cannot decrypt. The personal data we actually process for you is small:</p>
+  <table>
+    <tr><th>Data</th><th>Subjects</th><th>Purpose</th></tr>
+    <tr><td>Emails, names, workspace roles</td><td>Your team members</td><td>Accounts, invitations, sign-in</td></tr>
+    <tr><td>Device public keys</td><td>Your team members</td><td>Authentication and key wrapping</td></tr>
+    <tr><td>Audit events (who did what, when)</td><td>Your team members</td><td>The tamper-evident audit log you rely on</td></tr>
+    <tr><td>Short-lived technical logs (IPs)</td><td>Your team members</td><td>Security and debugging</td></tr>
+  </table>
+  <p>Duration: while your workspace exists. Nature: hosting, storage, transmission. We process this data only to run the service.</p>
+
+  <h2>2. Our obligations</h2>
+  <ul>
+    <li>We process personal data only on your documented instructions: this DPA, the Terms, and your use of the product. We tell you if we believe an instruction breaks the law.</li>
+    <li>Everyone with access is bound by confidentiality.</li>
+    <li>We apply the measures on our <a href="/security">security page</a>: client-side encryption, TLS, hashed scoped tokens, per-environment access control, and a publicly anchored audit log.</li>
+    <li>We help you respond to data subject requests and, where relevant, with your obligations under Articles 32 to 36. Most requests you can handle yourself: members, devices, and audit history are visible in your dashboard.</li>
+    <li>We notify you without undue delay after becoming aware of a personal data breach affecting your data.</li>
+    <li>Delete your workspace and its data goes with it; backups expire on a rolling basis. On request we confirm deletion.</li>
+    <li>We make available the information needed to demonstrate compliance, and allow audits. For a service at our size that means our public documentation first; reasonable written questions answered within 30 days.</li>
+  </ul>
+
+  <h2>3. Subprocessors</h2>
+  <p>You authorize these subprocessors. We remain responsible for them.</p>
+  <table>
+    <tr><th>Subprocessor</th><th>Role</th><th>Location</th></tr>
+    <tr><td>Vercel</td><td>Application hosting</td><td>USA/EU</td></tr>
+    <tr><td>Neon</td><td>Database hosting</td><td>EU region</td></tr>
+    <tr><td>Resend</td><td>Transactional email (invitations, sign-in links)</td><td>USA</td></tr>
+    <tr><td>Functional Software (Sentry)</td><td>Error monitoring, scrubbed before send</td><td>EU (Germany)</td></tr>
+  </table>
+  <p>Paddle handles billing as an independent merchant of record, not as our subprocessor. The public audit anchors contain only hashes, no personal data.</p>
+  <p>We will update this page at least 14 days before adding or replacing a subprocessor. If you object on reasonable data protection grounds and we cannot resolve it, you may terminate and export your data.</p>
+
+  <h2>4. International transfers</h2>
+  <p>Where a subprocessor processes data outside the EEA, transfers rest on the EU Standard Contractual Clauses or an adequacy decision, as implemented in that subprocessor's own DPA with us.</p>
+
+  <h2>5. The boring but binding part</h2>
+  <p>This DPA lasts as long as the Terms do and ends when your data is deleted. If it conflicts with the Terms on data protection, this DPA wins. Governing law follows the <a href="/terms">Terms</a>: Bulgaria.</p>
+</main>
+<footer><div class="wrap">
+  <div class="foot-links"><a href="/security">Security</a><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/dpa">DPA</a><a href="/refunds">Refunds</a><a href="/">keyline.sh</a></div>
+  <span>© 2026 Keyline. Sealed before it leaves your laptop.</span>
+</div></footer>
+</body>
+</html>
