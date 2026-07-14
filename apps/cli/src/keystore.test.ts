@@ -127,7 +127,26 @@ test("legacy security-CLI entries migrate on first read and are removed", () => 
   assert.equal(store.get("account"), "old-secret", "second read skips legacy");
 });
 
-test("the real native binding round-trips on this machine", { skip: !NativeKeychainStore.load() }, () => {
+/**
+ * The binding LOADING doesn't mean the OS keychain WORKS: Linux CI has the
+ * prebuilt binding but no secret-service/D-Bus, so a real write throws. Probe
+ * an actual round-trip and skip when the backend isn't usable here.
+ */
+function nativeKeychainUsable(): boolean {
+  const store = NativeKeychainStore.load();
+  if (!store) return false;
+  const account = `probe-${process.pid}`;
+  try {
+    store.set(account, "x");
+    const ok = store.get(account) === "x";
+    store.delete(account);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+test("the real native binding round-trips on this machine", { skip: !nativeKeychainUsable() }, () => {
   const store = NativeKeychainStore.load()!;
   const account = `test-${process.pid}`;
   try {
