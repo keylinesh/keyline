@@ -141,7 +141,7 @@ export function Members({ session }: { session: WebSession }) {
                   resend invite
                 </button>
               )}
-              {m.status === "active" && !m.keyed && (
+              {m.status === "active" && !m.keyed && (rows?.some((r) => r.keyed) ? (
                 <span className="key-hint" data-tip="They can't decrypt yet. Grant from a CLI that holds the key.">
                   no key yet
                   <CopyButton
@@ -149,7 +149,12 @@ export function Members({ session }: { session: WebSession }) {
                     label={`copy grant command for ${m.email}`}
                   />
                 </span>
-              )}
+              ) : (
+                <span className="key-hint" data-tip="No secrets in this workspace yet. The key is created on the first push.">
+                  nothing pushed yet
+                  <CopyButton text="keyline push" label="copy push command" />
+                </span>
+              ))}
             </div>
             {admin && m.id !== session.memberId && m.status !== "revoked" && (
               <button

@@ -176,3 +176,13 @@ describe("join codes (#66)", () => {
     expect(await screen.findByText("keyline join WXYZ-WXYZ-WXYZ")).toBeDefined();
   });
 });
+
+test("when nothing was ever pushed, the hint says so instead of 'no key yet'", async () => {
+  stubFetch([
+    { match: (m, u) => m === "GET" && u.includes("/members/m-owner/devices"), body: { devices: [{ id: "d1", publicKey: "pk", revoked: false, hasWrappedKey: false }] } },
+    ...baseRoutes,
+  ]);
+  render(<Members session={admin} />);
+  expect((await screen.findAllByText("nothing pushed yet")).length).toBeGreaterThan(0);
+  expect(screen.queryByText("no key yet")).toBeNull();
+});
