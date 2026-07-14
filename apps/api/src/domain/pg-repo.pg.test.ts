@@ -24,6 +24,7 @@ import {
   PgWrappedKeyRepo,
 } from "./pg-repo.js";
 import { PgDeviceRepo } from "../auth/pg-repo.js";
+import { PgSubscriptionRepo } from "../billing/subscriptions.js";
 import { hashSessionCode } from "./web-sessions.js";
 import { VersionConflictError } from "./bundles.js";
 import { verifyChain } from "./audit.js";
@@ -96,6 +97,30 @@ test("pg repos round-trip against Postgres", { skip: !dbUrl }, async () => {
     await au.append({ workspaceId: w.id, action: "a", outcome: "allowed" });
     await au.append({ workspaceId: w.id, action: "b", outcome: "denied", metadata: { reason: "x" } });
     assert.deepEqual(verifyChain(await au.list(w.id)), { ok: true, count: 2 });
+
+    // Subscription state machine (#74). The CASE branch for past_due_since
+    // needs an explicit ::timestamptz cast — without it pg infers text and the
+    // insert throws. This bit us in production; memory tests can't catch it.
+    const subs = new PgSubscriptionRepo(pool);
+    const t1 = new Date("2026-07-14T12:00:00Z");
+    const first = await subs.upsertIfNewer({
+      workspaceId: w.id, paddleSubscriptionId: "sub_pg", paddleCustomerId: "ctm_pg",
+      status: "trialing", currentPeriodEnd: new Date("2026-07-28T00:00:00Z"), occurredAt: t1,
+    });
+    assert.equal(first?.status, "trialing");
+    const newer = await subs.upsertIfNewer({
+      workspaceId: w.id, paddleSubscriptionId: "sub_pg", paddleCustomerId: null,
+      status: "past_due", currentPeriodEnd: null, occurredAt: new Date("2026-07-14T13:00:00Z"),
+    });
+    assert.equal(newer?.status, "past_due");
+    assert.equal(newer?.pastDueSince?.toISOString(), "2026-07-14T13:00:00.000Z");
+    assert.equal(newer?.paddleCustomerId, "ctm_pg", "customer id survives null updates");
+    const stale = await subs.upsertIfNewer({
+      workspaceId: w.id, paddleSubscriptionId: "sub_pg", paddleCustomerId: null,
+      status: "active", currentPeriodEnd: null, occurredAt: t1,
+    });
+    assert.equal(stale, null, "older event ignored");
+    assert.equal((await subs.findByWorkspace(w.id))?.status, "past_due");
 
     assert.ok(await ws.delete(w.id)); // cascade removes children + audit
   } finally {

@@ -97,26 +97,42 @@ export class BillingWebhookService {
       return { ok: false, status: 422, error: "not a paddle event" };
     }
 
+    // Duplicate check FIRST (read-only), record LAST (after success). The
+    // event row is written only once processing finished, so a delivery that
+    // crashed mid-way is NOT marked seen and Paddle's retry re-processes it.
+    // Recording before processing burned us in production: apply threw after
+    // the record, and the retry was acked as a duplicate — the event was
+    // permanently swallowed.
+    if (await this.events.has(event.event_id)) return { ok: true, result: "duplicate" };
+
     const workspaceId = this.workspaceIdOf(event);
-    const fresh = await this.events.insertOnce({
-      paddleEventId: event.event_id,
-      eventType: event.event_type,
-      workspaceId,
-      payload: event,
-    });
-    if (!fresh) return { ok: true, result: "duplicate" };
+    const record = () =>
+      this.events.insertOnce({
+        paddleEventId: event.event_id,
+        eventType: event.event_type,
+        workspaceId,
+        payload: event,
+      });
 
     if (!event.event_type.startsWith("subscription.")) {
+      await record();
       return { ok: true, result: "recorded" };
     }
-    if (!workspaceId) return { ok: true, result: "ignored", detail: "no workspaceId" };
+    if (!workspaceId) {
+      await record();
+      return { ok: true, result: "ignored", detail: "no workspaceId" };
+    }
 
     const status = event.data.status as SubscriptionStatus | undefined;
     if (!status || !SUBSCRIPTION_STATUSES.includes(status)) {
+      await record();
       return { ok: true, result: "ignored", detail: `status ${event.data.status}` };
     }
     const workspace = await this.workspaces.findById(workspaceId);
-    if (!workspace) return { ok: true, result: "ignored", detail: "unknown workspace" };
+    if (!workspace) {
+      await record();
+      return { ok: true, result: "ignored", detail: "unknown workspace" };
+    }
 
     // The state machine row first; a stale (out-of-order) event stops here.
     const occurredAt = event.occurred_at ? new Date(event.occurred_at) : new Date();
@@ -129,12 +145,18 @@ export class BillingWebhookService {
       currentPeriodEnd: periodEnd ? new Date(periodEnd) : null,
       occurredAt,
     });
-    if (!stored) return { ok: true, result: "ignored", detail: "stale event" };
+    if (!stored) {
+      await record();
+      return { ok: true, result: "ignored", detail: "stale event" };
+    }
 
     // Then the access consequence.
     const plan = PLAN_BY_SUBSCRIPTION_STATUS[status];
     const previousPlan = workspace.plan;
-    if (previousPlan === plan) return { ok: true, result: "applied", detail: `status ${status}` };
+    if (previousPlan === plan) {
+      await record();
+      return { ok: true, result: "applied", detail: `status ${status}` };
+    }
 
     await this.workspaces.update(workspaceId, { plan });
     await this.audit.record({
@@ -151,6 +173,7 @@ export class BillingWebhookService {
         eventType: event.event_type,
       },
     });
+    await record();
     return { ok: true, result: "applied", detail: plan };
   }
 

@@ -189,6 +189,36 @@ test("paused drops to solo; resuming restores team", async () => {
   assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team");
 });
 
+test("a delivery that crashes mid-processing is re-applied on Paddle's retry", async () => {
+  const { deps, ws, post } = await setup();
+  // First attempt: the state-machine write throws (the prod incident).
+  const real = deps.subscriptions;
+  let calls = 0;
+  deps.billingWebhook = new BillingWebhookService(
+    SECRET,
+    (deps.billingWebhook as any).events,
+    deps.workspaces,
+    deps.audit,
+    {
+      upsertIfNewer: async (input: any) => {
+        if (++calls === 1) throw new Error("boom");
+        return real.upsertIfNewer(input);
+      },
+      findByWorkspace: (id: string) => real.findByWorkspace(id),
+    } as any,
+  );
+
+  const body = lifecycleEvent(ws.id, "active", "2026-07-14T18:00:00Z");
+  const first = await post(body, sign(body));
+  assert.equal(first.status, 500, "first delivery fails");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
+
+  // Paddle retries the same event: must APPLY, not be swallowed as duplicate.
+  const retry = await readJson(await post(body, sign(body)));
+  assert.equal(retry.result, "applied");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team");
+});
+
 test("an out-of-order older event never regresses newer state", async () => {
   const { deps, ws, post } = await setup();
   const cancel = lifecycleEvent(ws.id, "canceled", "2026-07-14T15:00:00Z");
