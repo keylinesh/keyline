@@ -54,6 +54,7 @@ export async function listMembers(s: WebSession): Promise<Member[]> {
 export interface Invited extends Member {
   joinCode: string;
   joinCodeExpiresAt: string;
+  emailSent: boolean;
 }
 
 export function invite(s: WebSession, email: string, role: "member" | "admin"): Promise<Invited> {
@@ -67,7 +68,7 @@ export function invite(s: WebSession, email: string, role: "member" | "admin"): 
 export function regenerateJoinCode(
   s: WebSession,
   memberId: string,
-): Promise<{ joinCode: string; joinCodeExpiresAt: string }> {
+): Promise<{ joinCode: string; joinCodeExpiresAt: string; emailSent: boolean }> {
   return request("POST", `/v1/members/${memberId}/join-code`, { ...auth(s), body: {} });
 }
 

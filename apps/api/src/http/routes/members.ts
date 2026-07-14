@@ -18,8 +18,9 @@ import type { EnvironmentAccessRepo, EnvAccess } from "../../domain/access.js";
 import type { AuditService } from "../../domain/audit.js";
 import type { EntitlementsService } from "../../domain/entitlements.js";
 import type { JoinService } from "../../domain/join-codes.js";
+import { inviteEmail, type EmailSender } from "../../email/sender.js";
 import type { Member, MemberRepo } from "../../domain/members.js";
-import type { EnvironmentRepo, ProjectRepo } from "../../domain/resources.js";
+import type { EnvironmentRepo, ProjectRepo, WorkspaceRepo } from "../../domain/resources.js";
 import type { RevokeService } from "../../services/revoke.js";
 import { effectiveEnvRole } from "../access-control.js";
 import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
@@ -35,6 +36,9 @@ export interface MemberRouteDeps {
   revoke: RevokeService;
   entitlements: EntitlementsService;
   join: JoinService;
+  workspaces: WorkspaceRepo;
+  /** null when no email provider is configured; invites still work. */
+  email: EmailSender | null;
 }
 
 const workspaceRole = z.enum(["owner", "admin", "member"]);
@@ -66,7 +70,21 @@ export function registerMemberRoutes(
   deps: MemberRouteDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { members, access, projects, environments, audit, revoke, entitlements, join } = deps;
+  const { members, access, projects, environments, audit, revoke, entitlements, join, workspaces, email } = deps;
+
+  // Email the join command to the invitee (#78). Best-effort: a provider
+  // outage or missing config never blocks the invite.
+  async function sendJoinCode(member: Member, joinCode: string, inviterId: string | null): Promise<boolean> {
+    if (!email) return false;
+    const workspace = await workspaces.findById(member.workspaceId);
+    const inviter = inviterId ? await members.findById(inviterId) : null;
+    const message = inviteEmail({
+      workspaceName: workspace?.name ?? "your team",
+      inviterEmail: inviter?.email ?? null,
+      joinCode,
+    });
+    return (await email.send({ to: member.email, ...message })) !== null;
+  }
 
   // Resolve env -> workspace and require the caller to be an env admin there.
   async function requireEnvAdmin(c: Context<AppEnv>, envId: string) {
@@ -95,6 +113,7 @@ export function registerMemberRoutes(
     const m = await members.create({ workspaceId: wid, ...input });
     // The invite's join code (#66): shown once to the admin, stored hashed.
     const joinCode = await join.issue(m.id);
+    const emailSent = await sendJoinCode(m, joinCode.code, c.get("principal").memberId);
     await audit.record({
       workspaceId: wid,
       actorMemberId: c.get("principal").memberId,
@@ -106,7 +125,12 @@ export function registerMemberRoutes(
       metadata: { email: m.email, role: m.role },
     });
     return c.json(
-      { ...memberView(m), joinCode: joinCode.code, joinCodeExpiresAt: joinCode.expiresAt.toISOString() },
+      {
+        ...memberView(m),
+        joinCode: joinCode.code,
+        joinCodeExpiresAt: joinCode.expiresAt.toISOString(),
+        emailSent,
+      },
       201,
     );
   });
@@ -119,6 +143,7 @@ export function registerMemberRoutes(
     requireWorkspace(c.get("principal"), member.workspaceId);
     requireRole(c.get("principal"), "admin");
     const issued = await join.issue(member.id);
+    const emailSent = await sendJoinCode(member, issued.code, c.get("principal").memberId);
     await audit.record({
       workspaceId: member.workspaceId,
       actorMemberId: c.get("principal").memberId,
@@ -127,9 +152,9 @@ export function registerMemberRoutes(
       targetType: "member",
       targetId: member.id,
       outcome: "allowed",
-      metadata: { email: member.email },
+      metadata: { email: member.email, emailSent },
     });
-    return c.json({ joinCode: issued.code, joinCodeExpiresAt: issued.expiresAt.toISOString() });
+    return c.json({ joinCode: issued.code, joinCodeExpiresAt: issued.expiresAt.toISOString(), emailSent });
   });
 
   app.get("/v1/workspaces/:wid/members", auth, async (c) => {

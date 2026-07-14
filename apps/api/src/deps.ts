@@ -10,6 +10,7 @@ import { DeviceLoginService } from "./auth/device-login.js";
 import { TokenService } from "./auth/tokens.js";
 import { AuditService } from "./domain/audit.js";
 import { AnchorService, GitLabWitness, InMemoryAnchorRepo, PgAnchorRepo } from "./domain/anchors.js";
+import { ResendEmailSender, resendConfigFromEnv } from "./email/sender.js";
 import { EntitlementsService } from "./domain/entitlements.js";
 import { InMemoryJoinCodeRepo, JoinService, PgJoinCodeRepo } from "./domain/join-codes.js";
 import { WebSessionService } from "./domain/web-sessions.js";
@@ -80,6 +81,10 @@ export function memoryDeps(): AppDeps {
     webSessions: new WebSessionService(new InMemoryWebSessionRepo(), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
     join: new JoinService(new InMemoryJoinCodeRepo(), members, workspaces, login, audit),
+    email: (() => {
+      const cfg = resendConfigFromEnv();
+      return cfg ? new ResendEmailSender(cfg) : null;
+    })(),
     billingWebhook: webhookSecret
       ? new BillingWebhookService(webhookSecret, new InMemoryBillingEventRepo(), workspaces, audit, subscriptions)
       : null,
@@ -136,6 +141,10 @@ export function pgDeps(pool: Pool): AppDeps {
     webSessions: new WebSessionService(new PgWebSessionRepo(pool), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
     join: new JoinService(new PgJoinCodeRepo(pool), members, workspaces, login, audit),
+    email: (() => {
+      const cfg = resendConfigFromEnv();
+      return cfg ? new ResendEmailSender(cfg) : null;
+    })(),
     billingWebhook: webhookSecret
       ? new BillingWebhookService(webhookSecret, new PgBillingEventRepo(pool), workspaces, audit, subscriptions)
       : null,
