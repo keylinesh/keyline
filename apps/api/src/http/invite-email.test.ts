@@ -46,7 +46,10 @@ test("inviting emails the join command; the response says so (#78)", async () =>
   assert.equal(sender.sent.length, 1);
   const mail = sender.sent[0]!;
   assert.equal(mail.to, "mate@acme.test");
-  assert.equal(mail.subject, "Join Acme on Keyline");
+  assert.equal(mail.subject, "You're invited to Acme");
+  assert.ok(mail.html, "html part present");
+  assert.match(mail.html!, new RegExp(`keyline join <span[^>]*>${res.joinCode}`));
+  assert.match(mail.html!, /boss@acme.test invited you/);
   assert.match(mail.text, new RegExp(`keyline join ${res.joinCode}`));
   assert.match(mail.text, /boss@acme.test invited you/);
   assert.match(mail.text, /expires in 7 days/);
@@ -88,6 +91,7 @@ test("ResendEmailSender posts the right payload and survives outages", async () 
   assert.equal(calls[0]!.url, "https://api.resend.com/emails");
   assert.deepEqual(calls[0]!.body.to, ["x@y.z"]);
   assert.equal(calls[0]!.body.from, "Keyline <invites@keyline.sh>");
+  assert.equal(calls[0]!.body.html, undefined, "no html field unless provided");
 
   const downFetch = (async () => {
     throw new Error("ECONNREFUSED");
@@ -104,4 +108,9 @@ test("config resolution and the email copy", () => {
   const mail = inviteEmail({ workspaceName: "Acme", inviterEmail: null, joinCode: "AAAA-BBBB-CCCC" });
   assert.match(mail.text, /You were invited/);
   assert.ok(!mail.text.includes("—"), "no em-dash connectors (voice.md)");
+  assert.match(mail.html!, /You're invited to/);
+
+  // Workspace names render as text, never as markup.
+  const sneaky = inviteEmail({ workspaceName: '<img src=x>"Acme"', inviterEmail: null, joinCode: "A" });
+  assert.ok(!sneaky.html!.includes("<img"), "html-escaped workspace name");
 });
