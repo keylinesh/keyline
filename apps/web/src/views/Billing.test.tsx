@@ -14,12 +14,14 @@ const admin: WebSession = {
 
 const CONFIG = { environment: "sandbox", clientToken: "test_tok", teamPriceId: "pri_team" };
 
-function stubFetch(opts: { plan?: string; config?: boolean; subscription?: unknown } = {}) {
+function stubFetch(opts: { plan?: string; config?: boolean; subscription?: unknown; portal?: unknown } = {}) {
   const plan = { value: opts.plan ?? "solo" };
   vi.stubGlobal("fetch", async (url: string, init?: RequestInit) => {
     const method = init?.method ?? "GET";
     if (url.includes("/billing/subscription"))
       return new Response(JSON.stringify({ subscription: opts.subscription ?? null }), { status: 200 });
+    if (url.includes("/billing/portal"))
+      return new Response(JSON.stringify(opts.portal ?? {}), { status: 200 });
     if (url.includes("/billing/config")) {
       return opts.config === false
         ? new Response(JSON.stringify({ error: { code: "not_found", message: "billing not configured" } }), { status: 404 })
@@ -97,6 +99,20 @@ describe("Billing (Settings) — #71", () => {
     render(<Settings session={admin} />);
     expect(await screen.findByText("Team · $19/mo")).toBeDefined();
     expect(screen.queryByText("Upgrade to Team")).toBeNull();
+  });
+
+  test("Manage billing opens the Paddle portal (#72)", async () => {
+    stubFetch({
+      plan: "team",
+      subscription: { status: "active", currentPeriodEnd: null, pastDueSince: null },
+      portal: { overviewUrl: "https://p.example/overview", cancelUrl: null, updatePaymentMethodUrl: null },
+    });
+    const open = vi.fn();
+    vi.stubGlobal("open", open);
+    render(<Settings session={admin} />);
+
+    fireEvent.click(await screen.findByText("Manage billing"));
+    await waitFor(() => expect(open).toHaveBeenCalledWith("https://p.example/overview", "_blank", "noopener"));
   });
 
   test("past_due shows the payment-issue warning; trialing shows the trial end (#74)", async () => {

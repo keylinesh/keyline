@@ -8,6 +8,7 @@
 
 import type { Hono, MiddlewareHandler } from "hono";
 import type { BillingPublicConfig } from "../../billing/paddle.js";
+import type { BillingPortalService } from "../../billing/portal.js";
 import type { SubscriptionRepo } from "../../billing/subscriptions.js";
 import type { BillingWebhookService } from "../../billing/webhook.js";
 import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
@@ -19,6 +20,8 @@ export interface BillingRouteDeps {
   /** null when checkout isn't configured (no client token / price id). */
   billingConfig: BillingPublicConfig | null;
   subscriptions: SubscriptionRepo;
+  /** null when the server has no Paddle API key. */
+  billingPortal: BillingPortalService | null;
 }
 
 export function registerBillingRoutes(
@@ -39,6 +42,17 @@ export function registerBillingRoutes(
   app.get("/v1/billing/config", auth, async (c) => {
     if (!deps.billingConfig) throw notFound("billing not configured");
     return c.json(deps.billingConfig);
+  });
+
+  // Customer portal (#72): short-lived Paddle session for cancel/card changes.
+  app.post("/v1/workspaces/:wid/billing/portal", auth, async (c) => {
+    const wid = c.req.param("wid");
+    requireWorkspace(c.get("principal"), wid);
+    requireRole(c.get("principal"), "admin");
+    if (!deps.billingPortal) throw new ApiError(503, "internal", "billing not configured");
+    const result = await deps.billingPortal.createSession(wid);
+    if (!result.ok) throw notFound("no subscription for this workspace");
+    return c.json(result.links);
   });
 
   // Subscription state for the billing UI (#74). Admin-only, like audit.

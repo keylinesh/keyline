@@ -13,6 +13,7 @@ import { isAdmin, type WebSession } from "../session.js";
 import { getWorkspace, renameWorkspace, type Workspace } from "../resources.js";
 import { listMembers, type Member } from "../members.js";
 import {
+  createPortalSession,
   ensurePaddle,
   getBillingConfig,
   getSubscription,
@@ -237,8 +238,29 @@ function BillingCard({
             </p>
           )}
           <p className="hint" style={{ marginTop: 10 }}>
-            Up to 10 members, unlimited environments, full audit history. Cancel and card changes
-            arrive with the customer portal.
+            Up to 10 members, unlimited environments, full audit history.
+          </p>
+          {admin && (
+            <button
+              className="btn"
+              style={{ marginTop: 10 }}
+              onClick={() =>
+                void (async () => {
+                  setError(null);
+                  try {
+                    const links = await createPortalSession(session);
+                    window.open(links.overviewUrl, "_blank", "noopener");
+                  } catch (err) {
+                    setError(explainError(err));
+                  }
+                })()
+              }
+            >
+              Manage billing
+            </button>
+          )}
+          <p className="hint" style={{ marginTop: 8 }}>
+            Cancel or change your card in Paddle's portal. Changes land here in seconds.
           </p>
         </>
       ) : activating ? (
