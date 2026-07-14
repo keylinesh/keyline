@@ -42,11 +42,30 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
           <span className="mk">k_</span> Keyline
         </div>
         <h1>Sign in</h1>
-        <p className="sub">In your terminal, run:</p>
+        <p className="sub">
+          The dashboard signs in through the CLI. No passwords. In your terminal, run:
+        </p>
         <div className="code-box">
           <span className="pr">$</span> keyline web <b>{start ? start.code : "····-····"}</b>
         </div>
-        <p className="hint">The dashboard shows metadata only. Secret values stay in the CLI.</p>
+        <p className="hint">
+          This approves the browser from a device you already trust. The dashboard shows metadata
+          only. Secret values stay in the CLI.
+        </p>
+        <details className="signin-help">
+          <summary>Command not found?</summary>
+          <p className="hint">Install the CLI, create your account, then run the command above:</p>
+          <div className="code-box small">
+            <span className="pr">$</span> npm i -g @keylinesh/cli
+          </div>
+          <div className="code-box small">
+            <span className="pr">$</span> keyline login
+          </div>
+          <p className="hint">
+            Login is two questions on first run. Codes expire after 10 minutes. Refresh the page
+            for a fresh one.
+          </p>
+        </details>
         {error ? (
           <>
             <p className="error">{error}</p>
