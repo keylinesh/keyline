@@ -113,18 +113,56 @@ export interface AuditRepo {
   append(input: AppendAuditInput): Promise<AuditEvent>;
   /** All events for a workspace, ordered by seq ascending. */
   list(workspaceId: string): Promise<AuditEvent[]>;
+  /** Every workspace's chain head, for anchoring (#61). */
+  heads(): Promise<Array<{ workspaceId: string; seq: number; hash: string }>>;
+}
+
+export interface AnchorCheck {
+  seq: number;
+  anchoredAt: string;
+  witnessUrl: string | null;
+  /** The live chain still contains the anchored head, unchanged. */
+  matches: boolean;
+}
+
+/** How verify() looks up the newest anchor without importing the anchor module. */
+export interface AnchorLookup {
+  latestForWorkspace(workspaceId: string): Promise<{
+    seq: number;
+    headHash: string;
+    witnessUrl: string | null;
+    anchoredAt: Date;
+  } | null>;
 }
 
 /** Thin orchestration over the repo: record events and verify the chain. */
 export class AuditService {
-  constructor(private readonly repo: AuditRepo) {}
+  constructor(
+    private readonly repo: AuditRepo,
+    private readonly anchors?: AnchorLookup,
+  ) {}
 
   record(input: AppendAuditInput): Promise<AuditEvent> {
     return this.repo.append(input);
   }
 
-  async verify(workspaceId: string): Promise<VerifyResult> {
-    return verifyChain(await this.repo.list(workspaceId));
+  async verify(workspaceId: string): Promise<VerifyResult & { anchor?: AnchorCheck }> {
+    const events = await this.repo.list(workspaceId);
+    const result = verifyChain(events);
+    const anchor = await this.anchors?.latestForWorkspace(workspaceId);
+    if (!anchor) return result;
+    // The event at the anchored seq must still carry the publicly witnessed
+    // hash; a shorter chain means history was truncated after anchoring.
+    const at = events[anchor.seq - 1];
+    return {
+      ...result,
+      anchor: {
+        seq: anchor.seq,
+        anchoredAt: anchor.anchoredAt.toISOString(),
+        witnessUrl: anchor.witnessUrl,
+        matches: at?.hash === anchor.headHash,
+      },
+    };
   }
 
   list(workspaceId: string): Promise<AuditEvent[]> {

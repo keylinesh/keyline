@@ -9,6 +9,7 @@ import type { Pool } from "pg";
 import { DeviceLoginService } from "./auth/device-login.js";
 import { TokenService } from "./auth/tokens.js";
 import { AuditService } from "./domain/audit.js";
+import { AnchorService, GitLabWitness, InMemoryAnchorRepo, PgAnchorRepo } from "./domain/anchors.js";
 import { EntitlementsService } from "./domain/entitlements.js";
 import { InMemoryJoinCodeRepo, JoinService, PgJoinCodeRepo } from "./domain/join-codes.js";
 import { WebSessionService } from "./domain/web-sessions.js";
@@ -58,7 +59,9 @@ export function memoryDeps(): AppDeps {
   const projects = new InMemoryProjectRepo();
   const environments = new InMemoryEnvironmentRepo();
   const members = new InMemoryMemberRepo();
-  const audit = new AuditService(new InMemoryAuditRepo());
+  const auditRepo = new InMemoryAuditRepo();
+  const anchorRepo = new InMemoryAnchorRepo();
+  const audit = new AuditService(auditRepo, anchorRepo);
   const subscriptions = new InMemorySubscriptionRepo();
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   return {
@@ -92,6 +95,13 @@ export function memoryDeps(): AppDeps {
         ? new ReconciliationService(new PaddleApi(cfg), subscriptions, workspaces, audit)
         : null;
     })(),
+    auditAnchors: new AnchorService(
+      auditRepo,
+      anchorRepo,
+      process.env.ANCHOR_GITLAB_TOKEN && process.env.ANCHOR_REPO_PROJECT_ID
+        ? new GitLabWitness(process.env.ANCHOR_REPO_PROJECT_ID, process.env.ANCHOR_GITLAB_TOKEN)
+        : null,
+    ),
     cronSecret: process.env.CRON_SECRET ?? null,
   };
 }
@@ -105,7 +115,9 @@ export function pgDeps(pool: Pool): AppDeps {
   const projects = new PgProjectRepo(pool);
   const environments = new PgEnvironmentRepo(pool);
   const members = new PgMemberRepo(pool);
-  const audit = new AuditService(new PgAuditRepo(pool));
+  const auditRepo = new PgAuditRepo(pool);
+  const anchorRepo = new PgAnchorRepo(pool);
+  const audit = new AuditService(auditRepo, anchorRepo);
   const subscriptions = new PgSubscriptionRepo(pool);
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
   return {
@@ -139,6 +151,13 @@ export function pgDeps(pool: Pool): AppDeps {
         ? new ReconciliationService(new PaddleApi(cfg), subscriptions, workspaces, audit)
         : null;
     })(),
+    auditAnchors: new AnchorService(
+      auditRepo,
+      anchorRepo,
+      process.env.ANCHOR_GITLAB_TOKEN && process.env.ANCHOR_REPO_PROJECT_ID
+        ? new GitLabWitness(process.env.ANCHOR_REPO_PROJECT_ID, process.env.ANCHOR_GITLAB_TOKEN)
+        : null,
+    ),
     cronSecret: process.env.CRON_SECRET ?? null,
   };
 }

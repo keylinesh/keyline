@@ -112,7 +112,9 @@ All `/v1/web/*` routes sit behind the tight per-IP auth rate limit.
 
 ### Audit log
 - `GET /v1/workspaces/:wid/audit` — list events (admin). Hash-chained, append-only. → `{ events, retentionDays }` — on solo, only the last 7 days are returned (`retentionDays: 7`); events are never deleted.
-- `GET /v1/workspaces/:wid/audit/verify` — verify chain integrity (admin) → `{ ok, count }` or `{ ok: false, brokenSeq, reason }`. Always walks the full stored chain, regardless of plan retention.
+- `GET /v1/workspaces/:wid/audit/verify` — verify chain integrity (admin) → `{ ok, count, anchor? }` or `{ ok: false, brokenSeq, reason }`. Always walks the full stored chain, regardless of plan retention. `anchor` (#61) compares the chain against the newest public anchor: `{ seq, anchoredAt, witnessUrl, matches }` — `matches: false` means history diverged from the public witness even if the chain is internally consistent.
+
+**Anchoring (#61):** a daily cron (`GET /v1/audit/anchor`, `CRON_SECRET` bearer) publishes every workspace's chain head to the public witness repo ([keyline-anchors](https://gitlab.com/resim.boyadzhiev/keyline-anchors)), keyed by `sha256(workspaceId)` — the public learns nothing, but any rewrite of anchored history is detectable, even by us. Env: `ANCHOR_GITLAB_TOKEN` (project token for the witness repo), `ANCHOR_REPO_PROJECT_ID`.
 
 Recorded actions include `bundle.push`, `bundle.pull` (allowed and denied),
 `secret.rotate`, `member.invite`, `member.remove`, `member.revoke`,

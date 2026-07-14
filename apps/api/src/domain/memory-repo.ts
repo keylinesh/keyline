@@ -273,6 +273,15 @@ export class InMemoryAuditRepo implements AuditRepo {
   async list(workspaceId: string): Promise<AuditEvent[]> {
     return [...(this.byWs.get(workspaceId) ?? [])];
   }
+
+  async heads(): Promise<Array<{ workspaceId: string; seq: number; hash: string }>> {
+    const out: Array<{ workspaceId: string; seq: number; hash: string }> = [];
+    for (const [workspaceId, events] of this.byWs) {
+      const head = events[events.length - 1];
+      if (head) out.push({ workspaceId, seq: head.seq, hash: head.hash });
+    }
+    return out;
+  }
 }
 
 export class InMemoryWebSessionRepo implements WebSessionRepo {

@@ -26,6 +26,7 @@ import {
 import { PgDeviceRepo } from "../auth/pg-repo.js";
 import { PgSubscriptionRepo } from "../billing/subscriptions.js";
 import { PgJoinCodeRepo } from "./join-codes.js";
+import { PgAnchorRepo } from "./anchors.js";
 import { hashSessionCode } from "./web-sessions.js";
 import { VersionConflictError } from "./bundles.js";
 import { verifyChain } from "./audit.js";
@@ -133,6 +134,14 @@ test("pg repos round-trip against Postgres", { skip: !dbUrl }, async () => {
     await jc.upsertForMember({ memberId: mem.id, codeHash: "h2", expiresAt: new Date("2027-01-01T00:00:00Z") });
     assert.equal(await jc.findByCodeHash("h1"), null, "old code replaced");
     assert.equal((await jc.findByCodeHash("h2"))?.usedAt, null, "replacement resets used_at");
+
+    // Anchoring (#61): heads() sees the chain head; anchors round-trip.
+    const heads = await au.heads();
+    const mine = heads.find((h) => h.workspaceId === w.id);
+    assert.equal(mine?.seq, 2, "heads() returns the latest seq");
+    const an = new PgAnchorRepo(pool);
+    await an.insert({ workspaceId: w.id, seq: mine!.seq, headHash: mine!.hash, witnessUrl: null });
+    assert.equal((await an.latestForWorkspace(w.id))?.headHash, mine!.hash);
 
     assert.ok(await ws.delete(w.id)); // cascade removes children + audit
   } finally {

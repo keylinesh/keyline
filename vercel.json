@@ -44,6 +44,10 @@
     {
       "path": "/api/v1/billing/reconcile",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/v1/audit/anchor",
+      "schedule": "30 6 * * *"
     }
   ]
 }

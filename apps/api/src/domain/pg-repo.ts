@@ -582,6 +582,15 @@ export class PgAuditRepo implements AuditRepo {
     );
     return rows.map(toAudit);
   }
+
+  async heads(): Promise<Array<{ workspaceId: string; seq: number; hash: string }>> {
+    const { rows } = await this.pool.query<{ workspace_id: string; seq: number; hash: string }>(
+      `select distinct on (workspace_id) workspace_id, seq, hash
+         from audit_events order by workspace_id, seq desc`,
+    );
+    // pg returns bigint as a string; normalize so anchors publish numbers.
+    return rows.map((r) => ({ workspaceId: r.workspace_id, seq: Number(r.seq), hash: r.hash }));
+  }
 }
 
 interface WebSessionRow {
