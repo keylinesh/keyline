@@ -122,7 +122,7 @@ export class PgSubscriptionRepo implements SubscriptionRepo {
       `insert into workspace_subscriptions
          (workspace_id, paddle_subscription_id, paddle_customer_id, status,
           current_period_end, past_due_since, occurred_at)
-       values ($1, $2, $3, $4, $5, case when $4 = 'past_due' then $6 end, $6)
+       values ($1, $2, $3, $4, $5, case when $4 = 'past_due' then $6::timestamptz end, $6)
        on conflict (workspace_id) do update set
          paddle_subscription_id = excluded.paddle_subscription_id,
          paddle_customer_id = coalesce(excluded.paddle_customer_id, workspace_subscriptions.paddle_customer_id),

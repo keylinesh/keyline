@@ -16,6 +16,8 @@ export interface BillingEventRecord {
 export interface BillingEventRepo {
   /** Insert if unseen. Returns false when the event id was already recorded. */
   insertOnce(event: BillingEventRecord): Promise<boolean>;
+  /** Was this event id recorded (i.e. fully processed) before? */
+  has(paddleEventId: string): Promise<boolean>;
 }
 
 export class InMemoryBillingEventRepo implements BillingEventRepo {
@@ -25,6 +27,10 @@ export class InMemoryBillingEventRepo implements BillingEventRepo {
     if (this.seen.has(event.paddleEventId)) return false;
     this.seen.set(event.paddleEventId, event);
     return true;
+  }
+
+  async has(paddleEventId: string): Promise<boolean> {
+    return this.seen.has(paddleEventId);
   }
 }
 
@@ -37,6 +43,14 @@ export class PgBillingEventRepo implements BillingEventRepo {
        values ($1, $2, $3, $4)
        on conflict (paddle_event_id) do nothing`,
       [event.paddleEventId, event.eventType, event.workspaceId, JSON.stringify(event.payload)],
+    );
+    return (res.rowCount ?? 0) > 0;
+  }
+
+  async has(paddleEventId: string): Promise<boolean> {
+    const res = await this.pool.query(
+      `select 1 from billing_events where paddle_event_id = $1`,
+      [paddleEventId],
     );
     return (res.rowCount ?? 0) > 0;
   }
