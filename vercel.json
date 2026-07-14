@@ -4,17 +4,46 @@
   "buildCommand": "bash scripts/vercel-build.sh",
   "outputDirectory": "public",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/[[...route]]" },
-    { "source": "/install", "destination": "/install.sh" },
-    { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/refunds", "destination": "/refunds.html" },
-    { "source": "/app/:path*", "destination": "/app/index.html" }
+    {
+      "source": "/api/:path*",
+      "destination": "/api/[[...route]]"
+    },
+    {
+      "source": "/install",
+      "destination": "/install.sh"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/refunds",
+      "destination": "/refunds.html"
+    },
+    {
+      "source": "/app/:path*",
+      "destination": "/app/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/install",
-      "headers": [{ "key": "Content-Type", "value": "text/plain; charset=utf-8" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/v1/billing/reconcile",
+      "schedule": "0 6 * * *"
     }
   ]
 }

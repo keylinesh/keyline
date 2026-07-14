@@ -85,4 +85,30 @@ export class PaddleApi {
   post<T>(path: string, body: unknown): Promise<T> {
     return this.request<T>("POST", path, body);
   }
+
+  /** Follow Paddle's cursor pagination until exhausted. */
+  async getAll<T>(path: string): Promise<T[]> {
+    const items: T[] = [];
+    let url: string | null = `${this.config.baseUrl}${path}`;
+    while (url) {
+      const res = await this.fetchImpl(url, {
+        headers: { authorization: `Bearer ${this.config.apiKey}` },
+      });
+      const json = (await res.json()) as {
+        data?: T[];
+        error?: { code?: string; detail?: string };
+        meta?: { pagination?: { has_more?: boolean; next?: string } };
+      };
+      if (!res.ok) {
+        throw new PaddleApiError(
+          res.status,
+          json.error?.code ?? "unknown",
+          json.error?.detail ?? "request failed",
+        );
+      }
+      items.push(...(json.data ?? []));
+      url = json.meta?.pagination?.has_more ? (json.meta.pagination.next ?? null) : null;
+    }
+    return items;
+  }
 }

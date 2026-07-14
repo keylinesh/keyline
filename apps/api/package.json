@@ -16,7 +16,8 @@
     "dev": "node --import tsx src/index.ts",
     "db:migrate": "node --import tsx src/db/migrate.ts",
     "paddle:setup": "node --import tsx scripts/paddle-setup.ts",
-    "paddle:webhook": "node --import tsx scripts/paddle-webhook.ts"
+    "paddle:webhook": "node --import tsx scripts/paddle-webhook.ts",
+    "paddle:reconcile": "node --import tsx scripts/paddle-reconcile.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",
