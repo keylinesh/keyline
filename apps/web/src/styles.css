@@ -169,7 +169,8 @@ input::placeholder { color: var(--faint); }
 }
 .copy-btn:hover { color: var(--ink); border-color: var(--mint); }
 .copy-btn.copied { color: var(--mint); border-color: var(--mint); }
-.copy-btn::after {
+[data-tip] { position: relative; }
+[data-tip]::after {
   content: attr(data-tip);
   position: absolute;
   bottom: calc(100% + 7px);
@@ -188,8 +189,8 @@ input::placeholder { color: var(--faint); }
   transition: opacity 0.12s;
   z-index: 5;
 }
-.copy-btn:hover::after,
-.copy-btn:focus-visible::after,
+[data-tip]:hover::after,
+[data-tip]:focus-visible::after,
 .copy-btn.copied::after { opacity: 1; }
 
 .cmd-row { display: inline-flex; align-items: center; gap: 10px; }

@@ -244,6 +244,7 @@ function BillingCard({
             <button
               className="btn"
               style={{ marginTop: 10 }}
+              data-tip="Opens Paddle's portal. Cancel or change your card there."
               onClick={() =>
                 void (async () => {
                   setError(null);
