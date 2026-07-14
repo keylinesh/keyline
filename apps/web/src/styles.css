@@ -108,8 +108,10 @@ input::placeholder { color: var(--faint); }
 .center-page {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   padding: 24px;
   background:
     radial-gradient(600px 380px at 50% 30%, rgba(94, 234, 212, 0.05), transparent 70%),
@@ -145,6 +147,12 @@ input::placeholder { color: var(--faint); }
 }
 .code-box .pr { color: var(--mint); }
 .code-box b { color: var(--amber); font-weight: 600; letter-spacing: 0.04em; }
+.code-box.small { margin: 8px 0 0; padding: 10px 14px; font-size: 13.5px; }
+
+.signin-help { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+.signin-help summary { color: var(--muted); font-size: 13.5px; cursor: pointer; }
+.signin-help summary:hover { color: var(--ink); }
+.signin-help .hint { margin-top: 10px; }
 
 .hint { color: var(--faint); font-size: 13.5px; }
 .waiting { color: var(--muted); font-size: 14px; margin-top: 20px; }
