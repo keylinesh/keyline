@@ -8,14 +8,17 @@ afterEach(() => {
 });
 
 describe("CopyButton", () => {
-  test("copies the text and confirms", async () => {
+  test("copies the text and flips the tooltip to Copied!", async () => {
     const writeText = vi.fn(async () => {});
     vi.stubGlobal("navigator", { clipboard: { writeText } });
 
     render(<CopyButton text="keyline login" />);
-    fireEvent.click(screen.getByText("copy"));
+    const btn = screen.getByLabelText("copy keyline login");
+    expect(btn.getAttribute("data-tip")).toBe("Copy");
+    fireEvent.click(btn);
 
-    await waitFor(() => expect(screen.getByText("copied ✓")).toBeDefined());
+    await waitFor(() => expect(btn.getAttribute("data-tip")).toBe("Copied!"));
+    expect(btn.className).toContain("copied");
     expect(writeText).toHaveBeenCalledWith("keyline login");
   });
 
@@ -24,8 +27,9 @@ describe("CopyButton", () => {
       clipboard: { writeText: vi.fn(async () => { throw new Error("denied"); }) },
     });
     render(<CopyButton text="x" />);
-    fireEvent.click(screen.getByText("copy"));
+    const btn = screen.getByLabelText("copy x");
+    fireEvent.click(btn);
     await new Promise((r) => setTimeout(r, 20));
-    expect(screen.getByText("copy")).toBeDefined();
+    expect(btn.getAttribute("data-tip")).toBe("Copy");
   });
 });

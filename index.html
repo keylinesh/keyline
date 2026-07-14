@@ -226,9 +226,15 @@
   .step h3{font-family:'Bricolage Grotesque';font-weight:700;font-size:21px;margin:14px 0 9px;letter-spacing:-.01em}
   .step p{color:var(--muted);font-size:15.5px}
   .step code{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono';font-size:13px;background:#0a0c0f;border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-top:16px;color:var(--ink)}
-  .ccp{margin-left:auto;font-family:'Hanken Grotesk';font-size:11px;color:var(--faint);background:none;border:1px solid var(--line-2);border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s}
+  .ccp{position:relative;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;color:var(--faint);background:none;border:1px solid var(--line-2);border-radius:6px;cursor:pointer;transition:color .15s,border-color .15s}
   .ccp:hover{color:var(--ink);border-color:var(--mint)}
   .ccp.ok{color:var(--mint);border-color:var(--mint)}
+  .ccp .ic-copy,.ccp .ic-check{display:inline-flex;align-items:center}
+  .ccp .ic-check{display:none}
+  .ccp.ok .ic-copy{display:none}
+  .ccp.ok .ic-check{display:inline-flex}
+  .ccp::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);padding:3px 9px;border:1px solid var(--line-2);border-radius:6px;background:#0a0c0f;color:var(--ink);font-family:'Hanken Grotesk';font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .12s;z-index:5}
+  .ccp:hover::after,.ccp.ok::after{opacity:1}
   .step code .pr{color:var(--mint)}
 
   /* zero knowledge */
@@ -451,19 +457,19 @@
         <div class="no">01</div>
         <h3>Link your project</h3>
         <p>Point a directory at a workspace and an environment. Keyline remembers it.</p>
-        <code data-copy="keyline link acme-api --env prod"><span><span class="pr">$</span> keyline link acme-api --env prod</span><button class="ccp" aria-label="copy command">copy</button></code>
+        <code data-copy="keyline link acme-api --env prod"><span><span class="pr">$</span> keyline link acme-api --env prod</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
       </div>
       <div class="step rv">
         <div class="no">02</div>
         <h3>Push & pull</h3>
         <p>One person pushes the <span class="mono">.env</span>. Everyone else pulls it. Always current, never in Slack.</p>
-        <code data-copy="keyline pull"><span><span class="pr">$</span> keyline pull <span style="color:var(--faint)">› wrote .env</span></span><button class="ccp" aria-label="copy command">copy</button></code>
+        <code data-copy="keyline pull"><span><span class="pr">$</span> keyline pull <span style="color:var(--faint)">› wrote .env</span></span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
       </div>
       <div class="step rv">
         <div class="no">03</div>
         <h3>Rotate, revoke, audit</h3>
         <p>Cut access the moment someone leaves. Every read and write is logged for good.</p>
-        <code data-copy="keyline revoke jordan@"><span><span class="pr">$</span> keyline revoke jordan@</span><button class="ccp" aria-label="copy command">copy</button></code>
+        <code data-copy="keyline revoke jordan@"><span><span class="pr">$</span> keyline revoke jordan@</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
       </div>
     </div>
   </div>
@@ -497,7 +503,7 @@
       <div class="step rv">
         <h3>Out of the context window</h3>
         <p>The agent starts your app through Keyline. Secrets are injected in memory, into the app process. Never into the prompt.</p>
-        <code data-copy="keyline run -- npm test"><span><span class="pr">$</span> keyline run -- npm test</span><button class="ccp" aria-label="copy command">copy</button></code>
+        <code data-copy="keyline run -- npm test"><span><span class="pr">$</span> keyline run -- npm test</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
       </div>
       <div class="step rv">
         <h3>Scoped like any teammate</h3>
@@ -782,9 +788,9 @@
     const b=c.querySelector('.ccp');
     b?.addEventListener('click',()=>{
       navigator.clipboard?.writeText(c.dataset.copy).then(()=>{
-        b.textContent='copied ✓'; b.classList.add('ok');
-        setTimeout(()=>{ b.textContent='copy'; b.classList.remove('ok'); },1600);
-      }).catch(()=>{ b.textContent='copy failed'; });
+        b.dataset.tip='Copied!'; b.classList.add('ok');
+        setTimeout(()=>{ b.dataset.tip='Copy'; b.classList.remove('ok'); },1600);
+      }).catch(()=>{ b.dataset.tip='Copy failed'; });
     });
   });
 
