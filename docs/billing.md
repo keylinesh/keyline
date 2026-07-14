@@ -91,6 +91,44 @@ consume and re-serialize request bodies (see `api/[[...route]].ts`).
 
 Local: repo-root `.env`. Production: Vercel env. Code lives in `apps/api/src/billing/`.
 
+## Tax + invoices (#75)
+
+Paddle is the Merchant of Record: it charges, remits VAT/sales tax, and
+issues invoices. Verified in sandbox with a real charge (2026-07-14):
+
+- Price is **tax-inclusive**: the customer pays a flat $19.00. For a
+  Bulgarian consumer that split into $15.83 net + $3.17 VAT (20%), computed
+  by Paddle from the checkout address. Net revenue therefore varies by
+  country; the sticker price never does.
+- Invoice number issued (`113548-10001`) and PDF retrievable
+  (`GET /transactions/:id/invoice`). Paddle emails the receipt to the
+  customer. Tax category: `saas`.
+- US sales tax: Paddle registers and remits where it has obligations —
+  nothing on our side. Spot-check a US-address test purchase at go-live.
+
+**Income trail (personal tax filing, ADR-0004):** Paddle pays out net
+revenue. Monthly: download the transactions + payouts CSVs (Paddle →
+Reports) and keep them with the accounting records. The payout report is
+the document trail for what landed in the bank account; VAT on sales is
+Paddle's, income tax on payouts stays personal.
+
+## Payment lapse (#76)
+
+What happens when a card stops working, end to end:
+
+1. Renewal fails → Paddle moves the subscription to `past_due` and starts
+   its retry schedule + dunning emails to the customer (configure under
+   **Paddle → Checkout settings → Payment retries / dunning** — on by
+   default; review wording at go-live).
+2. Our webhook records `past_due`: the workspace **stays on Team** (grace),
+   Settings shows the payment-issue banner, `past_due_since` is tracked.
+3. The customer fixes the card in the portal (Manage billing) → `active`,
+   banner clears. Or Paddle exhausts retries → `canceled` → workspace drops
+   to **Solo limits**. Data is never deleted; over-limit members and
+   environments stay readable but new invites/environments are blocked by
+   entitlements (#49), and audit history windows to 7 days.
+4. Cancel-by-choice behaves the same: Team until period end, then Solo.
+
 ## Going live (the swap)
 
 1. `PADDLE_ENV=live PADDLE_API_KEY=<live key> pnpm --filter @keyline/api paddle:setup` and `paddle:webhook`.
