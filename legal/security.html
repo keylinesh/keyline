@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security · Keyline</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="description" content="Keyline security posture: client-side encryption, verifiable claims, publicly anchored audit logs, and how to report a vulnerability.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://keyline.sh/security">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0b0d;--ink:#e9ebee;--muted:#878d97;--faint:#5b616b;--line:rgba(255,255,255,.08);--mint:#5eead4;--amber:#fbbf77}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:22px 0}
+  .brand{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
+  .brand .mk{color:var(--mint);font-family:'JetBrains Mono'}
+  main{padding:56px 0 40px}
+  h1{font-family:'Bricolage Grotesque';font-size:36px;line-height:1.15;margin-bottom:10px}
+  .date{color:var(--faint);font-size:14px;margin-bottom:40px}
+  h2{font-family:'Bricolage Grotesque';font-size:21px;margin:38px 0 10px}
+  p,ul{color:var(--muted);margin-bottom:14px}
+  ul{padding-left:22px}
+  li{margin-bottom:6px}
+  strong{color:var(--ink);font-weight:600}
+  a{color:var(--mint);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:'JetBrains Mono';font-size:14px;color:var(--ink)}
+  table{width:100%;border-collapse:collapse;margin-bottom:14px;font-size:15px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);color:var(--muted)}
+  th{color:var(--ink);font-weight:600}
+  .honest{border:1px solid rgba(251,191,119,.3);border-radius:10px;padding:14px 18px;color:var(--muted)}
+  footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:14px}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .foot-links a{color:var(--faint)}
+  .foot-links a:hover{color:var(--ink)}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/"><span class="mk">k_</span> Keyline</a></div></header>
+<main class="wrap">
+  <h1>Security</h1>
+  <p class="date">Updated July 14, 2026</p>
+
+  <p><strong>A breach of us must not be a breach of you.</strong> Keyline is built so our servers cannot read your secrets, and so the claims on this page are verifiable instead of asserted.</p>
+
+  <h2>1. What our servers hold</h2>
+  <p>Ciphertext, wrapped keys, metadata, and audit events. Nothing else. Encryption and decryption happen on your machines with keys we never receive.</p>
+  <table>
+    <tr><th>Purpose</th><th>Primitive</th></tr>
+    <tr><td>Secret encryption</td><td>AES-256-GCM</td></tr>
+    <tr><td>Workspace key derivation</td><td>scrypt</td></tr>
+    <tr><td>Device identity + key wrapping</td><td>X25519, HKDF-SHA256</td></tr>
+  </table>
+  <p>All primitives come from Node's built-in <code>crypto</code>. No third-party crypto libraries. The full scheme, including the key hierarchy, recovery paths, and known trade-offs, is public: <a href="https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md">encryption design document</a>. The source is public too. Read it, don't trust us.</p>
+
+  <h2>2. Access</h2>
+  <ul>
+    <li><strong>Devices, not passwords.</strong> Every CLI session proves possession of a device private key. The key lives in your OS keychain, or a 0600 file where no keychain exists. It never leaves the machine.</li>
+    <li><strong>Enrollment is invitation-only.</strong> Teammates join with one-time, expiring codes. There is no open signup path onto an existing workspace.</li>
+    <li><strong>Per-environment access.</strong> A member has no environment access until granted. Grants and revokes take effect immediately: revoking drops tokens, deletes wrapped keys, and marks devices revoked, in one step.</li>
+    <li><strong>The dashboard shows metadata only.</strong> No secret value ever reaches a browser. Sign-in is approved from a trusted CLI device, or via a single-use email link bound to an enrolled device.</li>
+  </ul>
+
+  <h2>3. Tamper-evident, publicly anchored audit</h2>
+  <p>Every read, write, grant, and revoke lands in a hash-chained audit log. Editing, deleting, or reordering any event breaks the chain. And because a chain alone could in theory be rewritten wholesale, every workspace's chain head is <strong>witnessed daily in a public repository</strong>: <a href="https://gitlab.com/resim.boyadzhiev/keyline-anchors">keyline-anchors</a>. The public sees only hashes. The point: history rewrites are detectable, even by us.</p>
+
+  <h2>4. Platform</h2>
+  <ul>
+    <li>TLS everywhere. HSTS, strict security headers, tight rate limits on auth paths.</li>
+    <li>Access tokens are stored hashed and scoped; browser sessions expire in 8 hours.</li>
+    <li>Payments run through Paddle as merchant of record. Card data never touches us.</li>
+    <li>Error tracking is scrubbed twice: request data is dropped and secret-shaped fields are redacted before anything leaves the process.</li>
+  </ul>
+
+  <h2>5. Where we are honest about maturity</h2>
+  <div class="honest">
+    <p><strong>External review:</strong> the encryption design has not yet passed an independent security review. Engaging one is our launch gate, and the <a href="https://gitlab.com/resim.boyadzhiev/keyline/-/tree/main/docs/security-review">review packet is public</a>.</p>
+    <p><strong>SOC 2:</strong> we are at the start of a readiness program, not certified. We will state progress here as it happens, not before.</p>
+  </div>
+
+  <h2 id="disclosure">6. Reporting a vulnerability</h2>
+  <p>Found something? We want to know, and we will not take legal action against good-faith research.</p>
+  <ul>
+    <li>Email <a href="mailto:support@keyline.sh?subject=SECURITY">support@keyline.sh</a> with <code>SECURITY</code> in the subject.</li>
+    <li>We acknowledge within 48 hours and keep you updated until resolution.</li>
+    <li>Please give us a reasonable window to fix before public disclosure. We credit reporters unless you prefer otherwise.</li>
+    <li>Out of scope: volumetric denial of service, spam, and social engineering of our users.</li>
+  </ul>
+  <p>Machine-readable version: <a href="/.well-known/security.txt">/.well-known/security.txt</a>.</p>
+</main>
+<footer><div class="wrap">
+  <div class="foot-links"><a href="/security">Security</a><a href="/terms">Terms</a><a href="/privacy">Privacy</a><a href="/refunds">Refunds</a><a href="/">keyline.sh</a></div>
+  <span>© 2026 Keyline. Sealed before it leaves your laptop.</span>
+</div></footer>
+</body>
+</html>

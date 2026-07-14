@@ -73,7 +73,7 @@
     {
       "@type": "Question",
       "name": "What's your security posture?",
-      "acceptedAnswer": { "@type": "Answer", "text": "Client-side AES-256 encryption, TLS everywhere, scoped access tokens, and a full audit trail. SOC 2 Type II is in progress; our encryption design is documented publicly so you can verify the claims rather than trust them." }
+      "acceptedAnswer": { "@type": "Answer", "text": "Client-side AES-256 encryption, TLS everywhere, scoped access tokens, and a tamper-evident audit trail anchored publicly every day. Our encryption design is public so you can verify the claims, not trust them. SOC 2 readiness is underway. Full details at keyline.sh/security." }
     }
   ]
 }
@@ -638,7 +638,7 @@
       <div class="q rv"><h4>If it's zero-knowledge, what happens if we lose our key?</h4><p>Your workspace key is recoverable through any active admin's device, and we offer an optional sealed recovery file you store yourself. We genuinely can't reset it for you. That's the whole point. Recovery stays in your hands.</p></div>
       <div class="q rv"><h4>Do I really not have to change my app code?</h4><p>Correct, with one honest caveat: instead of a committed <code>.env</code>, your team runs <code>keyline pull</code> (or wraps startup in <code>keyline run</code>). Your app still just reads environment variables. Nothing in your codebase changes.</p></div>
       <div class="q rv"><h4>How is this different from Doppler or Vault?</h4><p>Those are powerful and can feel heavy for a 3-person team. Keyline is deliberately narrow: <code>.env</code>-native, one flat price, zero-knowledge, and nothing to configure. If you outgrow simple, they're great. We won't pretend otherwise.</p></div>
-      <div class="q rv"><h4>What's your security posture?</h4><p>Client-side AES-256 encryption, TLS everywhere, scoped access tokens, and a full audit trail. SOC 2 Type II is in progress; our encryption design is documented publicly so you can verify the claims rather than trust them.</p></div>
+      <div class="q rv"><h4>What's your security posture?</h4><p>Client-side AES-256 encryption, TLS everywhere, scoped access tokens, and a tamper-evident audit trail anchored publicly every day. Our encryption design is public so you can verify the claims, not trust them. SOC 2 readiness is underway. Full details at keyline.sh/security.</p></div>
     </div>
   </div>
 </section>
@@ -664,7 +664,7 @@
     <a class="brand" href="#"><span class="mk">k_</span> Keyline</a>
     <div class="foot-links">
       <a href="#how">How it works</a>
-      <a href="#security">Security</a>
+      <a href="/security">Security</a>
       <a href="#pricing">Pricing</a>
       <a href="/terms">Terms</a>
       <a href="/privacy">Privacy</a>
