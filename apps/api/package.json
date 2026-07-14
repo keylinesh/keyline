@@ -14,7 +14,8 @@
     "lint": "echo \"(lint: configure eslint)\"",
     "test": "KEYLINE_LOG_SILENT=1 node --import tsx --test $(find src -name '*.test.ts')",
     "dev": "node --import tsx src/index.ts",
-    "db:migrate": "node --import tsx src/db/migrate.ts"
+    "db:migrate": "node --import tsx src/db/migrate.ts",
+    "paddle:setup": "node --import tsx scripts/paddle-setup.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.0",

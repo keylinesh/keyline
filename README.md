@@ -87,7 +87,7 @@ Homebrew: `brew tap keyline/keyline https://gitlab.com/resim.boyadzhiev/homebrew
 - **M4 Web Dashboard** — done. `apps/web` (React + Vite), live at **keyline.sh/app**, metadata-only (never sees secret values). Sign-in via CLI-approved sessions (`keyline web <code>`, ADR-0003). Projects/environments with role-aware CRUD, member management (invite/grant/revoke), audit viewer (chain verify, filters, CSV/JSON export), settings + guided onboarding. ~30 web tests; screenshots attached to every UI MR.
 - **M5 Payments** — in progress. Paddle as Merchant of Record (ADR-0004): Solo free / Team $19 flat, 14-day trial. Server-side plan entitlements shipped first.
 
-Docs: [encryption design](docs/encryption-design.md) · [API reference](docs/api.md) · [first run](docs/first-run.md) · [distribution](docs/distribution.md) · [infra/deploy](docs/infra.md) · [observability](docs/observability.md) · [ADRs](docs/decisions/) · [security review packet](docs/security-review/). Full positioning + risk list in `keyline-context.md`.
+Docs: [encryption design](docs/encryption-design.md) · [API reference](docs/api.md) · [first run](docs/first-run.md) · [distribution](docs/distribution.md) · [infra/deploy](docs/infra.md) · [billing](docs/billing.md) · [observability](docs/observability.md) · [ADRs](docs/decisions/) · [security review packet](docs/security-review/). Full positioning + risk list in `keyline-context.md`.
 
 ## License
 
