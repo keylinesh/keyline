@@ -41,5 +41,8 @@
     "@keyline/shared": "workspace:*",
     "commander": "^12.1.0",
     "esbuild": "^0.28.1"
+  },
+  "optionalDependencies": {
+    "@napi-rs/keyring": "^1.3.0"
   }
 }

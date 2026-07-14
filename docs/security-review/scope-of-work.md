@@ -19,8 +19,8 @@ implementation match, and surface any weakness that breaks that promise.
    - `recovery.ts` — passphrase-sealed recovery file
    - `admin-recovery.ts` — admin-device re-wrap flow
 3. **Local key storage** in [`apps/cli/src/keystore.ts`](../../apps/cli/src/keystore.ts):
-   keychain vs. file fallback, permissions, and the documented `security` CLI
-   argv-exposure trade-off.
+   native keychain binding (`@napi-rs/keyring`, no argv exposure) vs. the
+   file fallback, permissions, and one-time legacy migration.
 
 ## Out of scope (for this round)
 
@@ -44,8 +44,9 @@ implementation match, and surface any weakness that breaks that promise.
    byte and format fields be authenticated as associated data?
 6. Failure modes: do all tamper cases fail closed? Any place an error reveals
    key material or distinguishes "wrong key" from "tampered"?
-7. Local key storage: is the file fallback (0600 / 0700) adequate, and how
-   should we close the keychain-CLI argv-exposure window?
+7. Local key storage: is the file fallback (0600 / 0700) adequate? The
+   keychain-CLI argv-exposure window is closed (#62, native binding); is the
+   binding's trust surface acceptable?
 
 ## Deliverables from the reviewer
 

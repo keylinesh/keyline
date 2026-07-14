@@ -1,7 +1,8 @@
 /**
- * Build the single-file distributable: everything (workspace packages,
- * commander) inlined into dist/keyline.js. This is the only file the npm
- * package ships, so `npm i -g keyline` installs zero dependencies.
+ * Build the distributable: everything (workspace packages, commander) inlined
+ * into dist/keyline.js. One exception since #62: @napi-rs/keyring is a native
+ * OPTIONAL dependency (prebuilt per platform) loaded at runtime when present,
+ * so it stays external; without it the CLI falls back to the file store.
  */
 
 import { chmodSync } from "node:fs";
@@ -10,6 +11,7 @@ import { build } from "esbuild";
 await build({
   entryPoints: ["src/index.ts"],
   bundle: true,
+  external: ["@napi-rs/keyring"],
   platform: "node",
   format: "esm",
   target: "node20",
