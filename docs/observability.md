@@ -43,11 +43,33 @@ Unhandled errors funnel through `app.onError` → `reportError`, which logs a
 structured `error` event with the error name + stack (context redacted) and
 returns a generic 500 (no internals leaked).
 
-For production alerting, forward errors to **Sentry**: set `SENTRY_DSN` in the
-environment and initialize the SDK at the process edge (`index.ts` / the Vercel
-function). Alert rules (e.g. new error type, error-rate spike, any 5xx on
-`/api/v1/*`) are configured in Sentry. Kept out of the app code so there's no
-hard dependency and tests need no DSN.
+For production alerting, errors forward to **Sentry** (#63). The SDK is wired at
+the process edge (`index.ts` and the Vercel function) via `initSentry()`, which
+registers an error sink that `reportError` calls. It's **dormant until
+`SENTRY_DSN` is set** — local dev and tests need nothing. On serverless the
+function flushes queued events before returning (`flushSentry()`), so an error
+captured at the edge of an invocation isn't lost to the freeze. Events are
+scrubbed twice: request headers/cookies/body are dropped, and any
+secret-shaped context key (`token`, `secret`, `authorization`, `bundle`,
+`ciphertext`, …) is redacted — belt-and-braces, since the API never handles
+plaintext secrets in the first place.
+
+**Setup:** add `SENTRY_DSN` to the Vercel env (and any Node deploy). `release`
+comes from `VERCEL_GIT_COMMIT_SHA` automatically, so stack traces map to a
+commit.
+
+**Alert rules to configure in Sentry** (Alerts → Create):
+
+| Alert | Condition | Why |
+|---|---|---|
+| New issue | A new error type appears | Catch regressions the moment they ship |
+| 5xx spike | `event.count` on `/api/v1/*` > ~10 in 5 min | Availability / a bad deploy |
+| Auth-failure spike | `unauthorized` / `forbidden` count > baseline | Abuse or a broken auth path |
+| Webhook failures | Errors from `/v1/billing/webhook` | Billing correctness (pairs with reconciliation #77) |
+
+Dashboards: Sentry's Issues + Performance views, alongside Vercel Observability
+for request-level metrics. Route request/latency/status counters still come from
+the structured logs below.
 
 ## What to watch first
 

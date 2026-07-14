@@ -90,12 +90,29 @@ export class Logger {
 export const logger = new Logger();
 
 /**
- * Report an unexpected error to the log (level=error) with its stack. In
- * production, forward to an error tracker (Sentry) when SENTRY_DSN is set — wired
- * at the edge, kept out of here so the app has no hard dependency. See
- * docs/observability.md.
+ * An error sink forwards reported errors to an external tracker. Registered at
+ * process init (see observability/sentry.ts) so this module stays free of any
+ * hard tracker dependency.
+ */
+export type ErrorSink = (err: Error, context: LogFields) => void;
+
+let errorSink: ErrorSink | null = null;
+
+export function setErrorSink(sink: ErrorSink | null): void {
+  errorSink = sink;
+}
+
+/**
+ * Report an unexpected error to the log (level=error) with its stack, and to
+ * the registered error tracker if one is wired (Sentry when SENTRY_DSN is set).
+ * See docs/observability.md.
  */
 export function reportError(err: unknown, context: LogFields = {}, log: Logger = logger): void {
   const e = err instanceof Error ? err : new Error(String(err));
   log.error("unhandled_error", { ...context, errorName: e.name, error: e.message, stack: e.stack });
+  try {
+    errorSink?.(e, context);
+  } catch {
+    // A broken tracker must never mask the original error.
+  }
 }

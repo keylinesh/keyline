@@ -21,13 +21,18 @@ type NodeHandler = (req: IncomingMessage, res: ServerResponse) => unknown;
 
 let cached: NodeHandler | undefined;
 
+let flushTracking: (() => Promise<void>) | undefined;
+
 async function getHandler(): Promise<NodeHandler> {
   if (cached) return cached;
-  const [{ Hono }, { handle }, { buildApp }] = await Promise.all([
+  const [{ Hono }, { handle }, { buildApp }, { initSentry, flushSentry }] = await Promise.all([
     import("hono"),
     import("@hono/node-server/vercel"),
     import("@keyline/api/app"),
+    import("@keyline/api/sentry"),
   ]);
+  initSentry(); // dormant unless SENTRY_DSN is set
+  flushTracking = flushSentry;
   const root = new Hono();
   root.route("/api", buildApp());
   cached = handle(root) as unknown as NodeHandler;
@@ -73,5 +78,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         ? Buffer.from(r.body)
         : Buffer.from(JSON.stringify(r.body));
   }
-  return h(req, res);
+  try {
+    await h(req, res);
+  } finally {
+    // Serverless freezes between invocations; flush queued events first so a
+    // captured error isn't stranded. No-op when tracking is off.
+    await flushTracking?.();
+  }
 }
