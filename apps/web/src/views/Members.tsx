@@ -40,7 +40,7 @@ export function Members({ session }: { session: WebSession }) {
   const [envs, setEnvs] = useState<EnvOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [joinCode, setJoinCode] = useState<{ email: string; code: string } | null>(null);
+  const [joinCode, setJoinCode] = useState<{ email: string; code: string; emailSent: boolean } | null>(null);
   const admin = isAdmin(session);
 
   const reload = useCallback(async () => {
@@ -105,14 +105,16 @@ export function Members({ session }: { session: WebSession }) {
           onInvite={(email, role) =>
             act(async () => {
               const invited = await invite(session, email, role);
-              setJoinCode({ email: invited.email, code: invited.joinCode });
+              setJoinCode({ email: invited.email, code: invited.joinCode, emailSent: invited.emailSent });
             })
           }
         />
       )}
       {joinCode && (
         <p className="notice" role="status">
-          Send {joinCode.email} this one-time command (valid 7 days):{" "}
+          {joinCode.emailSent
+            ? `Invite emailed to ${joinCode.email}. The command, in case they need it again:`
+            : `Send ${joinCode.email} this one-time command (valid 7 days):`}{" "}
           <code className="mono">keyline join {joinCode.code}</code>{" "}
           <CopyButton text={`keyline join ${joinCode.code}`} label={`copy join command for ${joinCode.email}`} />
         </p>
@@ -128,15 +130,15 @@ export function Members({ session }: { session: WebSession }) {
               {admin && m.status === "invited" && (
                 <button
                   className="mini"
-                  data-tip="Get a fresh join command to send them. The old code stops working."
+                  data-tip="Email them a fresh join code. The old one stops working."
                   onClick={() =>
                     void act(async () => {
                       const fresh = await regenerateJoinCode(session, m.id);
-                      setJoinCode({ email: m.email, code: fresh.joinCode });
+                      setJoinCode({ email: m.email, code: fresh.joinCode, emailSent: fresh.emailSent });
                     })
                   }
                 >
-                  join code
+                  resend invite
                 </button>
               )}
               {m.status === "active" && !m.keyed && (

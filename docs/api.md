@@ -61,7 +61,9 @@ server-side; hitting one returns `402 plan_limit` with
 
 ### Joining a workspace (#66)
 - `POST /v1/join` — redeem a one-time join code (public, tightly rate-limited). Body: `{ code, devicePublicKey, deviceName? }` → `{ workspaceId, workspaceName, memberId, deviceId, email, role }`. Codes come from an invite (or regeneration), live 7 days, burn on use, and are stored hashed. Audited as `member.join`.
-- `POST /v1/members/:id/join-code` — mint a fresh join code for a member (admin). The old code dies. → `{ joinCode, joinCodeExpiresAt }`.
+- `POST /v1/members/:id/join-code` — mint a fresh join code for a member (admin). The old code dies. → `{ joinCode, joinCodeExpiresAt, emailSent }`.
+
+**Invitation emails (#78):** when `RESEND_API_KEY` is set, inviting (and regenerating) emails the join command to the member from `EMAIL_FROM` (default `Keyline <invites@keyline.sh>`; the domain must be verified in Resend). Best-effort: no provider or an outage never blocks the invite — `emailSent: false` and the admin shares the command by hand.
 
 ### Device auth
 - `POST /v1/devices` — add a device to YOUR membership (authenticated; #64 closed the open seam). Body: `{ publicKey, name? }` → `{ deviceId, publicKey }`. New members enroll via `/v1/join`; new accounts via `/v1/onboard`.
@@ -91,7 +93,7 @@ server-side; hitting one returns `402 plan_limit` with
 - `POST /v1/environments/:id/rotate` — rotate one secret (env `write`). Body: `{ bundle, baseVersion?, secretName }` → `{ version, createdAt }`. The client re-encrypts with the secret changed; the server records the secret **name** and version, never the value.
 
 ### Members & access control
-- `POST /v1/workspaces/:wid/members` — invite (admin). Body: `{ email, role, displayName? }`. Response includes the one-time `joinCode` (+ expiry) to hand to the teammate.
+- `POST /v1/workspaces/:wid/members` — invite (admin). Body: `{ email, role, displayName? }`. Response includes the one-time `joinCode` (+ expiry) and `emailSent` (#78).
 - `GET /v1/workspaces/:wid/members` — list (member).
 - `PATCH /v1/members/:id` — profile update (self, or admin). Body: `{ displayName: string | null }`. Email and role are not editable.
 - `DELETE /v1/members/:id` — remove (admin).

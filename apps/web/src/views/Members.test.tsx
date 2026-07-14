@@ -163,7 +163,7 @@ describe("join codes (#66)", () => {
     expect(screen.getByLabelText("copy join command for mate@acme.test")).toBeDefined();
   });
 
-  test("invited members get a regenerate button that surfaces a fresh code", async () => {
+  test("invited members get a resend button that surfaces a fresh code", async () => {
     stubFetch([
       {
         match: (m, u) => m === "POST" && u.includes("/members/m-new/join-code"),
@@ -172,7 +172,7 @@ describe("join codes (#66)", () => {
       ...baseRoutes,
     ]);
     render(<Members session={admin} />);
-    fireEvent.click(await screen.findByText("join code"));
+    fireEvent.click(await screen.findByText("resend invite"));
     expect(await screen.findByText("keyline join WXYZ-WXYZ-WXYZ")).toBeDefined();
   });
 });
