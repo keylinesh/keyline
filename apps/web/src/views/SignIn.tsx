@@ -103,6 +103,7 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
         )}
       </div>
       <nav className="legal-links" aria-label="Legal">
+        <a href="/security">Security</a>
         <a href="/terms">Terms</a>
         <a href="/privacy">Privacy</a>
         <a href="/refunds">Refunds</a>

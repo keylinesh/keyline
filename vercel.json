@@ -13,6 +13,10 @@
       "destination": "/install.sh"
     },
     {
+      "source": "/security",
+      "destination": "/security.html"
+    },
+    {
       "source": "/terms",
       "destination": "/terms.html"
     },

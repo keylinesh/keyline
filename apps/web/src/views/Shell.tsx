@@ -78,6 +78,7 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
             Sign out
           </button>
           <nav className="legal-links" aria-label="Legal">
+            <a href="/security">Security</a>
             <a href="/terms">Terms</a>
             <a href="/privacy">Privacy</a>
             <a href="/refunds">Refunds</a>
