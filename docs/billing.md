@@ -88,6 +88,7 @@ consume and re-serialize request bodies (see `api/[[...route]].ts`).
 | `PADDLE_TEAM_PRICE_ID` | the Team price id, printed by paddle:setup |
 | `PADDLE_WEBHOOK_SECRET` | signing secret, printed by paddle:webhook |
 | `NODEJS_HELPERS` | `0` on Vercel, keeps raw bodies for signatures |
+| `CRON_SECRET` | bearer for the daily reconcile cron (#77) |
 
 Local: repo-root `.env`. Production: Vercel env. Code lives in `apps/api/src/billing/`.
 
@@ -128,6 +129,22 @@ What happens when a card stops working, end to end:
    environments stay readable but new invites/environments are blocked by
    entitlements (#49), and audit history windows to 7 days.
 4. Cancel-by-choice behaves the same: Team until period end, then Solo.
+
+## Reconciliation (#77)
+
+Webhooks can fail and deploys can lag behind checkouts (both happened).
+Paddle is the source of truth for money, so a daily job compares every
+Paddle subscription against `workspace_subscriptions` + `workspace.plan`
+and heals drift. Every healed plan lands in the audit log
+(`billing.reconcile`). Unknown workspaces are reported as orphans, never
+applied.
+
+- Production: Vercel cron, daily 06:00 UTC, `GET /v1/billing/reconcile`
+  authenticated with the `CRON_SECRET` bearer (set it in Vercel env;
+  Vercel attaches it to cron requests automatically).
+- Manual / admin view:
+  `PADDLE_API_KEY=... DATABASE_URL=... pnpm --filter @keyline/api paddle:reconcile`
+  prints every customer's Paddle status, DB status, plan, and what was done.
 
 ## Going live (the swap)
 

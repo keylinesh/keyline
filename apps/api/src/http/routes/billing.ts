@@ -6,13 +6,15 @@
  * gives a signed-in dashboard what it needs to open a Paddle checkout.
  */
 
+import { timingSafeEqual } from "node:crypto";
 import type { Hono, MiddlewareHandler } from "hono";
 import type { BillingPublicConfig } from "../../billing/paddle.js";
 import type { BillingPortalService } from "../../billing/portal.js";
+import type { ReconciliationService } from "../../billing/reconcile.js";
 import type { SubscriptionRepo } from "../../billing/subscriptions.js";
 import type { BillingWebhookService } from "../../billing/webhook.js";
 import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
-import { ApiError, notFound } from "../errors.js";
+import { ApiError, notFound, unauthorized } from "../errors.js";
 
 export interface BillingRouteDeps {
   /** null when billing webhooks aren't configured (no PADDLE_WEBHOOK_SECRET). */
@@ -22,6 +24,9 @@ export interface BillingRouteDeps {
   subscriptions: SubscriptionRepo;
   /** null when the server has no Paddle API key. */
   billingPortal: BillingPortalService | null;
+  billingReconcile: ReconciliationService | null;
+  /** Vercel cron authenticates with `Authorization: Bearer $CRON_SECRET`. */
+  cronSecret: string | null;
 }
 
 export function registerBillingRoutes(
@@ -42,6 +47,28 @@ export function registerBillingRoutes(
   app.get("/v1/billing/config", auth, async (c) => {
     if (!deps.billingConfig) throw notFound("billing not configured");
     return c.json(deps.billingConfig);
+  });
+
+  // Reconciliation (#77): heal drift between Paddle and our DB. Called by
+  // Vercel cron (daily) with the CRON_SECRET bearer; GET because cron GETs.
+  app.get("/v1/billing/reconcile", async (c) => {
+    if (!deps.billingReconcile || !deps.cronSecret) {
+      throw new ApiError(503, "internal", "reconciliation not configured");
+    }
+    const header = c.req.header("authorization") ?? "";
+    const expected = `Bearer ${deps.cronSecret}`;
+    const a = Buffer.from(header);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !timingSafeEqual(a, b)) {
+      throw unauthorized("bad cron secret");
+    }
+    const report = await deps.billingReconcile.run();
+    return c.json({
+      checked: report.checked,
+      healed: report.healed,
+      orphans: report.orphans,
+      drift: report.entries.filter((e) => e.action !== "in_sync"),
+    });
   });
 
   // Customer portal (#72): short-lived Paddle session for cancel/card changes.

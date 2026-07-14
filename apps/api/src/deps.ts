@@ -14,6 +14,7 @@ import { WebSessionService } from "./domain/web-sessions.js";
 import { InMemoryBillingEventRepo, PgBillingEventRepo } from "./billing/events.js";
 import { billingPublicConfigFromEnv, PaddleApi, paddleConfigFromEnv } from "./billing/paddle.js";
 import { BillingPortalService } from "./billing/portal.js";
+import { ReconciliationService } from "./billing/reconcile.js";
 import { InMemorySubscriptionRepo, PgSubscriptionRepo } from "./billing/subscriptions.js";
 import { BillingWebhookService } from "./billing/webhook.js";
 import { RevokeService } from "./services/revoke.js";
@@ -83,6 +84,13 @@ export function memoryDeps(): AppDeps {
       const cfg = paddleConfigFromEnv();
       return cfg ? new BillingPortalService(new PaddleApi(cfg), subscriptions) : null;
     })(),
+    billingReconcile: (() => {
+      const cfg = paddleConfigFromEnv();
+      return cfg
+        ? new ReconciliationService(new PaddleApi(cfg), subscriptions, workspaces, audit)
+        : null;
+    })(),
+    cronSecret: process.env.CRON_SECRET ?? null,
   };
 }
 
@@ -122,5 +130,12 @@ export function pgDeps(pool: Pool): AppDeps {
       const cfg = paddleConfigFromEnv();
       return cfg ? new BillingPortalService(new PaddleApi(cfg), subscriptions) : null;
     })(),
+    billingReconcile: (() => {
+      const cfg = paddleConfigFromEnv();
+      return cfg
+        ? new ReconciliationService(new PaddleApi(cfg), subscriptions, workspaces, audit)
+        : null;
+    })(),
+    cronSecret: process.env.CRON_SECRET ?? null,
   };
 }
