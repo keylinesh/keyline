@@ -1,9 +1,18 @@
 /**
  * Secure local key storage for device private keys.
  *
- * A device private key never leaves the machine. We store it in the OS keychain
- * where one is available (macOS today), and fall back to a file with strict
- * permissions (0600 in a 0700 directory) everywhere else.
+ * A device private key never leaves the machine. Preferred store since #62:
+ * the OS keychain via the @napi-rs/keyring native binding (macOS Keychain,
+ * Windows Credential Manager, Linux secret-service) — the secret crosses into
+ * the keychain in-process, never on a command line. Fallback: a file with
+ * strict permissions (0600 in a 0700 directory).
+ *
+ * History: v0.1.x wrote via the macOS `security` CLI, which briefly exposed
+ * the secret as an argv value visible to same-user processes (`ps`). That
+ * path is now READ-ONLY: reads never leaked (the secret is in stdout, not
+ * argv), so existing entries are migrated to the new store on first access
+ * and deleted from the legacy location. We never write through `security`
+ * again.
  *
  * The store holds a single secret string per account. The device layer
  * (device.ts) serializes the full DeviceIdentity as JSON and keeps it here.
@@ -18,10 +27,11 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 
 export interface KeyStore {
-  /** Identifies the backend in use (e.g. "macos-keychain", "file"). */
+  /** Identifies the backend in use (e.g. "keychain", "file"). */
   readonly backend: string;
   /** Return the stored secret for an account, or null if absent. */
   get(account: string): string | null;
@@ -41,8 +51,9 @@ function assertAccount(account: string): void {
 }
 
 /**
- * File-backed store. The default secure store on platforms without a keychain
- * integration, and the fallback when a keychain is unavailable.
+ * File-backed store. The fallback wherever the native keychain binding is
+ * unavailable (unsupported platform, or the optional dependency didn't
+ * install).
  *
  * Layout: `<baseDir>/<account>.key`, file mode 0600, directory mode 0700.
  */
@@ -91,87 +102,148 @@ export class FileKeyStore implements KeyStore {
   }
 }
 
-/**
- * macOS keychain store via the `security` CLI.
- *
- * Security note: `security add-generic-password` takes the secret as an argv
- * value, which is briefly visible to other processes of the same user via `ps`.
- * The keychain itself is the hardened store; closing that argv window means
- * replacing the CLI with a native binding (e.g. @napi-rs/keyring) — tracked as a
- * hardening follow-up. For now this is gated to macOS and is strictly better at
- * rest than a plaintext file.
- */
-export class MacKeychainStore implements KeyStore {
-  readonly backend = "macos-keychain";
+/** The slice of @napi-rs/keyring we use; injectable for tests. */
+export interface KeyringEntryCtor {
+  new (service: string, account: string): {
+    getPassword(): string | null;
+    setPassword(secret: string): void;
+    deletePassword(): boolean;
+  };
+}
 
-  static isAvailable(): boolean {
-    if (process.platform !== "darwin") return false;
+/**
+ * OS keychain via the native binding. The secret never appears on any
+ * process's command line.
+ */
+export class NativeKeychainStore implements KeyStore {
+  readonly backend = "keychain";
+
+  constructor(private readonly Entry: KeyringEntryCtor) {}
+
+  /** null when the optional native dependency isn't installed/loadable. */
+  static load(): NativeKeychainStore | null {
     try {
-      execFileSync("security", ["help"], { stdio: "ignore" });
-      return true;
+      const require = createRequire(import.meta.url);
+      const mod = require("@napi-rs/keyring") as { Entry: KeyringEntryCtor };
+      return new NativeKeychainStore(mod.Entry);
     } catch {
-      return false;
+      return null;
     }
   }
 
   get(account: string): string | null {
     assertAccount(account);
     try {
-      const out = execFileSync(
-        "security",
-        ["find-generic-password", "-s", KEYCHAIN_SERVICE, "-a", account, "-w"],
-        { encoding: "utf8" },
-      );
-      return out.replace(/\n$/, "");
+      return new this.Entry(KEYCHAIN_SERVICE, account).getPassword();
     } catch {
-      // Non-zero exit means the item does not exist.
       return null;
     }
   }
 
   set(account: string, secret: string): void {
     assertAccount(account);
-    // -U updates the item in place if it already exists.
-    execFileSync(
-      "security",
-      [
-        "add-generic-password",
-        "-U",
-        "-s",
-        KEYCHAIN_SERVICE,
-        "-a",
-        account,
-        "-w",
-        secret,
-      ],
-      { stdio: "ignore" },
-    );
+    const entry = new this.Entry(KEYCHAIN_SERVICE, account);
+    try {
+      entry.setPassword(secret);
+    } catch {
+      // A stale/duplicate item is blocking the add; drop it and retry once.
+      entry.deletePassword();
+      entry.setPassword(secret);
+    }
   }
 
   delete(account: string): void {
     assertAccount(account);
     try {
-      execFileSync(
-        "security",
-        ["delete-generic-password", "-s", KEYCHAIN_SERVICE, "-a", account],
-        { stdio: "ignore" },
-      );
+      new this.Entry(KEYCHAIN_SERVICE, account).deletePassword();
     } catch {
       // Item did not exist — nothing to delete.
     }
   }
 }
 
+/** Reads (only) legacy `security`-CLI keychain items, for migration. */
+export interface LegacyReader {
+  read(account: string): string | null;
+  remove(account: string): void;
+}
+
+export function macSecurityLegacyReader(): LegacyReader | null {
+  if (process.platform !== "darwin") return null;
+  return {
+    read(account: string): string | null {
+      assertAccount(account);
+      try {
+        const out = execFileSync(
+          "security",
+          ["find-generic-password", "-s", KEYCHAIN_SERVICE, "-a", account, "-w"],
+          { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+        );
+        return out.replace(/\n$/, "");
+      } catch {
+        return null;
+      }
+    },
+    remove(account: string): void {
+      try {
+        execFileSync(
+          "security",
+          ["delete-generic-password", "-s", KEYCHAIN_SERVICE, "-a", account],
+          { stdio: "ignore" },
+        );
+      } catch {
+        // Already gone.
+      }
+    },
+  };
+}
+
 /**
- * Pick the best available store: OS keychain where present, file otherwise.
+ * Wrap a store with one-time migration from the legacy location: a miss
+ * checks the legacy keychain, and a hit is moved into the new store.
+ */
+export function withLegacyMigration(primary: KeyStore, legacy: LegacyReader | null): KeyStore {
+  if (!legacy) return primary;
+  return {
+    backend: primary.backend,
+    get(account: string): string | null {
+      const current = primary.get(account);
+      if (current !== null) return current;
+      const old = legacy.read(account);
+      if (old === null) return null;
+      // Remove the legacy item BEFORE writing the native one. The native
+      // binding and the `security` CLI create distinct keychain items for the
+      // same service/account, so a native write while the legacy item exists
+      // fails with errSecDuplicateItem. Deleting via the CLI (which reliably
+      // removes its own item) first clears the collision. The value is held in
+      // memory across this one synchronous step.
+      legacy.remove(account);
+      primary.set(account, old);
+      return old;
+    },
+    set: (account, secret) => primary.set(account, secret),
+    delete(account: string): void {
+      primary.delete(account);
+      legacy.remove(account);
+    },
+  };
+}
+
+/**
+ * Pick the best available store: native OS keychain where the binding loads,
+ * file otherwise — both behind legacy migration on macOS.
  *
  * Override with KEYLINE_KEYSTORE=file|keychain (mainly for tests and for users
  * who prefer the file store).
  */
 export function openKeyStore(opts: { baseDir?: string } = {}): KeyStore {
   const forced = process.env.KEYLINE_KEYSTORE;
-  if (forced === "file") return new FileKeyStore(opts.baseDir);
-  if (forced === "keychain") return new MacKeychainStore();
-  if (MacKeychainStore.isAvailable()) return new MacKeychainStore();
-  return new FileKeyStore(opts.baseDir);
+  const legacy = macSecurityLegacyReader();
+  if (forced === "file") return withLegacyMigration(new FileKeyStore(opts.baseDir), legacy);
+  const native = NativeKeychainStore.load();
+  if (forced === "keychain") {
+    if (!native) throw new Error("the native keychain binding is not available on this install");
+    return withLegacyMigration(native, legacy);
+  }
+  return withLegacyMigration(native ?? new FileKeyStore(opts.baseDir), legacy);
 }

@@ -43,7 +43,7 @@ A set of secrets (e.g. a serialized `.env`) is sealed with AES-256-GCM under the
 
 ### 3. Device keypairs (`keypair.ts`)
 
-On first login a device generates an X25519 keypair. Public keys are stored as base64 SPKI DER; private keys as base64 PKCS8 DER, kept on the device. The private key is held in the OS keychain where available (macOS today), with a file fallback at `~/.keyline/keys/` (file mode 0600, directory mode 0700). Only the public key and a device id are registered with the server. See `apps/cli/src/keystore.ts` and `apps/cli/src/device.ts`.
+On first login a device generates an X25519 keypair. Public keys are stored as base64 SPKI DER; private keys as base64 PKCS8 DER, kept on the device. The private key is held in the OS keychain via a native binding (`@napi-rs/keyring`: macOS Keychain, Windows Credential Manager, Linux secret-service), so the secret never crosses a process command line (#62). Where the binding is unavailable it falls back to a file at `~/.keyline/keys/` (file mode 0600, directory mode 0700). Devices from v0.1.x, whose key was written via the legacy `security` CLI, migrate to the native store on first access. macOS shows a one-time keychain-access prompt the first time the binary reads the item; choose "Always Allow". Only the public key and a device id are registered with the server. See `apps/cli/src/keystore.ts` and `apps/cli/src/device.ts`.
 
 ### 4. Envelope encryption (`envelope.ts`)
 
