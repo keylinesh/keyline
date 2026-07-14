@@ -39,6 +39,22 @@ export function claimSession(sessionId: string, fetchImpl?: typeof fetch): Promi
   return request<ClaimResponse>("POST", `/v1/web/sessions/${sessionId}/claim`, { fetchImpl });
 }
 
+/** Ask for a sign-in link by email (#68). Always resolves; never reveals accounts. */
+export function requestMagicLink(email: string, fetchImpl?: typeof fetch): Promise<{ ok: boolean }> {
+  return request<{ ok: boolean }>("POST", "/v1/web/magic", { fetchImpl, body: { email } });
+}
+
+/** Redeem a magic-link token from the URL hash (#ml=...). Throws on bad/expired. */
+export function claimMagicLink(token: string, fetchImpl?: typeof fetch): Promise<WebSession> {
+  return request<WebSession>("POST", "/v1/web/magic/claim", { fetchImpl, body: { token } });
+}
+
+/** The #ml= token from a magic-link URL, if present. */
+export function magicTokenFromLocation(hash: string = window.location.hash): string | null {
+  const match = /[#&]ml=([A-Za-z0-9_-]{16,})/.exec(hash);
+  return match ? match[1]! : null;
+}
+
 /**
  * Poll claim until approved, expired, or consumed. Calls `onTick` between
  * polls so the UI can show progress. Resolves with the session on success,

@@ -405,6 +405,14 @@ export class PgMemberRepo implements MemberRepo {
     );
     return rows[0] ? toMember(rows[0]) : null;
   }
+  async findByEmailAnywhere(email: string): Promise<Member[]> {
+    const { rows } = await this.pool.query<MemberRow>(
+      `select id, workspace_id, email, display_name, role, created_at
+         from members where email = $1 order by created_at desc`,
+      [email],
+    );
+    return rows.map(toMember);
+  }
   async listByWorkspace(workspaceId: string): Promise<Member[]> {
     const { rows } = await this.pool.query<MemberRow>(
       `select id, workspace_id, email, display_name, role, created_at

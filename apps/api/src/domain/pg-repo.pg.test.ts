@@ -27,6 +27,7 @@ import { PgDeviceRepo } from "../auth/pg-repo.js";
 import { PgSubscriptionRepo } from "../billing/subscriptions.js";
 import { PgJoinCodeRepo } from "./join-codes.js";
 import { PgAnchorRepo } from "./anchors.js";
+import { PgMagicLinkRepo } from "./magic-links.js";
 import { hashSessionCode } from "./web-sessions.js";
 import { VersionConflictError } from "./bundles.js";
 import { verifyChain } from "./audit.js";
@@ -142,6 +143,13 @@ test("pg repos round-trip against Postgres", { skip: !dbUrl }, async () => {
     const an = new PgAnchorRepo(pool);
     await an.insert({ workspaceId: w.id, seq: mine!.seq, headHash: mine!.hash, witnessUrl: null });
     assert.equal((await an.latestForWorkspace(w.id))?.headHash, mine!.hash);
+
+    // Magic links (#68): single-use is atomic.
+    const mlr = new PgMagicLinkRepo(pool);
+    const link = await mlr.create({ memberId: mem.id, tokenHash: "th1", expiresAt: new Date("2027-01-01T00:00:00Z") });
+    assert.equal((await mlr.findByTokenHash("th1"))?.id, link.id);
+    assert.equal(await mlr.markUsed(link.id, new Date()), true);
+    assert.equal(await mlr.markUsed(link.id, new Date()), false, "second use loses");
 
     assert.ok(await ws.delete(w.id)); // cascade removes children + audit
   } finally {

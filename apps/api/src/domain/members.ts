@@ -22,6 +22,8 @@ export interface MemberRepo {
   }): Promise<Member>;
   findById(id: string): Promise<Member | null>;
   findByEmail(workspaceId: string, email: string): Promise<Member | null>;
+  /** All memberships for an email across workspaces, newest first (#68). */
+  findByEmailAnywhere(email: string): Promise<Member[]>;
   listByWorkspace(workspaceId: string): Promise<Member[]>;
   /** Update the display name (profile settings, #43). Null clears it. */
   updateDisplayName(id: string, displayName: string | null): Promise<Member | null>;

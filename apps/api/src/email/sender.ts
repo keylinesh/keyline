@@ -150,3 +150,63 @@ New to Keyline? https://keyline.sh
     html,
   };
 }
+
+/** The magic-link sign-in email (#68). One-time, 15 minutes. */
+export function magicLinkEmail(input: {
+  workspaceName: string;
+  url: string;
+}): Omit<EmailMessage, "to"> {
+  const ws = escapeHtml(input.workspaceName);
+  const url = escapeHtml(input.url);
+  const mono = "'SF Mono','JetBrains Mono',Menlo,Consolas,monospace";
+  const sans = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+  const text = `Sign in to "${input.workspaceName}" on Keyline:
+
+${input.url}
+
+The link works once and expires in 15 minutes. The dashboard shows metadata only. Secret values stay in the CLI.
+
+Didn't request this? Ignore it. Nothing happens without the link.
+`;
+
+  const html = `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background-color:#f4f5f7;">
+  <div style="display:none;max-height:0;overflow:hidden;">Your one-time sign-in link. Expires in 15 minutes.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+        <tr><td style="padding:0 4px 16px;font-family:${sans};font-size:16px;color:#111418;">
+          <span style="font-family:${mono};font-weight:700;color:#0d9488;">k_</span>&nbsp;<span style="font-weight:700;letter-spacing:-0.01em;">Keyline</span>
+        </td></tr>
+        <tr><td style="background-color:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:36px 36px 28px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr><td style="font-family:${sans};font-size:22px;line-height:1.3;font-weight:700;color:#111418;padding-bottom:10px;">
+              Sign in to <span style="color:#0d9488;">${ws}</span>
+            </td></tr>
+            <tr><td style="font-family:${sans};font-size:15px;line-height:1.6;color:#4b5563;padding-bottom:24px;">
+              One click and you're in. The link works once and expires in 15 minutes.
+            </td></tr>
+            <tr><td align="left" style="padding-bottom:20px;">
+              <a href="${url}" style="display:inline-block;background-color:#0d9488;color:#ffffff;font-family:${sans};font-size:15px;font-weight:600;text-decoration:none;padding:12px 26px;border-radius:9px;">Sign in</a>
+            </td></tr>
+            <tr><td style="font-family:${sans};font-size:13px;line-height:1.6;color:#8a919c;">
+              The dashboard shows metadata only. Secret values stay in the CLI.<br>
+              Didn't request this? Ignore it. Nothing happens without the link.
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:20px 4px 0;font-family:${sans};font-size:12.5px;line-height:1.6;color:#9aa1ab;">
+          <a href="https://keyline.sh" style="color:#0d9488;text-decoration:none;">keyline.sh</a> &nbsp;·&nbsp;
+          <a href="https://keyline.sh/terms" style="color:#9aa1ab;">Terms</a> &nbsp;·&nbsp;
+          <a href="https://keyline.sh/privacy" style="color:#9aa1ab;">Privacy</a>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  return { subject: `Sign in to ${input.workspaceName}`, text, html };
+}

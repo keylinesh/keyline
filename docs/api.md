@@ -110,6 +110,9 @@ server-side; hitting one returns `402 plan_limit` with
 - `POST /v1/web/sessions/approve` — approve by code (device-authenticated; the `keyline web <code>` command). Binds the caller's member/device/workspace/role to the session. Unknown, expired, or reused codes → 404.
 - `POST /v1/web/sessions/:id/claim` — poll (public) → `{ status: pending|expired|consumed }` or, exactly once after approval, `{ status: "ready", token, expiresAt, workspaceId, memberId, role }`. The 8-hour token is minted at claim time (never stored) and is bound to the approving device, so member/device revocation kills web sessions too.
 
+- `POST /v1/web/magic` — request a sign-in link by email (#68). Always `202 { ok: true }` — the response never reveals whether the email exists. A link is sent only to members with an active device; single-use, 15-minute, hashed at rest.
+- `POST /v1/web/magic/claim` — redeem the link token → the same session payload as a claimed web session; the token is bound to the member's device, so revocation kills it.
+
 All `/v1/web/*` routes sit behind the tight per-IP auth rate limit.
 
 ### Audit log
