@@ -92,6 +92,7 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   app.use("*", rateLimit({ ...rl, keyFn: tokenOrIpKey }));
   app.use("/v1/auth/*", rateLimit({ ...authRl, keyFn: ipKey }));
   app.use("/v1/devices", rateLimit({ ...authRl, keyFn: ipKey }));
+  app.use("/v1/join", rateLimit({ ...authRl, keyFn: ipKey }));
   app.use("/v1/web/*", rateLimit({ ...authRl, keyFn: ipKey }));
 
   app.onError((err, c) => {
@@ -170,7 +171,7 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   });
 
   const auth = authMiddleware(deps.tokens);
-  registerAuthRoutes(app, deps.login);
+  registerAuthRoutes(app, deps.login, deps.join, auth);
   registerOnboardingRoutes(app, deps);
   registerResourceRoutes(app, deps, auth);
   registerMemberRoutes(app, deps, auth);

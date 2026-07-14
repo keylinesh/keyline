@@ -17,6 +17,7 @@ import {
   grantsByMember,
   hasKey,
   invite,
+  regenerateJoinCode,
   listMembers,
   memberDevices,
   revokeAccess,
@@ -39,6 +40,7 @@ export function Members({ session }: { session: WebSession }) {
   const [envs, setEnvs] = useState<EnvOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [joinCode, setJoinCode] = useState<{ email: string; code: string } | null>(null);
   const admin = isAdmin(session);
 
   const reload = useCallback(async () => {
@@ -98,7 +100,23 @@ export function Members({ session }: { session: WebSession }) {
     <div>
       {error && <p className="error" role="alert">{error}</p>}
       {notice && <p className="notice" role="status">{notice}</p>}
-      {admin && <InviteForm onInvite={(email, role) => act(() => invite(session, email, role))} />}
+      {admin && (
+        <InviteForm
+          onInvite={(email, role) =>
+            act(async () => {
+              const invited = await invite(session, email, role);
+              setJoinCode({ email: invited.email, code: invited.joinCode });
+            })
+          }
+        />
+      )}
+      {joinCode && (
+        <p className="notice" role="status">
+          Send {joinCode.email} this one-time command (valid 7 days):{" "}
+          <code className="mono">keyline join {joinCode.code}</code>{" "}
+          <CopyButton text={`keyline join ${joinCode.code}`} label={`copy join command for ${joinCode.email}`} />
+        </p>
+      )}
       {rows?.map((m) => (
         <div className="res-card" key={m.id}>
           <div className="res-head">
@@ -107,8 +125,22 @@ export function Members({ session }: { session: WebSession }) {
               {m.id === session.memberId && <span className="you-tag">you</span>}
               <span className={`status-pill ${m.role}`}>{m.role}</span>
               {m.status && <span className={`status-pill ${m.status}`}>{m.status}</span>}
+              {admin && m.status === "invited" && (
+                <button
+                  className="mini"
+                  data-tip="Get a fresh join command to send them. The old code stops working."
+                  onClick={() =>
+                    void act(async () => {
+                      const fresh = await regenerateJoinCode(session, m.id);
+                      setJoinCode({ email: m.email, code: fresh.joinCode });
+                    })
+                  }
+                >
+                  join code
+                </button>
+              )}
               {m.status === "active" && !m.keyed && (
-                <span className="key-hint" title="Grant from a CLI to issue the workspace key">
+                <span className="key-hint" data-tip="They can't decrypt yet. Grant from a CLI that holds the key.">
                   no key yet
                   <CopyButton
                     text={`keyline members grant ${m.email}`}
@@ -120,6 +152,7 @@ export function Members({ session }: { session: WebSession }) {
             {admin && m.id !== session.memberId && m.status !== "revoked" && (
               <button
                 className="mini danger"
+                data-tip="Cuts their access now. Their data stays."
                 onClick={() => {
                   if (window.confirm(`Immediately revoke ${m.email}'s access? Their sessions end and their keys are deleted.`)) {
                     void act(async () => {
@@ -142,6 +175,7 @@ export function Members({ session }: { session: WebSession }) {
                   {g.env.label}: {g.role}
                   <button
                     className="chip-x"
+                    data-tip="Remove this access"
                     aria-label={`remove grant ${g.env.label} for ${m.email}`}
                     onClick={() => void act(() => revokeAccess(session, g.env.id, m.id))}
                   >

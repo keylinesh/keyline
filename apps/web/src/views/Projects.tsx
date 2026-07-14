@@ -107,6 +107,7 @@ export function Projects({ session }: { session: WebSession }) {
                 </button>
                 <button
                   className="mini danger"
+                  data-tip="Deletes the project, its environments, and pushed ciphertext."
                   onClick={() => {
                     if (window.confirm(`Delete project "${project.name}" and its environments? Pushed ciphertext is deleted too.`)) {
                       void act(() => deleteProject(session, project.id));
@@ -125,6 +126,7 @@ export function Projects({ session }: { session: WebSession }) {
                 {admin && (
                   <button
                     className="chip-x"
+                    data-tip="Deletes this environment and its secrets"
                     aria-label={`delete environment ${env.name}`}
                     onClick={() => {
                       if (window.confirm(`Delete environment "${env.name}" of ${project.name}?`)) {

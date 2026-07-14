@@ -27,15 +27,16 @@ See also: [MVP scope](mvp-scope.md), [ICP](icp.md), [ADR-0002 zero-knowledge bou
 ## 4. Add your team
 
 1. Upgrade to Team. See Billing below.
-2. Run `keyline members` and invite a teammate by email.
+2. Invite a teammate by email (`keyline members invite` or the Members page). You get a one-time join code to send them. It lives 7 days.
 3. Scope them per environment. For example, read-only on `prod`.
 4. Under the hood, the workspace key is re-wrapped to their device key. Nothing is re-encrypted. Access is just granted.
 
 ## 5. A teammate joins
 
-1. They install the CLI and run `keyline login`.
-2. They run `keyline link my-app --env dev`, then `keyline pull`.
-3. They have the secrets in under two minutes. They learned zero new concepts.
+1. They install the CLI and run `keyline join <code>` with the code you sent them.
+2. You grant them access: `keyline members grant them@co.com --env dev`. That wraps the workspace key to their device.
+3. They run `keyline link my-app --env dev`, then `keyline pull`.
+4. They have the secrets in minutes. They learned zero new concepts.
 
 ## 6. Someone leaves or a key leaks
 

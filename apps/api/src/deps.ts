@@ -10,6 +10,7 @@ import { DeviceLoginService } from "./auth/device-login.js";
 import { TokenService } from "./auth/tokens.js";
 import { AuditService } from "./domain/audit.js";
 import { EntitlementsService } from "./domain/entitlements.js";
+import { InMemoryJoinCodeRepo, JoinService, PgJoinCodeRepo } from "./domain/join-codes.js";
 import { WebSessionService } from "./domain/web-sessions.js";
 import { InMemoryBillingEventRepo, PgBillingEventRepo } from "./billing/events.js";
 import { billingPublicConfigFromEnv, PaddleApi, paddleConfigFromEnv } from "./billing/paddle.js";
@@ -75,6 +76,7 @@ export function memoryDeps(): AppDeps {
     revoke: new RevokeService(devices, wrappedKeys, tokens),
     webSessions: new WebSessionService(new InMemoryWebSessionRepo(), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
+    join: new JoinService(new InMemoryJoinCodeRepo(), members, workspaces, login, audit),
     billingWebhook: webhookSecret
       ? new BillingWebhookService(webhookSecret, new InMemoryBillingEventRepo(), workspaces, audit, subscriptions)
       : null,
@@ -121,6 +123,7 @@ export function pgDeps(pool: Pool): AppDeps {
     revoke: new RevokeService(devices, wrappedKeys, tokens),
     webSessions: new WebSessionService(new PgWebSessionRepo(pool), tokens),
     entitlements: new EntitlementsService(workspaces, projects, environments, members),
+    join: new JoinService(new PgJoinCodeRepo(pool), members, workspaces, login, audit),
     billingWebhook: webhookSecret
       ? new BillingWebhookService(webhookSecret, new PgBillingEventRepo(pool), workspaces, audit, subscriptions)
       : null,

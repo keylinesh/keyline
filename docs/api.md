@@ -59,8 +59,12 @@ server-side; hitting one returns `402 plan_limit` with
 ### Onboarding (public)
 - `POST /v1/onboard` — bootstrap a new account: creates a workspace (+ KDF salt), a first **owner** member, and registers the caller's device. Body: `{ workspaceName, kdfSalt, email, displayName?, devicePublicKey, deviceName? }` → `{ workspaceId, memberId, deviceId, publicKey }`. Open signup (invite/verification gating tracked as #64).
 
-### Device auth (public)
-- `POST /v1/devices` — register a device public key. Body: `{ memberId, workspaceId, publicKey, role, name? }` → `{ deviceId, publicKey }`. (Onboarding seam — to be gated by enrollment.)
+### Joining a workspace (#66)
+- `POST /v1/join` — redeem a one-time join code (public, tightly rate-limited). Body: `{ code, devicePublicKey, deviceName? }` → `{ workspaceId, workspaceName, memberId, deviceId, email, role }`. Codes come from an invite (or regeneration), live 7 days, burn on use, and are stored hashed. Audited as `member.join`.
+- `POST /v1/members/:id/join-code` — mint a fresh join code for a member (admin). The old code dies. → `{ joinCode, joinCodeExpiresAt }`.
+
+### Device auth
+- `POST /v1/devices` — add a device to YOUR membership (authenticated; #64 closed the open seam). Body: `{ publicKey, name? }` → `{ deviceId, publicKey }`. New members enroll via `/v1/join`; new accounts via `/v1/onboard`.
 - `POST /v1/auth/device/challenge` — Body: `{ deviceId }` → `{ challengeId, sealed }`. `sealed` is a 32-byte challenge sealed to the device public key.
 - `POST /v1/auth/device/login` — Body: `{ challengeId, answer, environmentIds? }` → `{ token, expiresAt }`. `answer` is the unsealed challenge (base64).
 
@@ -87,7 +91,7 @@ server-side; hitting one returns `402 plan_limit` with
 - `POST /v1/environments/:id/rotate` — rotate one secret (env `write`). Body: `{ bundle, baseVersion?, secretName }` → `{ version, createdAt }`. The client re-encrypts with the secret changed; the server records the secret **name** and version, never the value.
 
 ### Members & access control
-- `POST /v1/workspaces/:wid/members` — invite (admin). Body: `{ email, role, displayName? }`.
+- `POST /v1/workspaces/:wid/members` — invite (admin). Body: `{ email, role, displayName? }`. Response includes the one-time `joinCode` (+ expiry) to hand to the teammate.
 - `GET /v1/workspaces/:wid/members` — list (member).
 - `PATCH /v1/members/:id` — profile update (self, or admin). Body: `{ displayName: string | null }`. Email and role are not editable.
 - `DELETE /v1/members/:id` — remove (admin).

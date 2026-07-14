@@ -99,18 +99,16 @@ test("rotate validates the secret name", async () => {
 async function joinMember(h: Harness, email: string) {
   const owner = ownerApi(h);
   const account = loadAccount(h.deps.store)!;
-  const member = await owner.post<{ id: string }>(`/v1/workspaces/${account.workspaceId}/members`, {
-    email,
-    role: "member",
-  });
+  const member = await owner.post<{ id: string; joinCode: string }>(
+    `/v1/workspaces/${account.workspaceId}/members`,
+    { email, role: "member" },
+  );
 
   const kp = generateDeviceKeyPair();
   const anon = new ApiClient({ baseUrl: "", fetchImpl: h.fetchImpl });
-  const device = await anon.post<{ deviceId: string }>("/v1/devices", {
-    memberId: member.id,
-    workspaceId: account.workspaceId,
-    publicKey: kp.publicKey,
-    role: "member",
+  const device = await anon.post<{ deviceId: string }>("/v1/join", {
+    code: member.joinCode,
+    devicePublicKey: kp.publicKey,
   });
   const ch = await anon.post<{ challengeId: string; sealed: never }>(
     "/v1/auth/device/challenge",

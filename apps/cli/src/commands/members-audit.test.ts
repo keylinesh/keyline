@@ -30,11 +30,10 @@ async function joinAsMember(h: Harness, email: string) {
 
   const kp = generateDeviceKeyPair();
   const anon = new ApiClient({ baseUrl: "", fetchImpl: h.fetchImpl });
-  const device = await anon.post<{ deviceId: string }>("/v1/devices", {
-    memberId,
-    workspaceId: account.workspaceId,
-    publicKey: kp.publicKey,
-    role: "member",
+  const { joinCode } = await owner.post<{ joinCode: string }>(`/v1/members/${memberId}/join-code`, {});
+  const device = await anon.post<{ deviceId: string }>("/v1/join", {
+    code: joinCode,
+    devicePublicKey: kp.publicKey,
   });
   const ch = await anon.post<{ challengeId: string; sealed: never }>(
     "/v1/auth/device/challenge",
