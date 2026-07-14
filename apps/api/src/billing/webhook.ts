@@ -16,8 +16,14 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import type { AuditService } from "../domain/audit.js";
-import type { WorkspacePlan, WorkspaceRepo } from "../domain/resources.js";
+import type { WorkspaceRepo } from "../domain/resources.js";
 import type { BillingEventRepo } from "./events.js";
+import {
+  PLAN_BY_SUBSCRIPTION_STATUS,
+  SUBSCRIPTION_STATUSES,
+  type SubscriptionRepo,
+  type SubscriptionStatus,
+} from "./subscriptions.js";
 
 /** Reject signatures older than this — Paddle re-signs retries at send time. */
 const MAX_AGE_SECONDS = 5 * 60;
@@ -53,19 +59,15 @@ export function verifyPaddleSignature(
 interface PaddleEvent {
   event_id: string;
   event_type: string;
+  occurred_at?: string;
   data: {
     id?: string;
     status?: string;
+    customer_id?: string | null;
+    current_billing_period?: { ends_at?: string | null } | null;
     custom_data?: Record<string, unknown> | null;
   };
 }
-
-/** Subscription status → plan. Unlisted statuses (past_due, paused) change nothing: grace is #74. */
-const PLAN_BY_STATUS: Record<string, WorkspacePlan> = {
-  trialing: "team",
-  active: "team",
-  canceled: "solo",
-};
 
 export type WebhookOutcome =
   | { ok: true; result: "applied" | "duplicate" | "recorded" | "ignored"; detail?: string }
@@ -77,6 +79,7 @@ export class BillingWebhookService {
     private readonly events: BillingEventRepo,
     private readonly workspaces: WorkspaceRepo,
     private readonly audit: AuditService,
+    private readonly subscriptions: SubscriptionRepo,
   ) {}
 
   async handle(rawBody: string, signature: string | undefined, now?: Date): Promise<WebhookOutcome> {
@@ -108,13 +111,30 @@ export class BillingWebhookService {
     }
     if (!workspaceId) return { ok: true, result: "ignored", detail: "no workspaceId" };
 
-    const plan = PLAN_BY_STATUS[event.data.status ?? ""];
-    if (!plan) return { ok: true, result: "ignored", detail: `status ${event.data.status}` };
-
+    const status = event.data.status as SubscriptionStatus | undefined;
+    if (!status || !SUBSCRIPTION_STATUSES.includes(status)) {
+      return { ok: true, result: "ignored", detail: `status ${event.data.status}` };
+    }
     const workspace = await this.workspaces.findById(workspaceId);
     if (!workspace) return { ok: true, result: "ignored", detail: "unknown workspace" };
+
+    // The state machine row first; a stale (out-of-order) event stops here.
+    const occurredAt = event.occurred_at ? new Date(event.occurred_at) : new Date();
+    const periodEnd = event.data.current_billing_period?.ends_at;
+    const stored = await this.subscriptions.upsertIfNewer({
+      workspaceId,
+      paddleSubscriptionId: event.data.id ?? "unknown",
+      paddleCustomerId: event.data.customer_id ?? null,
+      status,
+      currentPeriodEnd: periodEnd ? new Date(periodEnd) : null,
+      occurredAt,
+    });
+    if (!stored) return { ok: true, result: "ignored", detail: "stale event" };
+
+    // Then the access consequence.
+    const plan = PLAN_BY_SUBSCRIPTION_STATUS[status];
     const previousPlan = workspace.plan;
-    if (previousPlan === plan) return { ok: true, result: "ignored", detail: "plan unchanged" };
+    if (previousPlan === plan) return { ok: true, result: "applied", detail: `status ${status}` };
 
     await this.workspaces.update(workspaceId, { plan });
     await this.audit.record({
@@ -126,6 +146,7 @@ export class BillingWebhookService {
       metadata: {
         plan,
         previousPlan,
+        subscriptionStatus: status,
         subscriptionId: event.data.id ?? null,
         eventType: event.event_type,
       },

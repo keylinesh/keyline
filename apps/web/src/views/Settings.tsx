@@ -12,7 +12,14 @@ import { explainError, request } from "../api.js";
 import { isAdmin, type WebSession } from "../session.js";
 import { getWorkspace, renameWorkspace, type Workspace } from "../resources.js";
 import { listMembers, type Member } from "../members.js";
-import { ensurePaddle, getBillingConfig, openTeamCheckout, type BillingConfig } from "../billing.js";
+import {
+  ensurePaddle,
+  getBillingConfig,
+  getSubscription,
+  openTeamCheckout,
+  type BillingConfig,
+  type SubscriptionInfo,
+} from "../billing.js";
 import { CopyButton } from "./CopyButton.js";
 
 export function Settings({ session }: { session: WebSession }) {
@@ -145,6 +152,7 @@ function BillingCard({
   onPlanChange: (ws: Workspace) => void;
 }) {
   const [config, setConfig] = useState<BillingConfig | null | "unavailable">(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
   const alive = useRef(true);
@@ -155,6 +163,11 @@ function BillingCard({
       getBillingConfig(session)
         .then((c) => alive.current && setConfig(c))
         .catch(() => alive.current && setConfig("unavailable"));
+    }
+    if (workspace.plan === "team" && admin) {
+      getSubscription(session)
+        .then((s) => alive.current && setSubscription(s))
+        .catch(() => {});
     }
     return () => {
       alive.current = false;
@@ -211,10 +224,23 @@ function BillingCard({
         </span>
       </div>
       {team ? (
-        <p className="hint" style={{ marginTop: 10 }}>
-          Up to 10 members, unlimited environments, full audit history. Cancel and card changes
-          arrive with the customer portal.
-        </p>
+        <>
+          {subscription?.status === "past_due" && (
+            <p className="error" role="alert" style={{ marginTop: 10 }}>
+              Payment issue. Paddle is retrying your card. Your plan stays active during the
+              retries, then drops to Solo.
+            </p>
+          )}
+          {subscription?.status === "trialing" && (
+            <p className="hint" style={{ marginTop: 10 }}>
+              Free trial{subscription.currentPeriodEnd ? ` until ${subscription.currentPeriodEnd.slice(0, 10)}` : ""}. First charge after that.
+            </p>
+          )}
+          <p className="hint" style={{ marginTop: 10 }}>
+            Up to 10 members, unlimited environments, full audit history. Cancel and card changes
+            arrive with the customer portal.
+          </p>
+        </>
       ) : activating ? (
         <p className="notice" role="status" style={{ marginTop: 10 }}>
           Payment received. Activating your Team plan…

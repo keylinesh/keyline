@@ -23,6 +23,7 @@ async function setup() {
     new InMemoryBillingEventRepo(),
     deps.workspaces,
     deps.audit,
+    deps.subscriptions,
   );
   const app = createApp(deps);
   const ws = await deps.workspaces.create({ name: "Acme", kdfSalt: SALT });
@@ -109,15 +110,8 @@ test("bad or missing signatures are 401 and change nothing", async () => {
   assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
 });
 
-test("past_due, unknown workspace, and non-subscription events are recorded, not applied", async () => {
+test("unknown workspace and non-subscription events are recorded, not applied", async () => {
   const { deps, ws, post } = await setup();
-
-  const pastDue = JSON.stringify({
-    event_id: "evt_pd",
-    event_type: "subscription.past_due",
-    data: { id: "sub_123", status: "past_due", custom_data: { workspaceId: ws.id } },
-  });
-  assert.equal((await readJson(await post(pastDue, sign(pastDue)))).result, "ignored");
 
   const foreign = JSON.stringify({
     event_id: "evt_fw",
@@ -134,6 +128,103 @@ test("past_due, unknown workspace, and non-subscription events are recorded, not
   assert.equal((await readJson(await post(txn, sign(txn)))).result, "recorded");
 
   assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
+});
+
+// ---- Lifecycle / state machine (#74) ----
+
+function lifecycleEvent(
+  wsId: string,
+  status: string,
+  occurredAt: string,
+  overrides: Record<string, unknown> = {},
+) {
+  return JSON.stringify({
+    event_id: `evt_${status}_${occurredAt}`,
+    event_type: `subscription.${status === "active" ? "activated" : status}`,
+    occurred_at: occurredAt,
+    data: {
+      id: "sub_lc",
+      status,
+      customer_id: "ctm_1",
+      current_billing_period: { ends_at: "2026-08-01T00:00:00Z" },
+      custom_data: { workspaceId: wsId },
+      ...overrides,
+    },
+  });
+}
+
+test("past_due keeps team (grace) and records when it started; cancel then downgrades", async () => {
+  const { deps, ws, post } = await setup();
+  const t = (m: number) => `2026-07-14T12:${String(m).padStart(2, "0")}:00Z`;
+
+  await post(lifecycleEvent(ws.id, "trialing", t(1)), sign(lifecycleEvent(ws.id, "trialing", t(1))));
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team");
+
+  const pd = lifecycleEvent(ws.id, "past_due", t(10));
+  assert.equal((await readJson(await post(pd, sign(pd)))).result, "applied");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team", "grace: still team");
+  let sub = await deps.subscriptions.findByWorkspace(ws.id);
+  assert.equal(sub?.status, "past_due");
+  assert.equal(sub?.pastDueSince?.toISOString(), new Date(t(10)).toISOString());
+
+  const cancel = lifecycleEvent(ws.id, "canceled", t(30));
+  assert.equal((await readJson(await post(cancel, sign(cancel)))).result, "applied");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
+  sub = await deps.subscriptions.findByWorkspace(ws.id);
+  assert.equal(sub?.status, "canceled");
+  assert.equal(sub?.pastDueSince, null);
+});
+
+test("paused drops to solo; resuming restores team", async () => {
+  const { deps, ws, post } = await setup();
+  const t = (m: number) => `2026-07-14T13:${String(m).padStart(2, "0")}:00Z`;
+
+  await post(lifecycleEvent(ws.id, "active", t(1)), sign(lifecycleEvent(ws.id, "active", t(1))));
+  const paused = lifecycleEvent(ws.id, "paused", t(5));
+  await post(paused, sign(paused));
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
+
+  const resumed = lifecycleEvent(ws.id, "active", t(9));
+  await post(resumed, sign(resumed));
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team");
+});
+
+test("an out-of-order older event never regresses newer state", async () => {
+  const { deps, ws, post } = await setup();
+  const cancel = lifecycleEvent(ws.id, "canceled", "2026-07-14T15:00:00Z");
+  await post(cancel, sign(cancel));
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
+
+  // A delayed 'activated' from BEFORE the cancel arrives late: must be ignored.
+  const stale = lifecycleEvent(ws.id, "active", "2026-07-14T14:00:00Z");
+  const res = await readJson(await post(stale, sign(stale)));
+  assert.equal(res.result, "ignored");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
+  assert.equal((await deps.subscriptions.findByWorkspace(ws.id))?.status, "canceled");
+});
+
+test("subscription endpoint: admin sees status, member is 403, empty is null", async () => {
+  const { deps, ws, post, app } = await setup();
+  const adminTok = (await deps.tokens.issue({
+    deviceId: "d-a", memberId: "m-a", scope: { workspaceId: ws.id, role: "admin" },
+  })).token;
+  const memberTok = (await deps.tokens.issue({
+    deviceId: "d-m", memberId: "m-m", scope: { workspaceId: ws.id, role: "member" },
+  })).token;
+  const get = (t: string) =>
+    app.request(`/v1/workspaces/${ws.id}/billing/subscription`, {
+      headers: { authorization: `Bearer ${t}` },
+    });
+
+  assert.deepEqual(await readJson(await get(adminTok)), { subscription: null });
+  assert.equal((await get(memberTok)).status, 403);
+
+  const pd = lifecycleEvent(ws.id, "past_due", "2026-07-14T16:00:00Z");
+  await post(pd, sign(pd));
+  const body = await readJson(await get(adminTok));
+  assert.equal(body.subscription.status, "past_due");
+  assert.equal(body.subscription.pastDueSince, "2026-07-14T16:00:00.000Z");
+  assert.equal(body.subscription.currentPeriodEnd, "2026-08-01T00:00:00.000Z");
 });
 
 test("the endpoint is 503 until a webhook secret is configured", async () => {

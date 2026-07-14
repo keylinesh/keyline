@@ -30,6 +30,23 @@ checkout with `customData.workspaceId`. Paddle collects payment. The webhook
 flips the plan, and the dashboard polls the workspace until it lands.
 Sandbox test card: 4242 4242 4242 4242, any future expiry, any CVC.
 
+## Subscription lifecycle (#74)
+
+One `workspace_subscriptions` row per subscribed workspace, upserted from
+webhook events and guarded by `occurred_at` (out-of-order deliveries never
+regress newer state). The plan consequence of each status is explicit:
+
+| Status | Plan | Why |
+|---|---|---|
+| trialing, active | team | paying (or trialing) |
+| past_due | team | grace: Paddle's dunning retries the card |
+| paused | solo | the customer chose to stop paying |
+| canceled | solo | end of the line; data is kept |
+
+The billing card shows a payment-issue warning during past_due and the trial
+end date while trialing (`GET /v1/workspaces/:wid/billing/subscription`,
+admin). `paddle_customer_id` is stored for the customer portal (#72).
+
 ## Webhooks (#73)
 
 Paddle drives our subscription state via `POST /v1/billing/webhook` (public,
@@ -70,6 +87,7 @@ Local: repo-root `.env`. Production: Vercel env. Code lives in `apps/api/src/bil
 ## Going live (the swap)
 
 1. `PADDLE_ENV=live PADDLE_API_KEY=<live key> pnpm --filter @keyline/api paddle:setup` and `paddle:webhook`.
-2. Replace in Vercel: `PADDLE_ENV=live`, the live API key + client token, and the printed live `PADDLE_TEAM_PRICE_ID` + `PADDLE_WEBHOOK_SECRET`.
+2. In the live Paddle dashboard: **Checkout → Checkout settings → set the Default payment link** (e.g. `https://keyline.sh/app`). Without it every checkout 400s with `transaction_default_checkout_url_not_set` — found the hard way in sandbox.
+3. Replace in Vercel: `PADDLE_ENV=live`, the live API key + client token, and the printed live `PADDLE_TEAM_PRICE_ID` + `PADDLE_WEBHOOK_SECRET`.
 
 No code changes.

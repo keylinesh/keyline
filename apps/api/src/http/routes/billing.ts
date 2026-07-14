@@ -8,8 +8,9 @@
 
 import type { Hono, MiddlewareHandler } from "hono";
 import type { BillingPublicConfig } from "../../billing/paddle.js";
+import type { SubscriptionRepo } from "../../billing/subscriptions.js";
 import type { BillingWebhookService } from "../../billing/webhook.js";
-import type { AppEnv } from "../authz.js";
+import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
 import { ApiError, notFound } from "../errors.js";
 
 export interface BillingRouteDeps {
@@ -17,6 +18,7 @@ export interface BillingRouteDeps {
   billingWebhook: BillingWebhookService | null;
   /** null when checkout isn't configured (no client token / price id). */
   billingConfig: BillingPublicConfig | null;
+  subscriptions: SubscriptionRepo;
 }
 
 export function registerBillingRoutes(
@@ -37,5 +39,21 @@ export function registerBillingRoutes(
   app.get("/v1/billing/config", auth, async (c) => {
     if (!deps.billingConfig) throw notFound("billing not configured");
     return c.json(deps.billingConfig);
+  });
+
+  // Subscription state for the billing UI (#74). Admin-only, like audit.
+  app.get("/v1/workspaces/:wid/billing/subscription", auth, async (c) => {
+    const wid = c.req.param("wid");
+    requireWorkspace(c.get("principal"), wid);
+    requireRole(c.get("principal"), "admin");
+    const sub = await deps.subscriptions.findByWorkspace(wid);
+    if (!sub) return c.json({ subscription: null });
+    return c.json({
+      subscription: {
+        status: sub.status,
+        currentPeriodEnd: sub.currentPeriodEnd?.toISOString() ?? null,
+        pastDueSince: sub.pastDueSince?.toISOString() ?? null,
+      },
+    });
   });
 }
