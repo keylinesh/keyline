@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { startSignIn, waitForApproval, type StartResponse, type WebSession } from "../session.js";
+import { CopyButton } from "./CopyButton.js";
 
 export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => void }) {
   const [start, setStart] = useState<StartResponse | null>(null);
@@ -47,6 +48,7 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
         </p>
         <div className="code-box">
           <span className="pr">$</span> keyline web <b>{start ? start.code : "····-····"}</b>
+          {start && <CopyButton text={`keyline web ${start.code}`} label="copy sign-in command" />}
         </div>
         <p className="hint">
           This approves the browser from a device you already trust. The dashboard shows metadata
@@ -57,9 +59,11 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
           <p className="hint">Install the CLI, create your account, then run the command above:</p>
           <div className="code-box small">
             <span className="pr">$</span> npm i -g @keylinesh/cli
+            <CopyButton text="npm i -g @keylinesh/cli" />
           </div>
           <div className="code-box small">
             <span className="pr">$</span> keyline login
+            <CopyButton text="keyline login" />
           </div>
           <p className="hint">
             Login is two questions on first run. Codes expire after 10 minutes. Refresh the page
