@@ -31,6 +31,7 @@ import { registerAuditRoutes } from "./routes/audit.js";
 import { registerOnboardingRoutes } from "./routes/onboarding.js";
 import { registerDeviceRoutes } from "./routes/devices.js";
 import { registerWebSessionRoutes, type WebSessionRouteDeps } from "./routes/web-sessions.js";
+import { registerBillingRoutes, type BillingRouteDeps } from "./routes/billing.js";
 
 export interface AppDeps
   extends ResourceDeps,
@@ -38,7 +39,8 @@ export interface AppDeps
     MemberRouteDeps,
     AuditRouteDeps,
     DeviceRouteDeps,
-    WebSessionRouteDeps {
+    WebSessionRouteDeps,
+    BillingRouteDeps {
   tokens: TokenService;
   login: DeviceLoginService;
   devices: DeviceRepo;
@@ -176,6 +178,7 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   registerDeviceRoutes(app, deps, auth);
   registerAuditRoutes(app, deps, auth);
   registerWebSessionRoutes(app, deps, auth);
+  registerBillingRoutes(app, deps);
 
   return app;
 }
