@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { explainError } from "../api.js";
 import { isAdmin, type WebSession } from "../session.js";
+import { CopyButton } from "./CopyButton.js";
 import {
   envCatalog,
   grantAccess,
@@ -107,8 +108,12 @@ export function Members({ session }: { session: WebSession }) {
               <span className={`status-pill ${m.role}`}>{m.role}</span>
               {m.status && <span className={`status-pill ${m.status}`}>{m.status}</span>}
               {m.status === "active" && !m.keyed && (
-                <span className="key-hint" title="Grant from a CLI to issue the workspace key: keyline members grant">
+                <span className="key-hint" title="Grant from a CLI to issue the workspace key">
                   no key yet
+                  <CopyButton
+                    text={`keyline members grant ${m.email}`}
+                    label={`copy grant command for ${m.email}`}
+                  />
                 </span>
               )}
             </div>

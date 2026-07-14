@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import type { WebSession } from "../session.js";
 import { listMembers } from "../members.js";
+import { CopyButton } from "./CopyButton.js";
 
 export function GettingStarted({ session }: { session: WebSession }) {
   const [teamDone, setTeamDone] = useState(false);
@@ -48,7 +49,12 @@ function Step({ done, label, command, hint }: { done: boolean; label: string; co
       </span>
       <div>
         <b>{label}</b>
-        {command && <code className="cmd">$ {command}</code>}
+        {command && (
+          <span className="cmd-row">
+            <code className="cmd">$ {command}</code>
+            <CopyButton text={command} />
+          </span>
+        )}
         {hint && <span className="hint step-hint">{hint}</span>}
       </div>
     </li>

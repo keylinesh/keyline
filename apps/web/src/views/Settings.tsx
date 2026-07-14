@@ -13,6 +13,7 @@ import { isAdmin, type WebSession } from "../session.js";
 import { getWorkspace, renameWorkspace, type Workspace } from "../resources.js";
 import { listMembers, type Member } from "../members.js";
 import { ensurePaddle, getBillingConfig, openTeamCheckout, type BillingConfig } from "../billing.js";
+import { CopyButton } from "./CopyButton.js";
 
 export function Settings({ session }: { session: WebSession }) {
   const [self, setSelf] = useState<Member | null>(null);
@@ -111,7 +112,9 @@ export function Settings({ session }: { session: WebSession }) {
         </div>
         <div className="kv">
           <span className="k">id</span>
-          <span className="mono faint">{session.workspaceId}</span>
+          <span className="mono faint">
+            {session.workspaceId} <CopyButton text={session.workspaceId} label="copy workspace id" />
+          </span>
         </div>
       </div>
 

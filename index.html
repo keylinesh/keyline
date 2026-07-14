@@ -225,7 +225,10 @@
   .step .no{font-family:'JetBrains Mono';font-size:13px;color:var(--mint-dim)}
   .step h3{font-family:'Bricolage Grotesque';font-weight:700;font-size:21px;margin:14px 0 9px;letter-spacing:-.01em}
   .step p{color:var(--muted);font-size:15.5px}
-  .step code{display:block;font-family:'JetBrains Mono';font-size:13px;background:#0a0c0f;border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-top:16px;color:var(--ink)}
+  .step code{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono';font-size:13px;background:#0a0c0f;border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-top:16px;color:var(--ink)}
+  .ccp{margin-left:auto;font-family:'Hanken Grotesk';font-size:11px;color:var(--faint);background:none;border:1px solid var(--line-2);border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s}
+  .ccp:hover{color:var(--ink);border-color:var(--mint)}
+  .ccp.ok{color:var(--mint);border-color:var(--mint)}
   .step code .pr{color:var(--mint)}
 
   /* zero knowledge */
@@ -448,19 +451,19 @@
         <div class="no">01</div>
         <h3>Link your project</h3>
         <p>Point a directory at a workspace and an environment. Keyline remembers it.</p>
-        <code><span class="pr">$</span> keyline link acme-api --env prod</code>
+        <code data-copy="keyline link acme-api --env prod"><span><span class="pr">$</span> keyline link acme-api --env prod</span><button class="ccp" aria-label="copy command">copy</button></code>
       </div>
       <div class="step rv">
         <div class="no">02</div>
         <h3>Push & pull</h3>
         <p>One person pushes the <span class="mono">.env</span>. Everyone else pulls it. Always current, never in Slack.</p>
-        <code><span class="pr">$</span> keyline pull <span style="color:var(--faint)">› wrote .env</span></code>
+        <code data-copy="keyline pull"><span><span class="pr">$</span> keyline pull <span style="color:var(--faint)">› wrote .env</span></span><button class="ccp" aria-label="copy command">copy</button></code>
       </div>
       <div class="step rv">
         <div class="no">03</div>
         <h3>Rotate, revoke, audit</h3>
         <p>Cut access the moment someone leaves. Every read and write is logged for good.</p>
-        <code><span class="pr">$</span> keyline revoke jordan@</code>
+        <code data-copy="keyline revoke jordan@"><span><span class="pr">$</span> keyline revoke jordan@</span><button class="ccp" aria-label="copy command">copy</button></code>
       </div>
     </div>
   </div>
@@ -494,7 +497,7 @@
       <div class="step rv">
         <h3>Out of the context window</h3>
         <p>The agent starts your app through Keyline. Secrets are injected in memory, into the app process. Never into the prompt.</p>
-        <code><span class="pr">$</span> keyline run -- npm test</code>
+        <code data-copy="keyline run -- npm test"><span><span class="pr">$</span> keyline run -- npm test</span><button class="ccp" aria-label="copy command">copy</button></code>
       </div>
       <div class="step rv">
         <h3>Scoped like any teammate</h3>
@@ -773,6 +776,17 @@
     es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
   },{threshold:.12});
   document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+  // Copy step commands
+  document.querySelectorAll('code[data-copy]').forEach(c=>{
+    const b=c.querySelector('.ccp');
+    b?.addEventListener('click',()=>{
+      navigator.clipboard?.writeText(c.dataset.copy).then(()=>{
+        b.textContent='copied ✓'; b.classList.add('ok');
+        setTimeout(()=>{ b.textContent='copy'; b.classList.remove('ok'); },1600);
+      }).catch(()=>{ b.textContent='copy failed'; });
+    });
+  });
 
   // Copy install
   const copy = document.getElementById('copy');
