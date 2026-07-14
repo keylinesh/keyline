@@ -25,6 +25,10 @@
       "destination": "/privacy.html"
     },
     {
+      "source": "/dpa",
+      "destination": "/dpa.html"
+    },
+    {
       "source": "/refunds",
       "destination": "/refunds.html"
     },
