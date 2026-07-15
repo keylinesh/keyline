@@ -115,7 +115,8 @@ button { font-family: inherit; }
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s, color 0.2s;
 }
-.btn:hover { border-color: var(--mint); }
+.btn:hover:not(:disabled) { border-color: var(--mint); }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .btn.primary {
   background: var(--mint);

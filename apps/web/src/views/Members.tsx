@@ -266,7 +266,16 @@ function GrantEditor({
         <option value="write">write</option>
         <option value="admin">admin</option>
       </select>
-      <button className="btn" type="submit">
+      <button
+        className="btn"
+        type="submit"
+        disabled={!envId}
+        data-tip={
+          envId
+            ? `Give ${role} access and the key to decrypt this environment`
+            : "Pick an environment first"
+        }
+      >
         + grant
       </button>
     </form>
