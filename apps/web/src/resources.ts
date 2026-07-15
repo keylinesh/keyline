@@ -11,6 +11,8 @@ export interface Project {
   id: string;
   name: string;
   slug: string;
+  /** Included by the list endpoint so the Projects page is one request. */
+  environments?: Environment[];
 }
 
 export interface Environment {

@@ -18,7 +18,7 @@ import {
   type AuditFilter,
   type VerifyResult,
 } from "../audit.js";
-import { listMembers, envCatalog, type EnvOption } from "../members.js";
+import { membersOverview, type EnvOption } from "../members.js";
 
 const SHOW_LIMIT = 200;
 
@@ -38,16 +38,15 @@ export function Audit({ session }: { session: WebSession }) {
     }
     (async () => {
       try {
-        const [list, v, members, catalog] = await Promise.all([
+        const [list, v, overview] = await Promise.all([
           fetchAudit(session),
           verifyChain(session),
-          listMembers(session),
-          envCatalog(session),
+          membersOverview(session), // members + env catalog in one request
         ]);
         setEvents(list.slice().reverse()); // newest first
         setVerify(v);
-        setEmailById(new Map(members.map((m) => [m.id, m.email])));
-        setEnvs(catalog);
+        setEmailById(new Map(overview.members.map((m) => [m.id, m.email])));
+        setEnvs(overview.environments);
       } catch (err) {
         if (err instanceof ApiError && err.status === 403) setDenied(true);
         else setError(explainError(err));

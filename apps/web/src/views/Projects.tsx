@@ -14,7 +14,6 @@ import {
   createProject,
   deleteEnvironment,
   deleteProject,
-  listEnvironments,
   listProjects,
   renameProject,
   type Environment,
@@ -34,11 +33,8 @@ export function Projects({ session }: { session: WebSession }) {
 
   const reload = useCallback(async () => {
     try {
-      const projects = await listProjects(session);
-      const withEnvs = await Promise.all(
-        projects.map(async (p) => ({ ...p, environments: await listEnvironments(session, p.id) })),
-      );
-      setRows(withEnvs);
+      // Environments come embedded in the list response: one request total.
+      setRows((await listProjects(session)).map((p) => ({ ...p, environments: p.environments ?? [] })));
     } catch (err) {
       setError(explain(err));
     }

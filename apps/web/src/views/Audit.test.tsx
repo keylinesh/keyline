@@ -31,14 +31,17 @@ function stubFetch() {
       ? { ok: true, count: 2 }
       : url.includes("/audit")
         ? { events: EVENTS }
-        : url.includes("/members")
-          ? { members: [
-              { id: "m1", email: "founder@acme.test", displayName: null, role: "owner", createdAt: "" },
-              { id: "m2", email: "dev@acme.test", displayName: null, role: "member", createdAt: "" },
-            ] }
-          : url.includes("/projects/p1/environments")
-            ? { environments: [{ id: "e1", name: "prod" }, { id: "e2", name: "dev" }] }
-            : { projects: [{ id: "p1", name: "api", slug: "api" }] };
+        : {
+            // the single members/overview response (#41 perf)
+            environments: [
+              { id: "e1", name: "prod", projectId: "p1", projectSlug: "api", label: "api/prod" },
+              { id: "e2", name: "dev", projectId: "p1", projectSlug: "api", label: "api/dev" },
+            ],
+            members: [
+              { id: "m1", email: "founder@acme.test", displayName: null, role: "owner", createdAt: "", status: "active", keyed: true, grants: [] },
+              { id: "m2", email: "dev@acme.test", displayName: null, role: "member", createdAt: "", status: "active", keyed: true, grants: [] },
+            ],
+          };
     return new Response(JSON.stringify(body), { status: 200 });
   });
 }
