@@ -42,7 +42,15 @@ test("no sink registered is a no-op (dormant without SENTRY_DSN)", () => {
 
 test("initSentry is dormant without a DSN and reports live with one", async () => {
   const { initSentry } = await import("./sentry.js");
-  assert.equal(initSentry({ dsn: undefined }), false);
+  // Scrub the ambient env first: under `keyline run` the real SENTRY_DSN is
+  // injected, and initSentry falls back to it when config.dsn is undefined.
+  const ambient = process.env.SENTRY_DSN;
+  delete process.env.SENTRY_DSN;
+  try {
+    assert.equal(initSentry({ dsn: undefined }), false);
+  } finally {
+    if (ambient !== undefined) process.env.SENTRY_DSN = ambient;
+  }
   // A syntactically valid DSN pointing nowhere: init returns true, and nothing
   // throws even though the transport can't reach Sentry.
   const live = initSentry({ dsn: "https://examplekey@o0.ingest.sentry.io/0", environment: "test" });
