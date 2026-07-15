@@ -86,9 +86,9 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
   return (
     <div className="layout">
       <aside className="sidebar">
-        <span className="brand">
+        <a className="brand" href="/" aria-label="Back to keyline.sh">
           <span className="mk">k_</span> Keyline
-        </span>
+        </a>
         <nav className="side-nav">
           {SECTIONS.map(({ name }) => (
             <a
