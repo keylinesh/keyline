@@ -64,33 +64,50 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
         </div>
         <h1>Sign in</h1>
         <p className="sub">
-          The dashboard signs in through the CLI. No passwords. In your terminal, run:
+          The dashboard signs in through the CLI. No passwords. Three steps, and the first two
+          you only ever do once:
         </p>
-        <div className="code-box">
-          <span className="pr">$</span> keyline web <b>{start ? start.code : "····-····"}</b>
-          {start && <CopyButton text={`keyline web ${start.code}`} label="copy sign-in command" />}
-        </div>
+        <ol className="signin-steps">
+          <li>
+            <span className="sdot">1</span>
+            <div className="sbody">
+              <b>Install the CLI</b> <span className="sskip">already installed? skip to 3</span>
+              <div className="code-box small">
+                <span className="pr">$</span> npm i -g @keylinesh/cli
+                <CopyButton text="npm i -g @keylinesh/cli" />
+              </div>
+            </div>
+          </li>
+          <li>
+            <span className="sdot">2</span>
+            <div className="sbody">
+              <b>Sign in or create your account</b>
+              <div className="code-box small">
+                <span className="pr">$</span> keyline login
+                <CopyButton text="keyline login" />
+              </div>
+              <p className="hint">Two questions on first run. No card.</p>
+            </div>
+          </li>
+          <li>
+            <span className="sdot">3</span>
+            <div className="sbody">
+              <b>Approve this browser</b>
+              <div className="code-box small">
+                <span className="pr">$</span> keyline web <b>{start ? start.code : "····-····"}</b>
+                {start && <CopyButton text={`keyline web ${start.code}`} label="copy sign-in command" />}
+              </div>
+              <p className="hint">
+                The code expires after 10 minutes. Refresh the page for a fresh one.
+              </p>
+            </div>
+          </li>
+        </ol>
         <p className="hint">
           This approves the browser from a device you already trust. The dashboard shows metadata
           only. Secret values stay in the CLI.
         </p>
         <MagicLinkForm />
-        <details className="signin-help">
-          <summary>Command not found?</summary>
-          <p className="hint">Install the CLI, create your account, then run the command above:</p>
-          <div className="code-box small">
-            <span className="pr">$</span> npm i -g @keylinesh/cli
-            <CopyButton text="npm i -g @keylinesh/cli" />
-          </div>
-          <div className="code-box small">
-            <span className="pr">$</span> keyline login
-            <CopyButton text="keyline login" />
-          </div>
-          <p className="hint">
-            Login is two questions on first run. Codes expire after 10 minutes. Refresh the page
-            for a fresh one.
-          </p>
-        </details>
         {error ? (
           <>
             <p className="error">{error}</p>
@@ -119,7 +136,7 @@ function MagicLinkForm() {
   const [email, setEmail] = useState("");
   const [requested, setRequested] = useState(false);
   return (
-    <details className="signin-help">
+    <details className="signin-help" open>
       <summary>No terminal handy?</summary>
       {requested ? (
         <p className="hint">If that email has an account, a sign-in link is on its way. It works once and expires in 15 minutes.</p>

@@ -145,6 +145,42 @@ input:focus {
 }
 input::placeholder { color: var(--faint); }
 
+/* ---- sign-in steps ---- */
+.signin-steps { list-style: none; margin: 20px 0 6px; padding: 0; }
+.signin-steps li { display: flex; gap: 13px; position: relative; padding-bottom: 20px; }
+.signin-steps li:last-child { padding-bottom: 0; }
+.signin-steps li::before {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 28px;
+  bottom: 0;
+  width: 1px;
+  background: var(--line-2);
+}
+.signin-steps li:last-child::before { display: none; }
+.sdot {
+  flex-shrink: 0;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--bg-inset);
+  border: 1px solid var(--mint-line);
+  color: var(--mint-dim);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  position: relative;
+  z-index: 1;
+  margin-top: 1px;
+}
+.signin-steps .sbody { min-width: 0; flex: 1; }
+.signin-steps b { font-size: 14.5px; font-weight: 600; }
+.sskip { color: var(--faint); font-size: 12px; margin-left: 8px; }
+.signin-steps .code-box.small { margin-top: 8px; }
+.signin-steps .hint { margin-top: 6px; font-size: 12.5px; }
+
 /* ---- sign-in ---- */
 
 .center-page {
