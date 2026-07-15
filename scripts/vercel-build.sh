@@ -6,7 +6,7 @@ set -euo pipefail
 pnpm -r build
 
 mkdir -p public
-cp index.html favicon.svg og-image.png og-image.svg robots.txt sitemap.xml install.sh public/
+cp index.html favicon.svg og-image.png og-image.svg robots.txt sitemap.xml install.sh llms.txt public/
 cp legal/*.html public/
 mkdir -p public/fonts
 cp fonts/*.woff2 public/fonts/

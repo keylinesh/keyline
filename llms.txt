@@ -1,0 +1,49 @@
+# Keyline
+
+> Zero-knowledge secrets manager for small dev teams. Push a `.env` with one
+> command; teammates pull it decrypted on their machines. The server only ever
+> holds ciphertext, so a breach of Keyline is not a breach of you. Solo is
+> free, Team is $19/month flat.
+
+Keyline is CLI-first. Install with `curl -fsSL keyline.sh/install | sh` or
+`npm i -g @keylinesh/cli`, then `keyline login`, `keyline link`, and
+`keyline push`. The web dashboard at /app shows metadata only; secret values
+never reach a browser. Encryption is client-side (AES-256-GCM, X25519 device
+keys); the design is public and verifiable rather than asserted.
+
+## Docs
+
+- [Security posture](https://keyline.sh/security): what our servers hold, the
+  crypto primitives, the publicly anchored audit log, and how to report a
+  vulnerability
+- [Encryption design](https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md):
+  the full scheme with key hierarchy, threat model, and known trade-offs
+- [Source repository](https://gitlab.com/resim.boyadzhiev/keyline): the code
+  is public; read it, don't trust us
+- [Audit anchors](https://gitlab.com/resim.boyadzhiev/keyline-anchors): daily
+  public witness of every workspace's audit chain head (hashes only)
+
+## Product
+
+- [Landing page](https://keyline.sh/): what Keyline does, pricing, FAQ
+- [Dashboard](https://keyline.sh/app): metadata-only web UI, signs in via the
+  CLI (no passwords)
+- [Install script](https://keyline.sh/install): POSIX shell installer for the
+  CLI
+- [npm package](https://www.npmjs.com/package/@keylinesh/cli): the CLI,
+  published with SHA-256 checksums
+
+## Legal
+
+- [Terms of Service](https://keyline.sh/terms)
+- [Privacy Policy](https://keyline.sh/privacy): we hold ciphertext, metadata,
+  and little else
+- [Data Processing Agreement](https://keyline.sh/dpa): GDPR Article 28 terms,
+  applies automatically
+- [Refund policy](https://keyline.sh/refunds): 14 days, no questions
+
+## Optional
+
+- [security.txt](https://keyline.sh/.well-known/security.txt): RFC 9116
+  machine-readable disclosure contact
+- [Sitemap](https://keyline.sh/sitemap.xml)
