@@ -59,9 +59,9 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
     <div className="center-page">
       <ThemeToggle />
       <div className="card">
-        <div className="brand" style={{ marginBottom: 18 }}>
+        <a className="brand" href="/" aria-label="Back to keyline.sh" style={{ marginBottom: 18 }}>
           <span className="mk">k_</span> Keyline
-        </div>
+        </a>
         <h1>Sign in</h1>
         <p className="sub">
           The dashboard signs in through the CLI. No passwords. Three steps, and the first two
