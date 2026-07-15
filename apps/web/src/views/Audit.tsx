@@ -138,6 +138,7 @@ export function Audit({ session }: { session: WebSession }) {
       {filtered.length === 0 ? (
         <div className="placeholder">No events match.</div>
       ) : (
+        <div className="table-scroll">
         <table className="audit-table">
           <thead>
             <tr>
@@ -170,6 +171,7 @@ export function Audit({ session }: { session: WebSession }) {
             ))}
           </tbody>
         </table>
+        </div>
       )}
       {filtered.length > SHOW_LIMIT && (
         <p className="hint" style={{ marginTop: 12 }}>
