@@ -111,6 +111,16 @@ export interface KeyringEntryCtor {
   };
 }
 
+/** null when the optional native dependency isn't installed/loadable. */
+export function loadKeyringEntry(): KeyringEntryCtor | null {
+  try {
+    const require = createRequire(import.meta.url);
+    return (require("@napi-rs/keyring") as { Entry: KeyringEntryCtor }).Entry;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * OS keychain via the native binding. The secret never appears on any
  * process's command line.
@@ -122,13 +132,8 @@ export class NativeKeychainStore implements KeyStore {
 
   /** null when the optional native dependency isn't installed/loadable. */
   static load(): NativeKeychainStore | null {
-    try {
-      const require = createRequire(import.meta.url);
-      const mod = require("@napi-rs/keyring") as { Entry: KeyringEntryCtor };
-      return new NativeKeychainStore(mod.Entry);
-    } catch {
-      return null;
-    }
+    const Entry = loadKeyringEntry();
+    return Entry ? new NativeKeychainStore(Entry) : null;
   }
 
   get(account: string): string | null {
@@ -159,6 +164,100 @@ export class NativeKeychainStore implements KeyStore {
     } catch {
       // Item did not exist — nothing to delete.
     }
+  }
+}
+
+/**
+ * One keychain item for everything.
+ *
+ * The CLI stores three secrets (device identity, account, session token). As
+ * three separate keychain items, macOS may show three permission prompts, and
+ * again for every new process unless the user clicks "Always Allow" on each.
+ * Stored as ONE item holding a JSON object, there is at most one prompt, and
+ * none at all for fresh installs: macOS automatically trusts the app that
+ * created an item, and with this store the CLI always creates it.
+ *
+ * Old per-account items are folded into the vault on first read and deleted,
+ * so existing users authorize once more at most, then never again.
+ */
+export class VaultKeychainStore implements KeyStore {
+  readonly backend = "keychain";
+  private static readonly VAULT_ACCOUNT = "vault";
+  private cache: Record<string, string> | null = null;
+
+  constructor(private readonly Entry: KeyringEntryCtor) {}
+
+  private readVault(): Record<string, string> {
+    if (this.cache) return this.cache;
+    let raw: string | null = null;
+    try {
+      raw = new this.Entry(KEYCHAIN_SERVICE, VaultKeychainStore.VAULT_ACCOUNT).getPassword();
+    } catch {
+      raw = null;
+    }
+    if (raw === null) {
+      this.cache = {};
+      return this.cache;
+    }
+    try {
+      this.cache = JSON.parse(raw) as Record<string, string>;
+    } catch {
+      // Never clobber a vault we can't parse — a device key may live in it.
+      throw new Error(
+        "the keyline keychain entry is unreadable; inspect the 'keyline' item in Keychain Access",
+      );
+    }
+    return this.cache;
+  }
+
+  private writeVault(vault: Record<string, string>): void {
+    const entry = new this.Entry(KEYCHAIN_SERVICE, VaultKeychainStore.VAULT_ACCOUNT);
+    const raw = JSON.stringify(vault);
+    try {
+      entry.setPassword(raw);
+    } catch {
+      // A stale/duplicate item is blocking the add; drop it and retry once.
+      entry.deletePassword();
+      entry.setPassword(raw);
+    }
+    this.cache = vault;
+  }
+
+  /** Read and remove a pre-vault per-account item (migration). */
+  private takeLegacyItem(account: string): string | null {
+    try {
+      const entry = new this.Entry(KEYCHAIN_SERVICE, account);
+      const old = entry.getPassword();
+      if (old !== null) entry.deletePassword();
+      return old;
+    } catch {
+      return null;
+    }
+  }
+
+  get(account: string): string | null {
+    assertAccount(account);
+    const vault = this.readVault();
+    if (account in vault) return vault[account]!;
+    const old = this.takeLegacyItem(account);
+    if (old === null) return null;
+    this.writeVault({ ...vault, [account]: old });
+    return old;
+  }
+
+  set(account: string, secret: string): void {
+    assertAccount(account);
+    this.writeVault({ ...this.readVault(), [account]: secret });
+    // Make sure a pre-vault item can't shadow the new value later.
+    this.takeLegacyItem(account);
+  }
+
+  delete(account: string): void {
+    assertAccount(account);
+    const vault = { ...this.readVault() };
+    delete vault[account];
+    this.writeVault(vault);
+    this.takeLegacyItem(account);
   }
 }
 
@@ -240,7 +339,8 @@ export function openKeyStore(opts: { baseDir?: string } = {}): KeyStore {
   const forced = process.env.KEYLINE_KEYSTORE;
   const legacy = macSecurityLegacyReader();
   if (forced === "file") return withLegacyMigration(new FileKeyStore(opts.baseDir), legacy);
-  const native = NativeKeychainStore.load();
+  const Entry = loadKeyringEntry();
+  const native = Entry ? new VaultKeychainStore(Entry) : null;
   if (forced === "keychain") {
     if (!native) throw new Error("the native keychain binding is not available on this install");
     return withLegacyMigration(native, legacy);
