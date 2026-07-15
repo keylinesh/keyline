@@ -105,7 +105,7 @@ button { font-family: inherit; }
   justify-content: center;
   gap: 8px;
   height: 40px;
-  padding: 0 18px;
+  padding: 0 18px 2px; /* optical: the font's tall ascent makes lowercase labels sit low */
   border-radius: 10px;
   border: 1px solid var(--line-2);
   background: transparent;
@@ -131,7 +131,7 @@ input[type="text"], input[type="email"], input:not([type]) {
   border-radius: 10px;
   color: var(--ink);
   height: 40px;
-  padding: 0 14px;
+  padding: 0 14px 2px; /* optical: see .btn */
   font-size: 14.5px;
   font-family: inherit;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -314,7 +314,7 @@ input::placeholder { color: var(--faint); }
   border-radius: 999px;
   padding: 1px 9px;
 }
-.side-foot .btn { margin-top: 14px; width: 100%; justify-content: center; height: 36px; padding: 0 12px; font-size: 13.5px; }
+.side-foot .btn { margin-top: 14px; width: 100%; justify-content: center; height: 36px; padding: 0 12px 2px; font-size: 13.5px; }
 
 .side-foot-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
 .side-foot-row .btn { margin-top: 0; flex: 1; }
@@ -361,7 +361,7 @@ input::placeholder { color: var(--faint); }
   border-radius: 8px;
   color: var(--muted);
   font-size: 13px;
-  padding: 5px 13px;
+  padding: 4px 13px 6px; /* optical: see .btn */
   cursor: pointer;
   transition: border-color 0.2s, color 0.2s;
 }
@@ -387,8 +387,8 @@ input::placeholder { color: var(--faint); }
 
 .inline-create { display: flex; gap: 8px; }
 .inline-create input { min-width: 220px; }
-.inline-create.small input { min-width: 150px; height: 34px; padding: 0 13px; font-size: 13.5px; border-radius: 999px; }
-.inline-create.small .btn { height: 34px; padding: 0 15px; font-size: 13.5px; border-radius: 999px; }
+.inline-create.small input { min-width: 150px; height: 34px; padding: 0 13px 2px; font-size: 13.5px; border-radius: 999px; }
+.inline-create.small .btn { height: 34px; padding: 0 15px 2px; font-size: 13.5px; border-radius: 999px; }
 
 /* ---- members (#41) ---- */
 
@@ -402,14 +402,14 @@ select {
   border-radius: 10px;
   color: var(--ink);
   height: 40px;
-  padding: 0 32px 0 14px;
+  padding: 0 32px 2px 14px;
   font-size: 14.5px;
   font-family: inherit;
   cursor: pointer;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 select:focus { outline: none; border-color: var(--mint); box-shadow: 0 0 0 3px var(--mint-ring); }
-.inline-create.small select { height: 34px; padding: 0 30px 0 13px; font-size: 13.5px; border-radius: 999px; }
+.inline-create.small select { height: 34px; padding: 0 30px 2px 13px; font-size: 13.5px; border-radius: 999px; }
 
 .you-tag {
   font-family: "JetBrains Mono", monospace;
@@ -606,7 +606,7 @@ select:focus { outline: none; border-color: var(--mint); box-shadow: 0 0 0 3px v
   .side-foot { margin: 0; border: none; padding: 0; display: flex; align-items: center; gap: 10px; }
   .side-foot .ws-name, .role-pill, .side-foot .legal-links { display: none; }
   .side-foot .side-foot-row { margin: 0; }
-  .side-foot .btn { margin: 0; width: auto; height: 34px; padding: 0 14px; }
+  .side-foot .btn { margin: 0; width: auto; height: 34px; padding: 0 14px 2px; }
   .theme-toggle { width: 34px; height: 34px; }
 
   .page { padding: 24px 16px 60px; }
