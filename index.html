@@ -255,6 +255,41 @@
   .step h3{font-family:'Bricolage Grotesque';font-weight:700;font-size:21px;margin:14px 0 9px;letter-spacing:-.01em}
   .step p{color:var(--muted);font-size:15.5px}
   .step code{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono';font-size:13px;background:#0a0c0f;border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-top:16px;color:var(--ink)}
+
+  /* journey (how-it-works redesign) */
+  .journey{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;margin-top:54px;align-items:stretch}
+  .jlane{background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r);padding:24px 22px}
+  .jhead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:16px;border-bottom:1px solid var(--line);margin-bottom:20px}
+  .jwho{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;letter-spacing:-.01em}
+  .jtime{font-family:'JetBrains Mono';font-size:11.5px;color:var(--mint-dim);border:1px solid rgba(94,234,212,.25);border-radius:999px;padding:2px 10px;white-space:nowrap}
+  .jsteps{list-style:none;margin:0;padding:0}
+  .jstep{display:flex;gap:14px;position:relative;padding-bottom:22px}
+  .jstep:last-child{padding-bottom:0}
+  .jstep::before{content:"";position:absolute;left:13px;top:30px;bottom:2px;width:1px;background:var(--line-2)}
+  .jstep:last-child::before{display:none}
+  .jdot{flex-shrink:0;width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:var(--bg);border:1px solid var(--mint-dim);color:var(--mint);font-family:'JetBrains Mono';font-size:12px;position:relative;z-index:1}
+  .jbody{min-width:0;flex:1}
+  .jbody h3{font-family:'Hanken Grotesk';font-weight:600;font-size:16px;margin:3px 0 3px}
+  .jbody p{color:var(--muted);font-size:14px;line-height:1.5}
+  .jbody code,.jday2 code{display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono';font-size:12.5px;background:#0a0c0f;border:1px solid var(--line);border-radius:8px;padding:9px 12px;margin-top:9px;color:var(--ink);overflow-x:auto}
+  .jlink{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;color:var(--faint);padding:0 4px}
+  .jarrow{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;border:1px solid var(--line-2);color:var(--mint-dim);background:var(--bg-card);position:relative}
+  .jarrow::before,.jarrow::after{content:"";position:absolute;top:50%;width:26px;height:1px;background:var(--line-2)}
+  .jarrow::before{right:100%}
+  .jarrow::after{left:100%}
+  .jlabel{font-size:12px;text-align:center;line-height:1.45}
+  .jday2{display:flex;align-items:center;flex-wrap:wrap;gap:8px 14px;margin-top:18px;background:var(--bg-card);border:1px solid var(--line);border-radius:var(--r);padding:16px 22px;color:var(--muted);font-size:14.5px}
+  .jday2-t{color:var(--ink);font-weight:600}
+  .jday2 code{margin-top:0;flex:0 1 auto}
+  @media (max-width:900px){
+    .journey{grid-template-columns:1fr}
+    .jlink{flex-direction:row;padding:2px 0}
+    .jarrow::before,.jarrow::after{width:1px;height:18px;left:50%;right:auto}
+    .jarrow::before{bottom:100%;top:auto}
+    .jarrow::after{top:100%}
+    .jlabel{text-align:left}
+  }
+
   .ccp{position:relative;margin-left:auto;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;padding:0;color:var(--faint);background:none;border:1px solid var(--line-2);border-radius:6px;cursor:pointer;transition:color .15s,border-color .15s}
   .ccp:hover{color:var(--ink);border-color:var(--mint)}
   .ccp.ok{color:var(--mint);border-color:var(--mint)}
@@ -479,27 +514,85 @@
 <section id="how">
   <div class="wrap">
     <div class="eyebrow">How it works</div>
-    <h2>Three commands. No new format to learn.</h2>
-    <p class="lead">Keyline speaks <span class="mono" style="color:var(--amber)">.env</span> natively. If your app reads environment variables today, you're already done. Just change where they come from.</p>
-    <div class="steps">
-      <div class="step rv">
-        <div class="no">01</div>
-        <h3>Link your project</h3>
-        <p>Point a directory at a workspace and an environment. Keyline remembers it.</p>
-        <code data-copy="keyline link acme-api --env prod"><span><span class="pr">$</span> keyline link acme-api --env prod</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+    <h2>Up and running in five minutes.</h2>
+    <p class="lead">Keyline speaks <span class="mono" style="color:var(--amber)">.env</span> natively. If your app reads environment variables today, nothing in your code changes. Here is the whole journey, no hidden steps.</p>
+    <div class="journey rv">
+      <div class="jlane">
+        <div class="jhead"><span class="jwho">You</span><span class="jtime">about 2 minutes</span></div>
+        <ol class="jsteps">
+        <li class="jstep">
+          <span class="jdot">1</span>
+          <div class="jbody">
+            <h3>Install the CLI</h3>
+            <p>One command. macOS, Linux, or Windows.</p>
+            <code data-copy="curl -fsSL keyline.sh/install | sh"><span><span class="pr">$</span> curl -fsSL keyline.sh/install | sh</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+          </div>
+        </li>
+        <li class="jstep">
+          <span class="jdot">2</span>
+          <div class="jbody">
+            <h3>Create your account</h3>
+            <p>Two questions: team name and your email. No card, no browser.</p>
+            <code data-copy="keyline login"><span><span class="pr">$</span> keyline login</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+          </div>
+        </li>
+        <li class="jstep">
+          <span class="jdot">3</span>
+          <div class="jbody">
+            <h3>Link this folder</h3>
+            <p>Once per project. Keyline remembers.</p>
+            <code data-copy="keyline link acme-api --env prod"><span><span class="pr">$</span> keyline link acme-api --env prod</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+          </div>
+        </li>
+        <li class="jstep">
+          <span class="jdot">4</span>
+          <div class="jbody">
+            <h3>Push your <span class="mono">.env</span></h3>
+            <p>Encrypted on your laptop before it leaves. We store ciphertext.</p>
+            <code data-copy="keyline push"><span><span class="pr">$</span> keyline push</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+          </div>
+        </li>
+        </ol>
       </div>
-      <div class="step rv">
-        <div class="no">02</div>
-        <h3>Push & pull</h3>
-        <p>One person pushes the <span class="mono">.env</span>. Everyone else pulls it. Always current, never in Slack.</p>
-        <code data-copy="keyline pull"><span><span class="pr">$</span> keyline pull <span style="color:var(--faint)">› wrote .env</span></span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+      <div class="jlink" aria-hidden="true">
+        <span class="jarrow">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="m3 6.5 9 6.5 9-6.5"/></svg>
+        </span>
+        <span class="jlabel">the invite email<br>carries the join code</span>
       </div>
-      <div class="step rv">
-        <div class="no">03</div>
-        <h3>Rotate, revoke, audit</h3>
-        <p>Cut access the moment someone leaves. Every read and write is logged for good.</p>
-        <code data-copy="keyline revoke jordan@"><span><span class="pr">$</span> keyline revoke jordan@</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+      <div class="jlane">
+        <div class="jhead"><span class="jwho">Your teammate</span><span class="jtime">about 1 minute</span></div>
+        <ol class="jsteps">
+        <li class="jstep">
+          <span class="jdot">5</span>
+          <div class="jbody">
+            <h3>Invite your teammate</h3>
+            <p>You run this. They get an email with a one-time join code.</p>
+            <code data-copy="keyline members invite sam@acme.com"><span><span class="pr">$</span> keyline members invite sam@acme.com</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+          </div>
+        </li>
+        <li class="jstep">
+          <span class="jdot">6</span>
+          <div class="jbody">
+            <h3>They join</h3>
+            <p>Their machine gets its own key. Nothing shared over chat.</p>
+            <code data-copy="keyline join QVJX-3F9K-TX2M"><span><span class="pr">$</span> keyline join QVJX-3F9K-TX2M</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+          </div>
+        </li>
+        <li class="jstep">
+          <span class="jdot">7</span>
+          <div class="jbody">
+            <h3>They pull</h3>
+            <p>The same <span class="mono">.env</span>, decrypted only on their machine.</p>
+            <code data-copy="keyline pull"><span><span class="pr">$</span> keyline pull <span style="color:var(--faint)">› wrote .env</span></span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
+          </div>
+        </li>
+        </ol>
       </div>
+    </div>
+    <div class="jday2 rv">
+      <span class="jday2-t">Day two and beyond:</span> someone leaves, you cut them off in one command. Every read and write lands in a tamper-evident audit log.
+      <code data-copy="keyline revoke jordan@acme.com"><span><span class="pr">$</span> keyline revoke jordan@acme.com</span><button class="ccp" aria-label="copy command" data-tip="Copy"><span class="ic-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span><span class="ic-check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg></span></button></code>
     </div>
   </div>
 </section>
