@@ -80,6 +80,12 @@ test("full workspace → project → environment CRUD happy path", async () => {
   res = await req("GET", `/v1/projects/${project.id}/environments`, { token });
   assert.equal((await readJson(res)).environments.length, 1);
 
+  // the projects list embeds each project's environments (one-request pages)
+  res = await req("GET", `/v1/workspaces/${ws.id}/projects`, { token });
+  const listed = await readJson(res);
+  assert.equal(listed.projects[0].environments.length, 1);
+  assert.equal(listed.projects[0].environments[0].name, "prod");
+
   // update + delete environment
   res = await req("PATCH", `/v1/environments/${env.id}`, { token, body: { name: "production" } });
   assert.equal((await readJson(res)).name, "production");

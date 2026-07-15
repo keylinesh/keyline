@@ -9,7 +9,7 @@
  */
 
 import { request } from "./api.js";
-import { listEnvironments, listProjects, type Environment } from "./resources.js";
+import { listProjects, type Environment } from "./resources.js";
 import type { WebSession } from "./session.js";
 
 export interface Member {
@@ -118,17 +118,14 @@ export function hasKey(devices: DeviceView[]): boolean {
 
 /** Every environment in the workspace, labeled "project/env". */
 export async function envCatalog(s: WebSession): Promise<EnvOption[]> {
-  const projects = await listProjects(s);
-  const nested = await Promise.all(
-    projects.map(async (p) =>
-      (await listEnvironments(s, p.id)).map((e) => ({
-        ...e,
-        projectSlug: p.slug,
-        label: `${p.slug}/${e.name}`,
-      })),
-    ),
+  const projects = await listProjects(s); // environments come embedded
+  return projects.flatMap((p) =>
+    (p.environments ?? []).map((e) => ({
+      ...e,
+      projectSlug: p.slug,
+      label: `${p.slug}/${e.name}`,
+    })),
   );
-  return nested.flat();
 }
 
 /** memberId → grants, built by listing access for every environment (admin). */

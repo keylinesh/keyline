@@ -33,11 +33,16 @@ function stubFetch(routes: Route[]) {
 const baseRoutes: Route[] = [
   {
     match: (m, u) => m === "GET" && u.includes("/workspaces/w1/projects"),
-    body: { projects: [{ id: "p1", name: "Acme API", slug: "acme-api" }] },
-  },
-  {
-    match: (m, u) => m === "GET" && u.includes("/projects/p1/environments"),
-    body: { environments: [{ id: "e1", name: "prod" }, { id: "e2", name: "dev" }] },
+    body: {
+      projects: [
+        {
+          id: "p1",
+          name: "Acme API",
+          slug: "acme-api",
+          environments: [{ id: "e1", name: "prod" }, { id: "e2", name: "dev" }],
+        },
+      ],
+    },
   },
 ];
 

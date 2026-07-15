@@ -146,7 +146,16 @@ export function registerResourceRoutes(
     const wid = c.req.param("wid");
     requireWorkspace(c.get("principal"), wid);
     const list = await projects.listByWorkspace(wid);
-    return c.json({ projects: list.map(projView) });
+    // Environments ride along so the Projects page is one request instead of
+    // one per project. Additive; older clients ignore the extra field.
+    return c.json({
+      projects: await Promise.all(
+        list.map(async (p) => ({
+          ...projView(p),
+          environments: (await environments.listByProject(p.id)).map(envView),
+        })),
+      ),
+    });
   });
 
   app.get("/v1/projects/:id", auth, async (c) => {
