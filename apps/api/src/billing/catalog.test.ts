@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { ensureTeamCatalog, TEAM_PLAN } from "./catalog.js";
-import { PaddleApi, PaddleApiError, paddleConfigFromEnv } from "./paddle.js";
+import { PaddleApi, PaddleApiError, billingPublicConfigFromEnv, paddleConfigFromEnv } from "./paddle.js";
 
 /** A fake Paddle backend: in-memory products/prices behind a fetch stub. */
 function fakePaddle() {
@@ -101,4 +101,30 @@ test("paddleConfigFromEnv: sandbox by default, live only when asked, null withou
     paddleConfigFromEnv({ PADDLE_API_KEY: "k", PADDLE_ENV: "live" })?.baseUrl,
     "https://api.paddle.com",
   );
+});
+
+test("live mode prefers PADDLE_LIVE_* values so the swap is one PADDLE_ENV flip", () => {
+  const base = {
+    PADDLE_API_KEY: "pdl_sdbx_a",
+    PADDLE_CLIENT_TOKEN: "test_t",
+    PADDLE_TEAM_PRICE_ID: "pri_sdbx",
+    PADDLE_LIVE_API_KEY: "pdl_live_a",
+    PADDLE_LIVE_CLIENT_TOKEN: "live_t",
+    PADDLE_LIVE_TEAM_PRICE_ID: "pri_live",
+  } as NodeJS.ProcessEnv;
+
+  const sandbox = paddleConfigFromEnv({ ...base });
+  assert.equal(sandbox?.apiKey, "pdl_sdbx_a");
+  assert.match(sandbox!.baseUrl, /sandbox/);
+
+  const live = paddleConfigFromEnv({ ...base, PADDLE_ENV: "live" });
+  assert.equal(live?.apiKey, "pdl_live_a");
+  assert.doesNotMatch(live!.baseUrl, /sandbox/);
+
+  const pub = billingPublicConfigFromEnv({ ...base, PADDLE_ENV: "live" });
+  assert.deepEqual(pub, { environment: "live", clientToken: "live_t", teamPriceId: "pri_live" });
+
+  // live mode without live-specific names still uses the plain ones
+  const plain = paddleConfigFromEnv({ PADDLE_ENV: "live", PADDLE_API_KEY: "pdl_live_plain" } as NodeJS.ProcessEnv);
+  assert.equal(plain?.apiKey, "pdl_live_plain");
 });

@@ -16,9 +16,12 @@ const BASE_URLS = {
 
 /** null when Paddle isn't configured (e.g. tests, local dev without billing). */
 export function paddleConfigFromEnv(env: NodeJS.ProcessEnv = process.env): PaddleConfig | null {
-  const apiKey = env.PADDLE_API_KEY;
-  if (!apiKey) return null;
   const mode = env.PADDLE_ENV === "live" ? "live" : "sandbox";
+  // In live mode the PADDLE_LIVE_* names win: they can sit in Vercel next to
+  // the sandbox values, so going live is one PADDLE_ENV flip instead of
+  // re-entering write-only sensitive values.
+  const apiKey = (mode === "live" && env.PADDLE_LIVE_API_KEY) || env.PADDLE_API_KEY;
+  if (!apiKey) return null;
   return { baseUrl: BASE_URLS[mode], apiKey };
 }
 
@@ -35,10 +38,11 @@ export interface BillingPublicConfig {
 export function billingPublicConfigFromEnv(
   env: NodeJS.ProcessEnv = process.env,
 ): BillingPublicConfig | null {
-  const clientToken = env.PADDLE_CLIENT_TOKEN;
-  const teamPriceId = env.PADDLE_TEAM_PRICE_ID;
+  const live = env.PADDLE_ENV === "live";
+  const clientToken = (live && env.PADDLE_LIVE_CLIENT_TOKEN) || env.PADDLE_CLIENT_TOKEN;
+  const teamPriceId = (live && env.PADDLE_LIVE_TEAM_PRICE_ID) || env.PADDLE_TEAM_PRICE_ID;
   if (!clientToken || !teamPriceId) return null;
-  return { environment: env.PADDLE_ENV === "live" ? "live" : "sandbox", clientToken, teamPriceId };
+  return { environment: live ? "live" : "sandbox", clientToken, teamPriceId };
 }
 
 export class PaddleApiError extends Error {
