@@ -60,6 +60,10 @@ export function buildApp(deps?: AppDeps): Hono<AppEnv> {
   const resolved = deps ?? (databaseUrl ? pgDeps(buildPool(databaseUrl)) : memoryDeps());
   const { environment, requireHttps } = resolveRuntimeConfig();
   const config: AppConfig = { environment, requireHttps };
+  // Ops knob (load tests, staging): raise the general per-token/IP limit
+  // without a deploy. Auth-path limits are deliberately not overridable.
+  const max = Number(process.env.RATE_LIMIT_MAX);
+  if (Number.isInteger(max) && max > 0) config.rateLimit = { windowMs: 60_000, max };
   return createApp(resolved, config);
 }
 

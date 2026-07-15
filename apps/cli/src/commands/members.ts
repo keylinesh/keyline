@@ -27,6 +27,8 @@ export interface MemberView {
   email: string;
   displayName?: string | null;
   role: string;
+  /** One-time join code, present on the invite response only. */
+  joinCode?: string;
 }
 
 interface EnvAccessView {
