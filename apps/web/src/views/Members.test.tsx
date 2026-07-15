@@ -34,29 +34,21 @@ const MEMBERS = {
   ],
 };
 
+const ENV = { id: "e1", name: "prod", projectId: "p1", projectSlug: "acme-api", label: "acme-api/prod" };
+
+// The page loads from the single overview endpoint (#41 perf).
+const OVERVIEW = {
+  environments: [ENV],
+  members: [
+    { ...MEMBERS.members[0]!, status: "active", keyed: true, grants: [] },
+    { ...MEMBERS.members[1]!, status: "active", keyed: false, grants: [{ environmentId: "e1", role: "write" }] },
+    { ...MEMBERS.members[2]!, status: "invited", keyed: false, grants: [] },
+  ],
+};
+
 const baseRoutes: Route[] = [
+  { match: (m, u) => m === "GET" && u.includes("/workspaces/w1/members/overview"), body: OVERVIEW },
   { match: (m, u) => m === "GET" && u.includes("/workspaces/w1/members"), body: MEMBERS },
-  {
-    match: (m, u) => m === "GET" && u.includes("/workspaces/w1/projects"),
-    body: { projects: [{ id: "p1", name: "acme-api", slug: "acme-api" }] },
-  },
-  {
-    match: (m, u) => m === "GET" && u.includes("/projects/p1/environments"),
-    body: { environments: [{ id: "e1", name: "prod" }] },
-  },
-  {
-    match: (m, u) => m === "GET" && u.includes("/environments/e1/access"),
-    body: { access: [{ memberId: "m-dev", role: "write" }] },
-  },
-  {
-    match: (m, u) => m === "GET" && u.includes("/members/m-owner/devices"),
-    body: { devices: [{ id: "d1", publicKey: "pk", revoked: false, hasWrappedKey: true }] },
-  },
-  {
-    match: (m, u) => m === "GET" && u.includes("/members/m-dev/devices"),
-    body: { devices: [{ id: "d2", publicKey: "pk", revoked: false, hasWrappedKey: false }] },
-  },
-  { match: (m, u) => m === "GET" && u.includes("/members/m-new/devices"), body: { devices: [] } },
 ];
 
 afterEach(() => {
@@ -77,7 +69,7 @@ describe("Members view", () => {
   });
 
   test("plain member sees the list without admin controls", async () => {
-    stubFetch([baseRoutes[0]!]);
+    stubFetch([baseRoutes[1]!]); // plain members use the simple list, not the admin overview
     render(<Members session={member} />);
     expect(await screen.findByText("founder@acme.test")).toBeDefined();
     expect(screen.queryByLabelText("invite email")).toBeNull();
@@ -179,8 +171,10 @@ describe("join codes (#66)", () => {
 
 test("when nothing was ever pushed, the hint says so instead of 'no key yet'", async () => {
   stubFetch([
-    { match: (m, u) => m === "GET" && u.includes("/members/m-owner/devices"), body: { devices: [{ id: "d1", publicKey: "pk", revoked: false, hasWrappedKey: false }] } },
-    ...baseRoutes,
+    {
+      match: (m, u) => m === "GET" && u.includes("/workspaces/w1/members/overview"),
+      body: { ...OVERVIEW, members: OVERVIEW.members.map((m) => ({ ...m, keyed: false })) },
+    },
   ]);
   render(<Members session={admin} />);
   expect((await screen.findAllByText("nothing pushed yet")).length).toBeGreaterThan(0);

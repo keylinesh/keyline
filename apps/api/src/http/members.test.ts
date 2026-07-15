@@ -144,3 +144,43 @@ test("profile patch (#43): self and admin can set displayName; others cannot", a
   // a plain member cannot edit another member
   assert.equal((await req("PATCH", `/v1/members/${other.id}`, devTok, { displayName: "x" })).status, 403);
 });
+
+test("overview returns the whole members page in one response (#41 perf)", async () => {
+  const { deps, ws, env, token, req } = await setup();
+  const admin = await token("admin");
+  await deps.workspaces.update(ws.id, { plan: "team" }); // two invites; solo caps at one
+
+  // An invited member (no device), and an active one with a granted env.
+  const invited = await readJson(
+    await req("POST", `/v1/workspaces/${ws.id}/members`, admin, { email: "new@acme.test", role: "member" }),
+  );
+  const active = await readJson(
+    await req("POST", `/v1/workspaces/${ws.id}/members`, admin, { email: "dev@acme.test", role: "member" }),
+  );
+  await deps.login.register({ memberId: active.id, workspaceId: ws.id, publicKey: "pk-dev", role: "member" });
+  assert.equal(
+    (await req("PUT", `/v1/environments/${env.id}/access`, admin, { memberId: active.id, role: "write" })).status,
+    200,
+  );
+
+  const res = await req("GET", `/v1/workspaces/${ws.id}/members/overview`, admin);
+  assert.equal(res.status, 200);
+  const overview = await readJson(res);
+
+  assert.deepEqual(
+    overview.environments.map((e: any) => e.label),
+    ["api/prod"],
+  );
+  const byEmail = new Map(overview.members.map((m: any) => [m.email, m]));
+  const inv = byEmail.get("new@acme.test") as any;
+  assert.equal(inv.status, "invited");
+  assert.deepEqual(inv.grants, []);
+  const dev = byEmail.get("dev@acme.test") as any;
+  assert.equal(dev.status, "active");
+  assert.equal(dev.keyed, false, "no wrapped key issued yet");
+  assert.deepEqual(dev.grants, [{ environmentId: env.id, role: "write" }]);
+
+  // Admin-only, like the endpoints it aggregates.
+  const plain = await token("member", "mem-plain");
+  assert.equal((await req("GET", `/v1/workspaces/${ws.id}/members/overview`, plain)).status, 403);
+});

@@ -14,6 +14,8 @@
 
 import type { Context, Hono, MiddlewareHandler } from "hono";
 import { z } from "zod";
+import type { DeviceRepo } from "../../auth/device-login.js";
+import type { WrappedKeyRepo } from "../../domain/bundles.js";
 import type { EnvironmentAccessRepo, EnvAccess } from "../../domain/access.js";
 import type { AuditService } from "../../domain/audit.js";
 import type { EntitlementsService } from "../../domain/entitlements.js";
@@ -32,6 +34,8 @@ export interface MemberRouteDeps {
   access: EnvironmentAccessRepo;
   projects: ProjectRepo;
   environments: EnvironmentRepo;
+  devices: DeviceRepo;
+  wrappedKeys: WrappedKeyRepo;
   audit: AuditService;
   revoke: RevokeService;
   entitlements: EntitlementsService;
@@ -70,7 +74,7 @@ export function registerMemberRoutes(
   deps: MemberRouteDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { members, access, projects, environments, audit, revoke, entitlements, join, workspaces, email } = deps;
+  const { members, access, projects, environments, devices, wrappedKeys, audit, revoke, entitlements, join, workspaces, email } = deps;
 
   // Email the join command to the invitee (#78). Best-effort: a provider
   // outage or missing config never blocks the invite.
@@ -163,6 +167,63 @@ export function registerMemberRoutes(
     requireRole(c.get("principal"), "member");
     const list = await members.listByWorkspace(wid);
     return c.json({ members: list.map(memberView) });
+  });
+
+  // The Members page in ONE round-trip (#41 perf): members with status and
+  // grants, plus the labeled environment catalog. Replaces the client-side
+  // fan-out of 1 catalog + 1-per-environment + 1-per-member requests, which
+  // multiplied serverless latency into a visibly slow page.
+  app.get("/v1/workspaces/:wid/members/overview", auth, async (c) => {
+    const wid = c.req.param("wid");
+    requireWorkspace(c.get("principal"), wid);
+    requireRole(c.get("principal"), "admin");
+
+    const [list, projectList] = await Promise.all([
+      members.listByWorkspace(wid),
+      projects.listByWorkspace(wid),
+    ]);
+    const envs = (
+      await Promise.all(
+        projectList.map(async (p) =>
+          (await environments.listByProject(p.id)).map((e) => ({
+            id: e.id,
+            name: e.name,
+            projectId: p.id,
+            projectSlug: p.slug,
+            label: `${p.slug}/${e.name}`,
+          })),
+        ),
+      )
+    ).flat();
+
+    const grants = new Map<string, Array<{ environmentId: string; role: string }>>();
+    await Promise.all(
+      envs.map(async (env) => {
+        for (const a of await access.listByEnvironment(env.id)) {
+          const list = grants.get(a.memberId) ?? [];
+          list.push({ environmentId: env.id, role: a.role });
+          grants.set(a.memberId, list);
+        }
+      }),
+    );
+
+    const rows = await Promise.all(
+      list.map(async (m) => {
+        const devs = await devices.listByMember(m.id);
+        const active = devs.filter((d) => d.revokedAt === null);
+        const keyed = (
+          await Promise.all(active.map((d) => wrappedKeys.findForDevice(wid, d.id)))
+        ).some((k) => k !== null);
+        return {
+          ...memberView(m),
+          status: devs.length === 0 ? "invited" : active.length > 0 ? "active" : "revoked",
+          keyed,
+          grants: grants.get(m.id) ?? [],
+        };
+      }),
+    );
+
+    return c.json({ environments: envs, members: rows });
   });
 
   // Profile settings (#43): a member edits their own display name; admins can
