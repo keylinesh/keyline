@@ -84,7 +84,11 @@ describe("Billing (Settings) — #71", () => {
     const paddle = stubPaddle();
     render(<Settings session={admin} />);
 
-    fireEvent.click(await screen.findByText("Upgrade to Team"));
+    // Wait for the config fetch to enable the button; clicking while it is
+    // still disabled is a silent no-op and was the source of a CI-only flake.
+    const btn = await screen.findByText("Upgrade to Team");
+    await waitFor(() => expect((btn as HTMLButtonElement).disabled).toBe(false));
+    fireEvent.click(btn);
     await waitFor(() => expect(paddle.calls.open.length).toBe(1), { timeout: 4000 });
 
     fetchCtl.setPlan("team"); // the webhook has flipped it server-side

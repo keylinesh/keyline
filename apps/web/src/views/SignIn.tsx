@@ -13,6 +13,7 @@ import {
   type WebSession,
 } from "../session.js";
 import { CopyButton } from "./CopyButton.js";
+import { ThemeToggle } from "./ThemeToggle.js";
 
 export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => void }) {
   const [start, setStart] = useState<StartResponse | null>(null);
@@ -56,6 +57,7 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
 
   return (
     <div className="center-page">
+      <ThemeToggle />
       <div className="card">
         <div className="brand" style={{ marginBottom: 18 }}>
           <span className="mk">k_</span> Keyline

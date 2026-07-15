@@ -11,6 +11,7 @@ import { Projects } from "./Projects.js";
 import { Members } from "./Members.js";
 import { Audit } from "./Audit.js";
 import { Settings } from "./Settings.js";
+import { ThemeToggle } from "./ThemeToggle.js";
 
 interface Workspace {
   id: string;
@@ -74,9 +75,12 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
         <div className="side-foot">
           <div className="ws-name">{workspace ? workspace.name : "…"}</div>
           {session.role && <span className="role-pill">{session.role}</span>}
-          <button className="btn" onClick={onSignOut}>
-            Sign out
-          </button>
+          <div className="side-foot-row">
+            <button className="btn" onClick={onSignOut}>
+              Sign out
+            </button>
+            <ThemeToggle />
+          </div>
           <nav className="legal-links" aria-label="Legal">
             <a href="/security">Security</a>
             <a href="/terms">Terms</a>
