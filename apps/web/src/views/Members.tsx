@@ -12,17 +12,13 @@ import { explainError } from "../api.js";
 import { isAdmin, type WebSession } from "../session.js";
 import { CopyButton } from "./CopyButton.js";
 import {
-  envCatalog,
   grantAccess,
-  grantsByMember,
-  hasKey,
   invite,
   regenerateJoinCode,
   listMembers,
-  memberDevices,
+  membersOverview,
   revokeAccess,
   revokeMember,
-  statusOf,
   type EnvOption,
   type Grant,
   type Member,
@@ -45,23 +41,23 @@ export function Members({ session }: { session: WebSession }) {
 
   const reload = useCallback(async () => {
     try {
-      const members = await listMembers(session);
       if (!admin) {
+        const members = await listMembers(session);
         setRows(members.map((m) => ({ ...m, grants: [] })));
         return;
       }
-      const catalog = await envCatalog(session);
-      setEnvs(catalog);
-      const [grants, devices] = await Promise.all([
-        grantsByMember(session, catalog),
-        Promise.all(members.map((m) => memberDevices(session, m.id))),
-      ]);
+      // One request for the whole page; the per-env + per-member fan-out made
+      // this view (and every button that reloads it) visibly slow.
+      const overview = await membersOverview(session);
+      const envById = new Map(overview.environments.map((e) => [e.id, e]));
+      setEnvs(overview.environments);
       setRows(
-        members.map((m, i) => ({
+        overview.members.map((m) => ({
           ...m,
-          status: statusOf(devices[i]!),
-          keyed: hasKey(devices[i]!),
-          grants: grants.get(m.id) ?? [],
+          grants: m.grants.flatMap(({ environmentId, role }) => {
+            const env = envById.get(environmentId);
+            return env ? [{ env, role }] : [];
+          }),
         })),
       );
     } catch (err) {

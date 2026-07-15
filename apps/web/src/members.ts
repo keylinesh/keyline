@@ -42,6 +42,22 @@ export interface Grant {
 
 const auth = (s: WebSession) => ({ token: s.token });
 
+/** The whole Members page in one request (admin-only). */
+export interface MembersOverview {
+  environments: EnvOption[];
+  members: Array<
+    Member & {
+      status: MemberStatus;
+      keyed: boolean;
+      grants: Array<{ environmentId: string; role: Grant["role"] }>;
+    }
+  >;
+}
+
+export function membersOverview(s: WebSession): Promise<MembersOverview> {
+  return request<MembersOverview>("GET", `/v1/workspaces/${s.workspaceId}/members/overview`, auth(s));
+}
+
 export async function listMembers(s: WebSession): Promise<Member[]> {
   const { members } = await request<{ members: Member[] }>(
     "GET",
