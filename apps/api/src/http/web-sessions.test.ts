@@ -152,3 +152,13 @@ test("code normalization strips separators and case", () => {
   assert.equal(normalizeSessionCode("lzq4-7nhk"), "LZQ47NHK");
   assert.equal(normalizeSessionCode(" LZQ4 7NHK "), "LZQ47NHK");
 });
+
+test("claim polling is not starved by the strict auth limit (sign-in 429 fix)", async () => {
+  const app = createApp(memoryDeps());
+  const start = await readJson(await client(app)("POST", "/v1/web/sessions"));
+  // 30 polls in one minute (what the sign-in page does) must never 429.
+  for (let i = 0; i < 30; i++) {
+    const res = await client(app)("POST", `/v1/web/sessions/${start.sessionId}/claim`);
+    assert.equal(res.status, 200, `poll ${i} rate-limited`);
+  }
+});

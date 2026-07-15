@@ -3,7 +3,7 @@
  * approves it, keep the short-lived token in localStorage.
  */
 
-import { request } from "./api.js";
+import { ApiError, request } from "./api.js";
 
 export interface WebSession {
   token: string;
@@ -69,12 +69,22 @@ export async function waitForApproval(
     sleep?: (ms: number) => Promise<void>;
   } = {},
 ): Promise<WebSession | null> {
-  const interval = opts.intervalMs ?? 2000;
-  const maxAttempts = opts.maxAttempts ?? 400; // ~13 min at 2s > code TTL
+  const interval = opts.intervalMs ?? 2500;
+  const maxAttempts = opts.maxAttempts ?? 320; // ~13 min at 2.5s > code TTL
   const sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
 
   for (let i = 0; i < maxAttempts; i++) {
-    const res = await claimSession(sessionId, opts.fetchImpl);
+    let res: ClaimResponse;
+    try {
+      res = await claimSession(sessionId, opts.fetchImpl);
+    } catch (err) {
+      // Rate limited mid-poll: back off and keep waiting instead of dying.
+      if (err instanceof ApiError && err.status === 429) {
+        await sleep(interval * 4);
+        continue;
+      }
+      throw err;
+    }
     if (res.status === "ready") {
       const { token, expiresAt, workspaceId, memberId, role } = res;
       return { token, expiresAt, workspaceId, memberId, role };
