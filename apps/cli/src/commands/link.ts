@@ -9,7 +9,7 @@
  */
 
 import { basename, resolve } from "node:path";
-import { ApiClient, ApiError } from "../api-client.js";
+import { ApiClient } from "../api-client.js";
 import type { KeyStore } from "../keystore.js";
 import { loadAccount } from "../account.js";
 import { isCredentialValid, loadCredentials } from "../credentials.js";
@@ -100,10 +100,3 @@ export async function runLink(deps: LinkDeps, input: LinkInput): Promise<Project
   return config;
 }
 
-/** Turn an auth failure into a friendly message. */
-export function explainLinkError(err: unknown): string {
-  if (err instanceof ApiError && (err.status === 401 || err.code === "unauthorized")) {
-    return "Your session expired. Run `keyline login` again.";
-  }
-  return err instanceof Error ? err.message : String(err);
-}
