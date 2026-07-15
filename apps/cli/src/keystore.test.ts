@@ -6,6 +6,7 @@ import { join } from "node:path";
 import {
   FileKeyStore,
   NativeKeychainStore,
+  VaultKeychainStore,
   openKeyStore,
   withLegacyMigration,
   type KeyringEntryCtor,
@@ -156,4 +157,47 @@ test("the real native binding round-trips on this machine", { skip: !nativeKeych
     store.delete(account);
   }
   assert.equal(store.get(account), null);
+});
+
+test("vault store keeps every account in ONE keychain item", () => {
+  const { Entry, vault } = fakeKeyring();
+  const store = new VaultKeychainStore(Entry);
+  store.set("device-identity", "id-json");
+  store.set("account", "acct-json");
+  store.set("access-token", "tok-json");
+  assert.equal(vault.size, 1, "exactly one keychain item regardless of accounts");
+  assert.ok(vault.has("keyline:vault"));
+  assert.equal(store.get("account"), "acct-json");
+
+  store.delete("account");
+  assert.equal(store.get("account"), null);
+  assert.equal(store.get("access-token"), "tok-json", "other accounts survive a delete");
+  assert.equal(vault.size, 1);
+});
+
+test("vault store folds pre-vault per-account items in and removes them", () => {
+  const { Entry, vault } = fakeKeyring();
+  // A v0.1.2 layout: three separate items.
+  vault.set("keyline:device-identity", "id-json");
+  vault.set("keyline:access-token", "tok-json");
+
+  const store = new VaultKeychainStore(Entry);
+  assert.equal(store.get("device-identity"), "id-json");
+  assert.equal(store.get("access-token"), "tok-json");
+  assert.equal(vault.has("keyline:device-identity"), false, "old item removed");
+  assert.equal(vault.has("keyline:access-token"), false, "old item removed");
+  assert.ok(vault.has("keyline:vault"));
+  assert.equal(vault.size, 1, "only the vault remains");
+
+  // A second store (new process) sees the migrated values without old items.
+  const again = new VaultKeychainStore(Entry);
+  assert.equal(again.get("device-identity"), "id-json");
+});
+
+test("vault store never clobbers an unreadable vault", () => {
+  const { Entry, vault } = fakeKeyring();
+  vault.set("keyline:vault", "not json at all");
+  const store = new VaultKeychainStore(Entry);
+  assert.throws(() => store.get("device-identity"), /unreadable/);
+  assert.equal(vault.get("keyline:vault"), "not json at all", "vault untouched");
 });
