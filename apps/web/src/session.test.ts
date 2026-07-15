@@ -119,3 +119,19 @@ describe("magic links (#68)", () => {
     expect(magicTokenFromLocation("")).toBeNull();
   });
 });
+
+test("waitForApproval survives a 429 mid-poll and keeps waiting", async () => {
+  let calls = 0;
+  const fetchImpl = (async () => {
+    calls++;
+    if (calls === 1)
+      return new Response(JSON.stringify({ error: { code: "rate_limited", message: "slow down" } }), { status: 429 });
+    return new Response(
+      JSON.stringify({ status: "ready", token: "klk_t", expiresAt: "2099-01-01T00:00:00Z", workspaceId: "w1", memberId: "m1", role: "owner" }),
+      { status: 200 },
+    );
+  }) as unknown as typeof fetch;
+  const session = await waitForApproval("s1", { fetchImpl, intervalMs: 1, sleep: async () => {} });
+  expect(session?.token).toBe("klk_t");
+  expect(calls).toBe(2);
+});

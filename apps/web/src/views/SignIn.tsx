@@ -3,6 +3,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { ApiError } from "../api.js";
 import {
   claimMagicLink,
   magicTokenFromLocation,
@@ -45,8 +46,15 @@ export function SignIn({ onSignedIn }: { onSignedIn: (session: WebSession) => vo
         if (!active.current) return;
         if (session) onSignedIn(session);
         else setError("That code expired. Get a fresh one.");
-      } catch {
-        if (active.current) setError("Can't reach the keyline API. Try again in a moment.");
+      } catch (err) {
+        if (!active.current) return;
+        setError(
+          err instanceof ApiError && err.status === 429
+            ? "Too many sign-in attempts from this network. Wait a minute, then get a new code."
+            : err instanceof ApiError && err.status > 0
+              ? "The sign-in service hit a problem. Get a new code to retry."
+              : "Can't reach the Keyline API. Check your connection and get a new code.",
+        );
       }
     })();
 

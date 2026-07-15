@@ -286,7 +286,15 @@ input::placeholder { color: var(--faint); }
 .waiting .dot { display: inline-block; animation: pulse 1.2s infinite; color: var(--mint); }
 @keyframes pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
 
-.error { color: var(--red); margin-top: 14px; font-size: 14px; }
+.error {
+  color: var(--red);
+  background: rgba(220, 38, 38, 0.07);
+  border: 1px solid var(--red-line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 14px;
+  font-size: 14px;
+}
 
 /* ---- app layout: sidebar + content ---- */
 

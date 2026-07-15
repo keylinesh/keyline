@@ -93,7 +93,14 @@ export function createApp(deps: AppDeps, config: AppConfig = {}): Hono<AppEnv> {
   app.use("/v1/auth/*", rateLimit({ ...authRl, keyFn: ipKey }));
   app.use("/v1/devices", rateLimit({ ...authRl, keyFn: ipKey }));
   app.use("/v1/join", rateLimit({ ...authRl, keyFn: ipKey }));
-  app.use("/v1/web/*", rateLimit({ ...authRl, keyFn: ipKey }));
+  // The sign-in page polls session claim every few seconds, so the strict
+  // auth budget 429'd legitimate sign-ins after ~40 seconds on the page.
+  // Session ids are unguessable, so claim polling gets a polling-sized
+  // budget; creating sessions and magic links stays strict.
+  app.use("/v1/web/sessions", rateLimit({ ...authRl, keyFn: ipKey }));
+  app.use("/v1/web/sessions/*", rateLimit({ windowMs: 60_000, max: 120, keyFn: ipKey }));
+  app.use("/v1/web/magic", rateLimit({ ...authRl, keyFn: ipKey }));
+  app.use("/v1/web/magic/*", rateLimit({ ...authRl, keyFn: ipKey }));
 
   app.onError((err, c) => {
     if (err instanceof ApiError) return c.json(err.body(), err.status as 400);
