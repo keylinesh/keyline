@@ -84,6 +84,33 @@ pg-test:
     - pnpm --filter @keyline/api db:migrate
     - pnpm --filter @keyline/api exec node --import tsx --test src/domain/pg-repo.pg.test.ts
 
+# End-to-end (#56): the real bundled CLI as a child process against the real
+# API server over real HTTP — signup, link, push/pull, webhook plan flip,
+# invite/join on a second HOME, grant, revoke lockout, audit verify.
+e2e:
+  stage: verify
+  <<: *setup
+  script:
+    - pnpm build
+    - pnpm --filter @keylinesh/cli bundle
+    - node --test e2e/cli.e2e.test.mjs
+
+# Load test (#56): pull/push/webhook paths under concurrency, in-memory
+# storage. Budget: zero non-2xx, p99 <= 250ms. Scheduled weekly with
+# dep-audit; start manually from the Pipelines UI for an ad-hoc run.
+load-test:
+  stage: verify
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: manual
+      allow_failure: true
+  <<: *setup
+  script:
+    - pnpm build
+    - pnpm --filter @keylinesh/cli bundle
+    - node scripts/load-test.mjs
+
 # Dependency audit (SOC 2 readiness, CC7 in docs/compliance/gap-assessment.md).
 # Runs on scheduled pipelines (weekly schedule set in GitLab UI) and can be
 # started by hand. Gates on production dependencies; dev-chain advisories

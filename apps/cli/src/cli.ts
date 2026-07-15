@@ -369,6 +369,10 @@ export function buildProgram(): Command {
           { email, role: opts.role },
         );
         console.log(`Invited ${invited.email} as ${invited.role}.`);
+        if (invited.joinCode) {
+          console.log(`  join code: ${invited.joinCode}  (one-time, expires in 7 days; also emailed)`);
+          console.log(`  they run:  keyline join ${invited.joinCode}`);
+        }
         console.log("Next: `keyline members grant " + invited.email + " --env <env> --role read|write|admin`");
       } catch (err) {
         throw new Error(explainLinkError(err));
