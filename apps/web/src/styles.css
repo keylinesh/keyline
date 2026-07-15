@@ -320,10 +320,11 @@ input::placeholder { color: var(--faint); }
 .side-foot-row .btn { margin-top: 0; flex: 1; }
 .theme-toggle { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; }
 .center-page .theme-toggle { position: fixed; top: 18px; right: 18px; }
-.legal-links { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 14px; }
-.legal-links a { color: var(--faint); font-size: 12px; text-decoration: none; }
+/* One row, evenly spread; 11px + negative margin buys the width the sidebar padding takes. */
+.legal-links { display: flex; justify-content: space-between; margin: 14px -4px 0; }
+.legal-links a { color: var(--faint); font-size: 11px; white-space: nowrap; text-decoration: none; }
 .legal-links a:hover { color: var(--ink); }
-.center-page .legal-links { justify-content: center; margin-top: 22px; }
+.center-page .legal-links { justify-content: center; gap: 16px; margin: 22px 0 0; }
 
 .content { flex: 1; min-width: 0; }
 
