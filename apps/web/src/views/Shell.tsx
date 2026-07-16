@@ -28,7 +28,7 @@ const ICONS = {
       <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6" />
     </svg>
   ),
-  Members: (
+  Team: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="9" cy="8" r="3.4" />
       <path d="M2.8 20c.8-3.4 3.3-5 6.2-5s5.4 1.6 6.2 5" />
@@ -57,7 +57,7 @@ const ICONS = {
 
 const SECTIONS = [
   { name: "Projects", lead: "Projects and environments in this workspace." },
-  { name: "Members", lead: "Who has access, and to what." },
+  { name: "Team", lead: "Who has access, and to what. Solo is you; Team unlocks up to 10." },
   { name: "Audit", lead: "Every read, write, and denied attempt." },
   { name: "CLI", lead: "Every command, what it does, and the flags worth knowing." },
   { name: "Settings", lead: "Workspace and account settings." },
@@ -65,9 +65,10 @@ const SECTIONS = [
 
 type SectionName = (typeof SECTIONS)[number]["name"];
 
-/** Sections deep-link via the hash: /app/#members opens Members. */
+/** Sections deep-link via the hash: /app/#team opens Team. */
 function sectionFromHash(): SectionName {
   const hash = window.location.hash.slice(1).toLowerCase();
+  if (hash === "members") return "Team"; // pre-rename links keep working
   return SECTIONS.find((s) => s.name.toLowerCase() === hash)?.name ?? "Projects";
 }
 
@@ -139,7 +140,7 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
             <p className="error">{error}</p>
           ) : section === "Projects" ? (
             <Projects session={session} />
-          ) : section === "Members" ? (
+          ) : section === "Team" ? (
             <Members session={session} />
           ) : section === "Audit" ? (
             <Audit session={session} />
