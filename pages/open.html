@@ -44,10 +44,18 @@
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
   .wrap{max-width:840px;margin:0 auto;padding:0 24px}
-  header{border-bottom:1px solid var(--line);padding:22px 0}
-  .brand{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
-  .brand .mk{color:var(--mint);font-family:'JetBrains Mono'}
-  main{padding:56px 0 40px}
+  header{border-bottom:1px solid var(--line);padding:16px 0}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
+  .brand .mk{width:28px;height:28px;border:1.5px solid var(--mint);border-radius:8px;display:grid;place-items:center;color:var(--mint);font-family:'JetBrains Mono';font-size:14px;font-weight:700;flex-shrink:0}
+  .brand:hover{text-decoration:none}
+  .hnav{display:flex;align-items:center;gap:20px;font-size:14.5px}
+  .hnav a{color:var(--muted)}
+  .hnav a:hover{color:var(--ink);text-decoration:none}
+  .hnav .hbtn{background:var(--mint);color:#06251f;font-weight:600;padding:7px 15px;border-radius:9px}
+  .hnav .hbtn:hover{opacity:.9}
+  @media (max-width:560px){.hnav a:not(.hbtn){display:none}}
+  main.wrap{padding:56px 24px 40px}
   h1{font-family:'Bricolage Grotesque';font-size:38px;line-height:1.12;margin-bottom:12px;letter-spacing:-.02em}
   .sub{color:var(--muted);font-size:18px;margin-bottom:40px;max-width:60ch}
   h2{font-family:'Bricolage Grotesque';font-size:22px;margin:40px 0 12px}
@@ -82,7 +90,15 @@
 </style>
 </head>
 <body>
-<header><div class="wrap"><a class="brand" href="/"><span class="mk">k_</span> Keyline</a></div></header>
+<header><div class="wrap nav-in">
+  <a class="brand" href="/"><span class="mk">k_</span> Keyline</a>
+  <nav class="hnav">
+    <a href="/#how">How it works</a>
+    <a href="/#pricing">Pricing</a>
+    <a href="/security">Security</a>
+    <a class="hbtn" href="/#how">Sign up</a>
+  </nav>
+</div></header>
 <main class="wrap">
   <h1>Keyline is built in the open</h1>
   <p class="sub">"We can't read your secrets" is only worth something if you can check it. So the design docs, the compliance homework, and even the launch plan are public. This page is the map.</p>
