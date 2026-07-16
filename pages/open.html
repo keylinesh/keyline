@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyline builds in the open</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="description" content="Design docs, compliance homework, public audit anchors, and even the launch runbook. Trust through receipts, not adjectives.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://keyline.sh/open">
+<style>
+/* Self-hosted fonts, latin subset, one VARIABLE woff2 per family (Google served
+   identical bytes for every weight). Kills the render-blocking
+   fonts.googleapis.com chain flagged by PageSpeed. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 500 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(/fonts/bricolage-grotesque-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(/fonts/hanken-grotesk-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(/fonts/jetbrains-mono-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+  :root{--bg:#0a0b0d;--ink:#e9ebee;--muted:#878d97;--faint:#5b616b;--line:rgba(255,255,255,.08);--mint:#5eead4;--amber:#fbbf77;--red:#f0816b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:22px 0}
+  .brand{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
+  .brand .mk{color:var(--mint);font-family:'JetBrains Mono'}
+  main{padding:56px 0 40px}
+  h1{font-family:'Bricolage Grotesque';font-size:38px;line-height:1.12;margin-bottom:12px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:18px;margin-bottom:40px;max-width:60ch}
+  h2{font-family:'Bricolage Grotesque';font-size:22px;margin:40px 0 12px}
+  p,ul,ol{color:var(--muted);margin-bottom:14px}
+  ul,ol{padding-left:22px}
+  li{margin-bottom:7px}
+  strong{color:var(--ink);font-weight:600}
+  a{color:var(--mint);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:'JetBrains Mono';font-size:14px;color:var(--amber)}
+  table{width:100%;border-collapse:collapse;margin:18px 0 8px;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+  th{color:var(--ink);font-weight:600;font-size:13.5px}
+  td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+  .good{color:var(--mint)}
+  .meh{color:var(--faint)}
+  .verdict{border:1px solid var(--line);border-left:3px solid var(--mint);border-radius:10px;padding:16px 20px;margin:26px 0;color:var(--muted)}
+  .verdict b{color:var(--ink)}
+  .cta{margin:44px 0 10px;border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;background:linear-gradient(180deg,#10141a,#0d1015)}
+  .cta h2{margin-top:0}
+  .cta .cmd{display:inline-block;font-family:'JetBrains Mono';font-size:14px;background:#0a0c0f;border:1px solid var(--line);border-radius:8px;padding:10px 16px;margin:12px 0;color:var(--ink)}
+  .cta .cmd .pr{color:var(--mint)}
+  .btn{display:inline-block;background:var(--mint);color:#06251f;font-weight:600;padding:11px 22px;border-radius:10px;margin-top:8px}
+  .btn:hover{text-decoration:none;opacity:.9}
+  .note{color:var(--faint);font-size:13px;margin-top:10px}
+  footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:14px;margin-top:40px}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .foot-links a{color:var(--faint)}
+  .foot-links a:hover{color:var(--ink)}
+  .table-scroll{overflow-x:auto}
+  @media (max-width:640px){h1{font-size:30px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/"><span class="mk">k_</span> Keyline</a></div></header>
+<main class="wrap">
+  <h1>Keyline is built in the open</h1>
+  <p class="sub">"We can't read your secrets" is only worth something if you can check it. So the design docs, the compliance homework, and even the launch plan are public. This page is the map.</p>
+
+  <h2>Verify the security claims</h2>
+  <ul>
+    <li><a href="/security">Security posture</a>: what our servers hold, the primitives, how to report a vulnerability.</li>
+    <li><a href="https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md">Encryption design</a>: the full scheme, key hierarchy, threat model, and known trade-offs.</li>
+    <li><a href="https://gitlab.com/resim.boyadzhiev/keyline-anchors">Public audit anchors</a>: every workspace's audit chain head, witnessed daily. If we rewrote history, this repo would prove it.</li>
+    <li><a href="https://gitlab.com/resim.boyadzhiev/keyline">The source</a>: the entire product, tests included.</li>
+  </ul>
+
+  <h2>The operational homework, public too</h2>
+  <ul>
+    <li><a href="https://gitlab.com/resim.boyadzhiev/keyline/-/tree/main/docs/compliance">SOC 2 readiness program</a>: a gap assessment that names what a one-person company honestly cannot have yet, and seven policies that describe real practice.</li>
+    <li><a href="https://gitlab.com/resim.boyadzhiev/keyline/-/tree/main/docs/security-review">External review packet</a>: prepared and waiting for the independent reviewer; the engagement status is stated honestly on the security page.</li>
+    <li><a href="https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/launch/README.md">The launch runbook</a>: yes, even the go-live checklist and the announcement plan are in the repo.</li>
+  </ul>
+
+  <h2>Why publish all this</h2>
+  <p>Trust in a secrets manager cannot come from a landing page adjective. It comes from documents you can read, code you can run, and public records that would expose us if we cheated. A company of one cannot offer a compliance department. It can offer receipts.</p>
+<div class="cta">
+    <h2>Two minutes to the first encrypted push</h2>
+    <div class="cmd"><span class="pr">$</span> curl -fsSL keyline.sh/install | sh</div>
+    <p>Solo is free forever. Team is $19 flat for up to 10 people, 14-day trial.</p>
+    <a class="btn" href="/#how">See the whole journey</a>
+    <p class="note">No card for Solo. Your secrets are encrypted before they leave your laptop.</p>
+  </div>
+</main>
+<footer><div class="wrap">
+  <div class="foot-links"><a href="/">keyline.sh</a><a href="/security">Security</a><a href="/vs/doppler">vs Doppler</a><a href="/vs/sharing-env-in-slack">vs Slack sharing</a><a href="/open">Open company</a></div>
+  <span>© 2026 Keyline. Sealed before it leaves your laptop.</span>
+</div></footer>
+</body>
+</html>
