@@ -404,9 +404,14 @@
 
   /* footer */
   footer{border-top:1px solid var(--line);padding:46px 0 60px;color:var(--faint);font-size:14px}
-  .foot{display:flex;justify-content:space-between;gap:30px;flex-wrap:wrap;align-items:center}
-  .foot-links{display:flex;gap:26px;flex-wrap:wrap}
-  .foot-links a:hover{color:var(--ink)}
+  .foot-grid{display:grid;grid-template-columns:1.6fr repeat(4,1fr);gap:34px}
+  .foot-brand p{color:var(--faint);font-size:13.5px;margin-top:12px;max-width:24ch;line-height:1.55}
+  .foot-col{display:flex;flex-direction:column;gap:9px;font-size:14px}
+  .foot-col b{color:var(--ink);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+  .foot-col a{color:var(--muted)}
+  .foot-col a:hover{color:var(--ink)}
+  .foot-base{border-top:1px solid var(--line);margin-top:34px;padding-top:20px;color:var(--faint);font-size:13.5px}
+  @media (max-width:860px){.foot-grid{grid-template-columns:1fr 1fr}.foot-brand{grid-column:1/-1}}
 
   /* reveal */
   .rv{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
@@ -851,21 +856,39 @@
 </section>
 
 <footer>
-  <div class="wrap foot">
-    <a class="brand" href="#"><span class="mk">k_</span> Keyline</a>
-    <div class="foot-links">
-      <a href="#how">How it works</a>
-      <a href="/security">Security</a>
-      <a href="#pricing">Pricing</a>
-      <a href="/terms">Terms</a>
-      <a href="/privacy">Privacy</a>
-      <a href="/dpa">DPA</a>
-      <a href="/refunds">Refunds</a>
-      <a href="/vs/doppler">vs Doppler</a>
-      <a href="/vs/sharing-env-in-slack">vs Slack sharing</a>
-      <a href="/open">Open company</a>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a class="brand" href="#"><span class="mk">k_</span> Keyline</a>
+        <p>Secrets your whole team can share. Encrypted before they leave your laptop.</p>
+      </div>
+      <div class="foot-col">
+        <b>Product</b>
+        <a href="#how">How it works</a>
+        <a href="#structure">The mental model</a>
+        <a href="#pricing">Pricing</a>
+        <a href="/app">Sign in</a>
+      </div>
+      <div class="foot-col">
+        <b>Compare</b>
+        <a href="/vs/doppler">Keyline vs Doppler</a>
+        <a href="/vs/sharing-env-in-slack">vs sharing in Slack</a>
+      </div>
+      <div class="foot-col">
+        <b>Trust</b>
+        <a href="/security">Security</a>
+        <a href="/open">Open company</a>
+        <a href="https://gitlab.com/resim.boyadzhiev/keyline-anchors">Audit anchors</a>
+      </div>
+      <div class="foot-col">
+        <b>Legal</b>
+        <a href="/terms">Terms</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/dpa">DPA</a>
+        <a href="/refunds">Refunds</a>
+      </div>
     </div>
-    <span>© 2026 Keyline. Sealed before it leaves your laptop.</span>
+    <div class="foot-base">© 2026 Keyline. Sealed before it leaves your laptop.</div>
   </div>
 </footer>
 
