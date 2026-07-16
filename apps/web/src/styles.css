@@ -587,6 +587,17 @@ select:focus { outline: none; border-color: var(--mint); box-shadow: 0 0 0 3px v
 }
 .step-hint { display: block; margin-top: 4px; }
 
+/* ---- CLI reference ---- */
+.cmd-lead { color: var(--muted); font-size: 14px; margin: -6px 0 16px; }
+.cmd-entry { padding: 14px 0; border-top: 1px solid var(--line); }
+.cmd-entry .code-box.small { margin: 0; width: fit-content; max-width: 100%; overflow-x: auto; }
+.cmd-what { color: var(--muted); font-size: 14px; margin-top: 8px; max-width: 68ch; }
+.cmd-flags { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.cmd-flags div { display: flex; gap: 12px; font-size: 13px; }
+.cmd-flags dt { color: var(--amber); flex: 0 0 210px; }
+.cmd-flags dd { color: var(--faint); margin: 0; }
+@media (max-width: 600px) { .cmd-flags div { flex-direction: column; gap: 1px; } .cmd-flags dt { flex: none; } }
+
 /* ---- states ---- */
 
 .placeholder {

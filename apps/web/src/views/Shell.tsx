@@ -11,6 +11,7 @@ import { Projects } from "./Projects.js";
 import { Members } from "./Members.js";
 import { Audit } from "./Audit.js";
 import { Settings } from "./Settings.js";
+import { Commands } from "./Commands.js";
 import { ThemeToggle } from "./ThemeToggle.js";
 
 interface Workspace {
@@ -40,6 +41,12 @@ const ICONS = {
       <circle cx="19" cy="19" r="1" fill="currentColor" stroke="none" />
     </svg>
   ),
+  CLI: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="2.5" y="4" width="19" height="16" rx="2.5" />
+      <path d="m7 9 3 3-3 3M12.5 15H17" />
+    </svg>
+  ),
   Settings: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="3" />
@@ -52,6 +59,7 @@ const SECTIONS = [
   { name: "Projects", lead: "Projects and environments in this workspace." },
   { name: "Members", lead: "Who has access, and to what." },
   { name: "Audit", lead: "Every read, write, and denied attempt." },
+  { name: "CLI", lead: "Every command, what it does, and the flags worth knowing." },
   { name: "Settings", lead: "Workspace and account settings." },
 ] as const;
 
@@ -135,6 +143,8 @@ export function Shell({ session, onSignOut }: { session: WebSession; onSignOut: 
             <Members session={session} />
           ) : section === "Audit" ? (
             <Audit session={session} />
+          ) : section === "CLI" ? (
+            <Commands />
           ) : (
             <Settings session={session} />
           )}
