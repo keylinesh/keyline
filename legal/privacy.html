@@ -63,6 +63,12 @@
   .foot-links a{color:var(--faint)}
   .foot-links a:hover{color:var(--ink)}
 </style>
+<!-- Privacy-friendly analytics by Plausible (cookieless, EU). Marketing site only; the dashboard has none. -->
+<script async src="https://plausible.io/js/pa-aTnvDgpWHSVj2mkPktIA5.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
 </head>
 <body>
 <header><div class="wrap"><a class="brand" href="/"><span class="mk">k_</span> Keyline</a></div></header>
@@ -89,7 +95,7 @@
   <p>Paid plans are sold through <a href="https://www.paddle.com">Paddle</a>, our merchant of record. Paddle collects your payment and billing details under <a href="https://www.paddle.com/legal/privacy">its own privacy policy</a>. We never see your card number. From Paddle we receive subscription status and what's needed for accounting.</p>
 
   <h2>4. Cookies and analytics</h2>
-  <p>No tracking cookies. No ad tech. The dashboard keeps a short-lived session token in your browser's localStorage. If we add analytics to the marketing site it will be Plausible, which is cookieless, and we will update this page.</p>
+  <p>No tracking cookies. No ad tech. The dashboard keeps a short-lived session token in your browser's localStorage and has no analytics at all. The marketing site uses <a href="https://plausible.io">Plausible</a>, a cookieless, EU-hosted analytics service: aggregate page counts, no cookies, no personal profiles, no cross-site tracking.</p>
 
   <h2>5. Who processes data for us</h2>
   <ul>
@@ -98,6 +104,7 @@
     <li><strong>Paddle</strong> (payments, merchant of record)</li>
     <li><strong>Resend</strong> (transactional email: invitations, sign-in links)</li>
     <li><strong>Sentry</strong> (error monitoring, EU region, scrubbed before send)</li>
+    <li><strong>Plausible</strong> (cookieless site analytics, EU, marketing pages only)</li>
     <li><strong>Google Fonts</strong> (web fonts on this site, loaded from Google's servers)</li>
   </ul>
   <p>We do not sell your data. We share it only with the processors above, or if the law requires it. Business customers: our <a href="/dpa">Data Processing Agreement</a> covers this in GDPR terms.</p>
