@@ -69,7 +69,9 @@ export function memoryDeps(): AppDeps {
     return cfg ? new ResendEmailSender(cfg) : null;
   })();
   const subscriptions = new InMemorySubscriptionRepo();
-  const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
+  const webhookSecret =
+    (process.env.PADDLE_ENV === "live" && process.env.PADDLE_LIVE_WEBHOOK_SECRET) ||
+    process.env.PADDLE_WEBHOOK_SECRET;
   return {
     tokens,
     login,
@@ -134,7 +136,9 @@ export function pgDeps(pool: Pool): AppDeps {
     return cfg ? new ResendEmailSender(cfg) : null;
   })();
   const subscriptions = new PgSubscriptionRepo(pool);
-  const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
+  const webhookSecret =
+    (process.env.PADDLE_ENV === "live" && process.env.PADDLE_LIVE_WEBHOOK_SECRET) ||
+    process.env.PADDLE_WEBHOOK_SECRET;
   return {
     tokens,
     login,
