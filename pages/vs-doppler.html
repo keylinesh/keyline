@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyline vs Doppler: an honest comparison</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="description" content="Doppler is the mature enterprise choice. Keyline is zero-knowledge, .env native, and $19 flat for small teams. An honest comparison, including when to pick Doppler.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://keyline.sh/vs/doppler">
+<style>
+/* Self-hosted fonts, latin subset, one VARIABLE woff2 per family (Google served
+   identical bytes for every weight). Kills the render-blocking
+   fonts.googleapis.com chain flagged by PageSpeed. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 500 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(/fonts/bricolage-grotesque-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(/fonts/hanken-grotesk-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(/fonts/jetbrains-mono-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+  :root{--bg:#0a0b0d;--ink:#e9ebee;--muted:#878d97;--faint:#5b616b;--line:rgba(255,255,255,.08);--mint:#5eead4;--amber:#fbbf77;--red:#f0816b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:22px 0}
+  .brand{font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
+  .brand .mk{color:var(--mint);font-family:'JetBrains Mono'}
+  main{padding:56px 0 40px}
+  h1{font-family:'Bricolage Grotesque';font-size:38px;line-height:1.12;margin-bottom:12px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:18px;margin-bottom:40px;max-width:60ch}
+  h2{font-family:'Bricolage Grotesque';font-size:22px;margin:40px 0 12px}
+  p,ul,ol{color:var(--muted);margin-bottom:14px}
+  ul,ol{padding-left:22px}
+  li{margin-bottom:7px}
+  strong{color:var(--ink);font-weight:600}
+  a{color:var(--mint);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:'JetBrains Mono';font-size:14px;color:var(--amber)}
+  table{width:100%;border-collapse:collapse;margin:18px 0 8px;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+  th{color:var(--ink);font-weight:600;font-size:13.5px}
+  td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+  .good{color:var(--mint)}
+  .meh{color:var(--faint)}
+  .verdict{border:1px solid var(--line);border-left:3px solid var(--mint);border-radius:10px;padding:16px 20px;margin:26px 0;color:var(--muted)}
+  .verdict b{color:var(--ink)}
+  .cta{margin:44px 0 10px;border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;background:linear-gradient(180deg,#10141a,#0d1015)}
+  .cta h2{margin-top:0}
+  .cta .cmd{display:inline-block;font-family:'JetBrains Mono';font-size:14px;background:#0a0c0f;border:1px solid var(--line);border-radius:8px;padding:10px 16px;margin:12px 0;color:var(--ink)}
+  .cta .cmd .pr{color:var(--mint)}
+  .btn{display:inline-block;background:var(--mint);color:#06251f;font-weight:600;padding:11px 22px;border-radius:10px;margin-top:8px}
+  .btn:hover{text-decoration:none;opacity:.9}
+  .note{color:var(--faint);font-size:13px;margin-top:10px}
+  footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:14px;margin-top:40px}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .foot-links a{color:var(--faint)}
+  .foot-links a:hover{color:var(--ink)}
+  .table-scroll{overflow-x:auto}
+  @media (max-width:640px){h1{font-size:30px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/"><span class="mk">k_</span> Keyline</a></div></header>
+<main class="wrap">
+  <h1>Keyline vs Doppler</h1>
+  <p class="sub">An honest comparison from the smaller product. Doppler is excellent software. It is also more product than a small team usually needs, and it can read your secrets. Here is where each one fits.</p>
+
+  <h2>The short version</h2>
+  <div class="verdict"><b>Choose Doppler</b> if you are 30+ engineers, need SSO/SCIM, dozens of native integrations, and dynamic secrets. It is the mature enterprise choice.</div>
+  <div class="verdict"><b>Choose Keyline</b> if you are 2 to 10 people sharing .env files today. Setup is two minutes, the price is $19 flat, and our servers cannot read your secrets even if we wanted to.</div>
+
+  <h2>Side by side</h2>
+  <div class="table-scroll"><table>
+    <tr><th></th><th>Keyline</th><th>Doppler</th></tr>
+    <tr><td>Built for</td><td>2 to 10 person teams</td><td>Startups through enterprise</td></tr>
+    <tr><td>Encryption model</td><td><span class="good">Zero-knowledge.</span> Secrets are encrypted on your machine. The server stores ciphertext it cannot decrypt</td><td>Encrypted at rest and in transit. The service can decrypt your secrets to run its features</td></tr>
+    <tr><td>A breach of the vendor</td><td>Attackers get ciphertext</td><td>Depends on the layers around the decryption keys</td></tr>
+    <tr><td>Pricing</td><td>$19 flat for the whole team</td><td>Per seat. Grows with headcount</td></tr>
+    <tr><td>Setup</td><td>Two minutes: install, login, link, push</td><td>Quick start, more concepts to learn</td></tr>
+    <tr><td>Workflow</td><td>.env native: push and pull the format you already use</td><td>Own dashboard-first model, many sync targets</td></tr>
+    <tr><td>Integrations</td><td>Anything that reads environment variables, plus <code>keyline run</code></td><td><span class="good">Dozens of native syncs</span> (AWS, GCP, Vercel, K8s...)</td></tr>
+    <tr><td>Audit log</td><td>Hash-chained and <a href="https://gitlab.com/resim.boyadzhiev/keyline-anchors">anchored in a public repo</a>: history rewrites are provable, even by us</td><td>Access logs on higher tiers</td></tr>
+    <tr><td>SSO / SCIM</td><td>Not yet. Device keys instead of passwords</td><td><span class="good">Yes, on enterprise tiers</span></td></tr>
+    <tr><td>Source</td><td><a href="https://gitlab.com/resim.boyadzhiev/keyline">Public</a>, including the <a href="/security">encryption design</a></td><td>Closed</td></tr>
+  </table></div>
+
+  <h2>The real difference: who can read your secrets</h2>
+  <p>Most secret managers, Doppler included, decrypt your secrets server-side to power their features. That is a legitimate design and it enables things Keyline deliberately does not do. It also means their infrastructure, their employees under compulsion, and anyone who fully compromises them can reach plaintext.</p>
+  <p>Keyline made the opposite trade. Encryption happens on your laptop with keys we never receive. We cannot read your secrets, leak them, or be forced to hand them over. The cost is honest: no server-side integrations, values live in your CLI, and the dashboard shows metadata only. For a small team sharing .env files, that trade is usually free.</p>
+
+  <h2>Migrating takes one push</h2>
+  <ol>
+    <li>Export from Doppler: <code>doppler secrets download --no-file --format env &gt; .env</code></li>
+    <li>Install Keyline and push: <code>keyline link && keyline push</code></li>
+    <li>Teammates run <code>keyline pull</code>. Done. Your app code does not change.</li>
+  </ol>
+<div class="cta">
+    <h2>Two minutes to the first encrypted push</h2>
+    <div class="cmd"><span class="pr">$</span> curl -fsSL keyline.sh/install | sh</div>
+    <p>Solo is free forever. Team is $19 flat for up to 10 people, 14-day trial.</p>
+    <a class="btn" href="/#how">See the whole journey</a>
+    <p class="note">No card for Solo. Your secrets are encrypted before they leave your laptop.</p>
+  </div>
+</main>
+<footer><div class="wrap">
+  <div class="foot-links"><a href="/">keyline.sh</a><a href="/security">Security</a><a href="/vs/doppler">vs Doppler</a><a href="/vs/sharing-env-in-slack">vs Slack sharing</a><a href="/open">Open company</a></div>
+  <span>© 2026 Keyline. Sealed before it leaves your laptop.</span>
+</div></footer>
+</body>
+</html>

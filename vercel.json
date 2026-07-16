@@ -13,6 +13,18 @@
       "destination": "/install.sh"
     },
     {
+      "source": "/open",
+      "destination": "/open.html"
+    },
+    {
+      "source": "/vs/sharing-env-in-slack",
+      "destination": "/vs-sharing-env-in-slack.html"
+    },
+    {
+      "source": "/vs/doppler",
+      "destination": "/vs-doppler.html"
+    },
+    {
       "source": "/security",
       "destination": "/security.html"
     },
