@@ -439,12 +439,13 @@
   .wl-msg.err{color:#ff6b6b}
   .wl-close{float:right;background:none;border:none;color:var(--faint,#8a93a6);font-size:20px;cursor:pointer;line-height:1;margin:-6px -6px 0 0}
 </style>
-<!--
-  Privacy-friendly analytics (Plausible, no cookies, GDPR-friendly).
-  To enable: create a site at plausible.io, then uncomment and set data-domain.
-  Custom events (waitlist_open / waitlist_signup) already fire via window.plausible().
--->
-<!-- <script defer data-domain="keyline.sh" src="https://plausible.io/js/script.tagged-events.js"></script> -->
+<!-- Privacy-friendly analytics by Plausible (cookieless, EU). Marketing site only; the dashboard has none.
+     Custom events: waitlist_open / waitlist_signup / install_copy. -->
+<script async src="https://plausible.io/js/pa-aTnvDgpWHSVj2mkPktIA5.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
 <!--
   Vercel Web Analytics (static-site method). Enable Web Analytics for the project
   in the Vercel dashboard, then redeploy. Vercel serves /_vercel/insights/script.js
@@ -1015,6 +1016,7 @@
   // Copy install
   const copy = document.getElementById('copy');
   copy.addEventListener('click', ()=>{
+    window.plausible && plausible('install_copy');
     const txt = 'curl -fsSL keyline.sh/install | sh';
     const lbl = document.getElementById('cpLabel');
     navigator.clipboard?.writeText(txt).then(()=>{
