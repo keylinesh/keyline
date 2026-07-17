@@ -25,7 +25,15 @@ export interface PlanLimits {
 
 export const PLAN_LIMITS: Record<WorkspacePlan, PlanLimits> = {
   solo: { maxMembers: 1, maxEnvironments: 2, auditRetentionDays: 7 },
+  team_free: { maxMembers: 3, maxEnvironments: null, auditRetentionDays: 30 },
   team: { maxMembers: 10, maxEnvironments: null, auditRetentionDays: null },
+};
+
+/** The paywall speaks here: every denial names the next step and the price. */
+const MEMBER_UPGRADE: Record<WorkspacePlan, string> = {
+  solo: "Switch to Team Free (still $0, up to 3 members) in the dashboard: Settings.",
+  team_free: "Upgrade to Team ($19/mo flat, up to 10) in the dashboard: Settings.",
+  team: "Team includes up to 10 members. For more, email support@keyline.sh.",
 };
 
 export type EntitlementDecision =
@@ -62,10 +70,9 @@ export class EntitlementsService {
     if (limits.maxMembers === null) return { allowed: true };
     const current = (await this.members.listByWorkspace(workspaceId)).length;
     if (current < limits.maxMembers) return { allowed: true };
-    const upgrade =
-      plan === "solo" ? "Upgrade to Team for up to 10 members." : "Contact us for more seats.";
+    const planName = plan === "team_free" ? "Team Free" : plan === "team" ? "Team" : "Solo";
     return deny(
-      `The ${plan} plan includes ${limits.maxMembers} member${limits.maxMembers === 1 ? "" : "s"}. ${upgrade}`,
+      `${planName} includes ${limits.maxMembers} member${limits.maxMembers === 1 ? "" : "s"}. ${MEMBER_UPGRADE[plan]}`,
       plan,
       limits.maxMembers,
       current,

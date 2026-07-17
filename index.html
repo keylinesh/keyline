@@ -44,6 +44,7 @@
   "description": "Zero-knowledge secrets manager for small dev teams. Share .env files with one command, control access per environment, and audit every change. Encrypted client-side.",
   "offers": [
     { "@type": "Offer", "name": "Solo", "price": "0", "priceCurrency": "USD" },
+    { "@type": "Offer", "name": "Team Free", "price": "0", "priceCurrency": "USD" },
     { "@type": "Offer", "name": "Team", "price": "19", "priceCurrency": "USD" }
   ]
 }
@@ -59,6 +60,11 @@
       "@type": "Question",
       "name": "If it's zero-knowledge, what happens if we lose our key?",
       "acceptedAnswer": { "@type": "Answer", "text": "Your workspace key is recoverable through any active admin's device, and we offer an optional sealed recovery file you store yourself. We genuinely can't reset it for you. That's the whole point. Recovery stays in your hands." }
+    },
+    {
+      "@type": "Question",
+      "name": "Why is Team Free actually free?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Secrets managers are trust products. We'd rather you verify us with real usage first: three people, real projects, the full product. You pay when the team gets serious: more than 3 members, or unlimited audit history." }
     },
     {
       "@type": "Question",
@@ -372,7 +378,7 @@
 
   /* pricing */
   .price{background:linear-gradient(180deg,transparent,rgba(94,234,212,.03));border-top:1px solid var(--line)}
-  .cards{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;margin-top:54px;max-width:840px}
+  .cards{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:22px;margin-top:54px;max-width:1080px}
   .card{background:var(--bg-card);border:1px solid var(--line);border-radius:18px;padding:34px 32px;position:relative}
   .card.feature{border-color:rgba(94,234,212,.35);box-shadow:0 0 0 1px rgba(94,234,212,.1),0 40px 90px -50px rgba(94,234,212,.4)}
   .card .tier{font-family:'JetBrains Mono';font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
@@ -808,18 +814,30 @@
         <a class="btn btn-ghost" href="/app">Sign up free</a>
       </div>
       <div class="card feature rv">
-        <span class="ribbon">FOR TEAMS</span>
-        <div class="tier">Team</div>
-        <div class="amt">$19<small> /month, flat</small></div>
-        <div class="who">For 2–10 person teams that share secrets daily.</div>
+        <span class="ribbon">START HERE</span>
+        <div class="tier">Team Free</div>
+        <div class="amt">$0<small> · no card</small></div>
+        <div class="who">Try it with your whole (small) team.</div>
         <ul>
-          <li><span class="ck">✓</span> <b style="font-weight:600">Up to 10 members</b> <span>· no per-seat fees</span></li>
+          <li><span class="ck">✓</span> <b style="font-weight:600">Up to 3 members</b></li>
           <li><span class="ck">✓</span> Unlimited environments & projects</li>
           <li><span class="ck">✓</span> Per-environment access control</li>
-          <li><span class="ck">✓</span> Unlimited, exportable audit log</li>
-          <li><span class="ck">✓</span> Instant revoke, rotate & SSO-ready</li>
+          <li><span class="ck">✓</span> Instant revoke & rotate</li>
+          <li><span class="ck">✓</span> 30-day audit history</li>
         </ul>
         <a class="btn btn-primary" href="/app">Sign up</a>
+      </div>
+      <div class="card rv">
+        <div class="tier">Team</div>
+        <div class="amt">$19<small> /month, flat</small></div>
+        <div class="who">For teams that got serious. No per-seat math.</div>
+        <ul>
+          <li><span class="ck">✓</span> <b style="font-weight:600">Up to 10 members</b> <span>· no per-seat fees</span></li>
+          <li><span class="ck">✓</span> Everything in Team Free</li>
+          <li><span class="ck">✓</span> Unlimited, exportable audit history</li>
+          <li><span class="ck">✓</span> 14-day free trial</li>
+        </ul>
+        <a class="btn btn-ghost" href="/app">Start the trial</a>
       </div>
     </div>
   </div>
@@ -832,6 +850,7 @@
     <h2>The things you're right to ask.</h2>
     <div class="faq">
       <div class="q rv"><h4>If it's zero-knowledge, what happens if we lose our key?</h4><p>Your workspace key is recoverable through any active admin's device, and we offer an optional sealed recovery file you store yourself. We genuinely can't reset it for you. That's the whole point. Recovery stays in your hands.</p></div>
+      <div class="q rv"><h4>Why is Team Free actually free?</h4><p>Secrets managers are trust products. We'd rather you verify us with real usage first: three people, real projects, the full product. You pay when the team gets serious: more than 3 members, or unlimited audit history.</p></div>
       <div class="q rv"><h4>Do I really not have to change my app code?</h4><p>Correct, with one honest caveat: instead of a committed <code>.env</code>, your team runs <code>keyline pull</code> (or wraps startup in <code>keyline run</code>). Your app still just reads environment variables. Nothing in your codebase changes.</p></div>
       <div class="q rv"><h4>How is this different from Doppler or Vault?</h4><p>Those are powerful and can feel heavy for a 3-person team. Keyline is deliberately narrow: <code>.env</code>-native, one flat price, zero-knowledge, and nothing to configure. If you outgrow simple, they're great. We won't pretend otherwise.</p></div>
       <div class="q rv"><h4>What's your security posture?</h4><p>Client-side AES-256 encryption, TLS everywhere, scoped access tokens, and a tamper-evident audit trail anchored publicly every day. Our encryption design is public so you can verify the claims, not trust them. SOC 2 readiness is underway. Full details at keyline.sh/security.</p></div>
