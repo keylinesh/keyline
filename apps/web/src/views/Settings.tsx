@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { explainError, request } from "../api.js";
 import { isAdmin, type WebSession } from "../session.js";
-import { getWorkspace, renameWorkspace, type Workspace } from "../resources.js";
+import { getWorkspace, renameWorkspace, switchFreePlan, type Workspace } from "../resources.js";
 import { listMembers, type Member } from "../members.js";
 import {
   createPortalSession,
@@ -214,6 +214,8 @@ function BillingCard({
   }, [config, session.workspaceId, email, awaitUpgrade]);
 
   const team = workspace.plan === "team";
+  const planLabel =
+    workspace.plan === "team" ? "Team · $19/mo" : workspace.plan === "team_free" ? "Team Free · $0" : "Solo · $0";
   return (
     <div className="res-card">
       <h3 className="card-title">Billing</h3>
@@ -221,7 +223,7 @@ function BillingCard({
       <div className="kv">
         <span className="k">plan</span>
         <span>
-          <span className="status-pill active">{team ? "Team · $19/mo" : "Solo · $0"}</span>
+          <span className="status-pill active">{planLabel}</span>
         </span>
       </div>
       {team ? (
@@ -271,16 +273,32 @@ function BillingCard({
       ) : (
         <>
           <p className="hint" style={{ marginTop: 10 }}>
-            Team is $19 flat for up to 10 members: unlimited environments, per-environment access,
-            full audit history. 14-day free trial.
+            {workspace.plan === "team_free"
+              ? "Team Free: up to 3 members, unlimited environments, 30-day audit history. Team is $19 flat for up to 10 members with unlimited, exportable history. 14-day free trial."
+              : "Solo: just you, 2 environments, 7-day audit history. Team Free is $0 for up to 3 members. Team is $19 flat for up to 10. 14-day free trial."}
           </p>
           {admin ? (
             config === "unavailable" ? (
               <p className="hint">Billing isn't configured in this environment.</p>
             ) : (
-              <button className="btn primary" style={{ marginTop: 10 }} disabled={config === null} onClick={() => void upgrade()}>
-                Upgrade to Team
-              </button>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 10 }}>
+                {workspace.plan === "solo" && (
+                  <button
+                    className="btn"
+                    data-tip="Still $0. Up to 3 members, unlimited environments."
+                    onClick={() =>
+                      void switchFreePlan(session, "team_free")
+                        .then(() => window.location.reload())
+                        .catch((err: unknown) => setError(explainError(err)))
+                    }
+                  >
+                    Switch to Team Free · $0
+                  </button>
+                )}
+                <button className="btn primary" disabled={config === null} onClick={() => void upgrade()}>
+                  Upgrade to Team
+                </button>
+              </div>
             )
           ) : (
             <p className="hint">Ask an owner or admin to upgrade.</p>

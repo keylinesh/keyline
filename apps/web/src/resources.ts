@@ -23,7 +23,7 @@ export interface Environment {
 export interface Workspace {
   id: string;
   name: string;
-  plan: "solo" | "team";
+  plan: "solo" | "team_free" | "team";
 }
 
 /** lowercase, hyphen-separated slug (same rules as the CLI). */
@@ -38,6 +38,16 @@ const auth = (s: WebSession) => ({ token: s.token });
 
 export function getWorkspace(s: WebSession): Promise<Workspace> {
   return request<Workspace>("GET", `/v1/workspaces/${s.workspaceId}`, auth(s));
+}
+
+export function switchFreePlan(
+  s: WebSession,
+  plan: "solo" | "team_free",
+): Promise<Workspace> {
+  return request<Workspace>("PATCH", `/v1/workspaces/${s.workspaceId}/plan`, {
+    ...auth(s),
+    body: { plan },
+  });
 }
 
 export function renameWorkspace(s: WebSession, name: string): Promise<Workspace> {
