@@ -1,5 +1,9 @@
 # Keyline
 
+[![npm](https://img.shields.io/npm/v/%40keylinesh%2Fcli?color=5eead4&label=npm)](https://www.npmjs.com/package/@keylinesh/cli)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![site](https://img.shields.io/badge/keyline.sh-live-0d9488)](https://keyline.sh)
+
 **Share `.env` files with one command. Encrypted so even we can't read them.**
 
 > We host your secrets. We can't read them.
@@ -74,7 +78,7 @@ pnpm test         # run tests
 curl -fsSL keyline.sh/install | sh      # or: npm i -g @keylinesh/cli
 ```
 
-Homebrew: `brew tap keyline/keyline https://gitlab.com/resim.boyadzhiev/homebrew-keyline && brew install keyline`.
+Homebrew: `brew tap keyline/keyline https://github.com/keylinesh/homebrew-keyline && brew install keyline`.
 
 ## Project status
 
@@ -94,3 +98,18 @@ Docs: [encryption design](docs/encryption-design.md) · [API reference](docs/api
 ## License
 
 TBD.
+
+
+## Where things live
+
+- **This repo (GitHub)**: the public home. Stars, issues, and the source.
+- **[GitLab](https://gitlab.com/resim.boyadzhiev/keyline)**: CI and merge requests (development happens here; GitHub mirrors main).
+- **[Public audit anchors](https://gitlab.com/resim.boyadzhiev/keyline-anchors)**: every workspace's audit chain head, witnessed daily. They stay on GitLab on purpose: a witness is only as good as its unbroken history.
+
+## Install
+
+```sh
+curl -fsSL https://keyline.sh/install | sh      # or:
+npm i -g @keylinesh/cli                          # or:
+brew tap keylinesh/keyline && brew install keyline
+```

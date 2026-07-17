@@ -18,7 +18,7 @@ Three things I think are worth your skepticism:
 1. Zero-knowledge for real: AES-256-GCM client-side, X25519 device keys,
    the server stores ciphertext it cannot decrypt. The design doc is
    public and I want it torn apart:
-   https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md
+   https://github.com/keylinesh/keyline/blob/main/docs/encryption-design.md
 
 2. The audit log is hash-chained AND anchored daily to a public repo, so
    if I ever rewrote history you could prove it:
