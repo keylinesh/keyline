@@ -121,10 +121,10 @@ mirror-github:
     - if: '$CI_COMMIT_BRANCH == "main" && $GITHUB_MIRROR_TOKEN'
   <<: *setup
   script:
-    - git push --force "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/keylinesh/keyline.git" "HEAD:main"
+    - git push --force "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/keylinesh/keyline.git" "HEAD:refs/heads/main"
     - git push --force --tags "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/keylinesh/keyline.git"
     - git clone --quiet https://gitlab.com/resim.boyadzhiev/homebrew-keyline.git /tmp/tap
-    - git -C /tmp/tap push --force "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/keylinesh/homebrew-keyline.git" "HEAD:main"
+    - git -C /tmp/tap push --force "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/keylinesh/homebrew-keyline.git" "HEAD:refs/heads/main"
 
 # Dependency audit (SOC 2 readiness, CC7 in docs/compliance/gap-assessment.md).
 # Runs on scheduled pipelines (weekly schedule set in GitLab UI) and can be
