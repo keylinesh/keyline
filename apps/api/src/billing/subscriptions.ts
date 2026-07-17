@@ -6,9 +6,7 @@
  *
  * Plan consequences live in PLAN_BY_SUBSCRIPTION_STATUS: past_due keeps team
  * (grace, while Paddle's dunning retries payment); paused and canceled drop
- * to team_free (never solo: a lapsed team keeps reading its secrets, only new
- * invites beyond 3 are blocked). Rows are upserted from webhook events,
- * guarded by occurred_at so
+ * to solo. Rows are upserted from webhook events, guarded by occurred_at so
  * out-of-order deliveries never regress newer state.
  */
 
@@ -30,8 +28,8 @@ export const PLAN_BY_SUBSCRIPTION_STATUS: Record<SubscriptionStatus, WorkspacePl
   trialing: "team",
   active: "team",
   past_due: "team", // grace: Paddle retries payment; downgrade happens on cancel
-  paused: "team_free",
-  canceled: "team_free",
+  paused: "solo",
+  canceled: "solo",
 };
 
 export interface WorkspaceSubscription {

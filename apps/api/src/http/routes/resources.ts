@@ -17,7 +17,6 @@ import type {
   Workspace,
   WorkspaceRepo,
 } from "../../domain/resources.js";
-import type { AuditService } from "../../domain/audit.js";
 import type { EntitlementsService } from "../../domain/entitlements.js";
 import { type AppEnv, requireRole, requireWorkspace } from "../authz.js";
 import { conflict, notFound, planLimit } from "../errors.js";
@@ -28,7 +27,6 @@ export interface ResourceDeps {
   projects: ProjectRepo;
   environments: EnvironmentRepo;
   entitlements: EntitlementsService;
-  audit: AuditService;
 }
 
 const name = z.string().min(1).max(120);
@@ -74,7 +72,7 @@ export function registerResourceRoutes(
   deps: ResourceDeps,
   auth: MiddlewareHandler<AppEnv>,
 ): void {
-  const { workspaces, projects, environments, entitlements, audit } = deps;
+  const { workspaces, projects, environments, entitlements } = deps;
 
   // Load a project and assert the caller's token covers its workspace.
   async function loadProject(c: Context<AppEnv>, id: string) {
@@ -122,34 +120,6 @@ export function registerResourceRoutes(
     const w = await workspaces.update(id, patch);
     if (!w) throw notFound("workspace not found");
     return c.json(wsView(w));
-  });
-
-  // Free self-serve plan switch (M7 #87): solo <-> team_free only. Paid
-  // transitions happen exclusively through billing webhooks/reconciliation,
-  // so this endpoint can never grant what wasn't paid for.
-  app.patch("/v1/workspaces/:id/plan", auth, async (c) => {
-    const id = c.req.param("id");
-    const principal = c.get("principal");
-    requireWorkspace(principal, id);
-    requireRole(principal, "owner");
-    const { plan } = await parseBody(c, z.object({ plan: z.enum(["solo", "team_free"]) }));
-    const current = await workspaces.findById(id);
-    if (!current) throw notFound("workspace not found");
-    if (current.plan === "team") {
-      throw conflict("Team is a paid plan. Manage it in billing, not here.");
-    }
-    const w = await workspaces.update(id, { plan });
-    await audit.record({
-      workspaceId: id,
-      actorMemberId: principal.memberId,
-      actorDeviceId: principal.deviceId,
-      action: "plan.change",
-      targetType: "workspace",
-      targetId: id,
-      outcome: "allowed",
-      metadata: { from: current.plan, to: plan },
-    });
-    return c.json(wsView(w!));
   });
 
   app.delete("/v1/workspaces/:id", auth, async (c) => {

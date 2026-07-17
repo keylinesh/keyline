@@ -7,7 +7,7 @@
  */
 
 /** Set by the billing layer only (M5); limits per plan live in entitlements.ts. */
-export type WorkspacePlan = "solo" | "team_free" | "team";
+export type WorkspacePlan = "solo" | "team";
 
 export interface Workspace {
   id: string;

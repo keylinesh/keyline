@@ -69,7 +69,7 @@ test("subscription.activated flips the workspace to team and audits it", async (
   assert.equal(change!.metadata.previousPlan, "solo");
 });
 
-test("subscription.canceled drops the workspace back to team_free", async () => {
+test("subscription.canceled drops the workspace back to solo", async () => {
   const { deps, ws, post, subscriptionEvent } = await setup();
   await deps.workspaces.update(ws.id, { plan: "team" });
 
@@ -80,7 +80,7 @@ test("subscription.canceled drops the workspace back to team_free", async () => 
   });
   const res = await post(body, sign(body));
   assert.equal((await readJson(res)).result, "applied");
-  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team_free");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
 });
 
 test("a retried delivery is acked but not re-applied", async () => {
@@ -169,20 +169,20 @@ test("past_due keeps team (grace) and records when it started; cancel then downg
 
   const cancel = lifecycleEvent(ws.id, "canceled", t(30));
   assert.equal((await readJson(await post(cancel, sign(cancel)))).result, "applied");
-  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team_free");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
   sub = await deps.subscriptions.findByWorkspace(ws.id);
   assert.equal(sub?.status, "canceled");
   assert.equal(sub?.pastDueSince, null);
 });
 
-test("paused drops to team_free; resuming restores team", async () => {
+test("paused drops to solo; resuming restores team", async () => {
   const { deps, ws, post } = await setup();
   const t = (m: number) => `2026-07-14T13:${String(m).padStart(2, "0")}:00Z`;
 
   await post(lifecycleEvent(ws.id, "active", t(1)), sign(lifecycleEvent(ws.id, "active", t(1))));
   const paused = lifecycleEvent(ws.id, "paused", t(5));
   await post(paused, sign(paused));
-  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team_free");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
 
   const resumed = lifecycleEvent(ws.id, "active", t(9));
   await post(resumed, sign(resumed));
@@ -223,13 +223,13 @@ test("an out-of-order older event never regresses newer state", async () => {
   const { deps, ws, post } = await setup();
   const cancel = lifecycleEvent(ws.id, "canceled", "2026-07-14T15:00:00Z");
   await post(cancel, sign(cancel));
-  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team_free");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
 
   // A delayed 'activated' from BEFORE the cancel arrives late: must be ignored.
   const stale = lifecycleEvent(ws.id, "active", "2026-07-14T14:00:00Z");
   const res = await readJson(await post(stale, sign(stale)));
   assert.equal(res.result, "ignored");
-  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team_free");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
   assert.equal((await deps.subscriptions.findByWorkspace(ws.id))?.status, "canceled");
 });
 
