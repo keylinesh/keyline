@@ -17,10 +17,10 @@ async function setup(plan: WorkspacePlan = "solo") {
     deviceId: "dev-a", memberId: "mem-a", scope: { workspaceId: ws.id, role: "admin" },
   })).token;
 
-  const req = (method: string, path: string, body?: unknown, token = adminTok) =>
+  const req = (method: string, path: string, body?: unknown) =>
     app.request(path, {
       method,
-      headers: { authorization: `Bearer ${token}`, ...(body ? { "content-type": "application/json" } : {}) },
+      headers: { authorization: `Bearer ${adminTok}`, ...(body ? { "content-type": "application/json" } : {}) },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
 
@@ -120,50 +120,4 @@ test("auditWindowStart is now minus 7 days on solo, null on team", async () => {
 
   await deps.workspaces.update(ws.id, { plan: "team" });
   assert.equal(await deps.entitlements.auditWindowStart(ws.id, now), null);
-});
-
-test("team_free allows 3 members, blocks the 4th with the paid upgrade message (#87)", async () => {
-  const { ws, req } = await setup("team_free");
-  for (let i = 0; i < 3; i++) {
-    const res = await req("POST", `/v1/workspaces/${ws.id}/members`, {
-      email: `m${i}@acme.test`, role: "member",
-    });
-    assert.equal(res.status, 201, `invite ${i + 1} allowed`);
-  }
-  const fourth = await req("POST", `/v1/workspaces/${ws.id}/members`, {
-    email: "m4@acme.test", role: "member",
-  });
-  assert.equal(fourth.status, 402);
-  const err = (await readJson(fourth)).error;
-  assert.equal(err.code, "plan_limit");
-  assert.match(err.message, /\$19/);
-  assert.deepEqual(err.details, { plan: "team_free", limit: 3, current: 3 });
-});
-
-test("team_free environments are unlimited, audit windows to 30 days", async () => {
-  const { deps, ws } = await setup("team_free");
-  const decision = await deps.entitlements.canCreateEnvironment(ws.id);
-  assert.deepEqual(decision, { allowed: true });
-  const { limits } = await deps.entitlements.limitsFor(ws.id);
-  assert.equal(limits.auditRetentionDays, 30);
-});
-
-test("the free plan switch: solo <-> team_free, owner only, paid stays locked (#87)", async () => {
-  const { deps, ws, req } = await setup("solo");
-  // owner flips solo -> team_free
-  const ownerTok = (await deps.tokens.issue({
-    deviceId: "dev-o", memberId: "mem-o", scope: { workspaceId: ws.id, role: "owner" },
-  })).token;
-  const flip = await req("PATCH", `/v1/workspaces/${ws.id}/plan`, { plan: "team_free" }, ownerTok);
-  assert.equal(flip.status, 200);
-  assert.equal((await readJson(flip)).plan, "team_free");
-
-  // admin (non-owner) cannot
-  const back = await req("PATCH", `/v1/workspaces/${ws.id}/plan`, { plan: "solo" });
-  assert.equal(back.status, 403);
-
-  // paid plan cannot be changed here
-  await deps.workspaces.update(ws.id, { plan: "team" });
-  const locked = await req("PATCH", `/v1/workspaces/${ws.id}/plan`, { plan: "solo" }, ownerTok);
-  assert.equal(locked.status, 409);
 });

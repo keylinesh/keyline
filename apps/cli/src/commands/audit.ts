@@ -47,8 +47,6 @@ export interface AuditResult {
   events: AuditEventRow[];
   total: number;
   env?: string;
-  /** Present when the plan windows history. */
-  retentionDays?: number | null;
 }
 
 export async function runAudit(deps: SyncDeps, input: AuditInput = {}): Promise<AuditResult> {
@@ -67,8 +65,8 @@ export async function runAudit(deps: SyncDeps, input: AuditInput = {}): Promise<
     }
   }
 
-  const [{ events, retentionDays }, { members }] = await Promise.all([
-    session.api.get<{ events: RawEvent[]; retentionDays?: number | null }>(
+  const [{ events }, { members }] = await Promise.all([
+    session.api.get<{ events: RawEvent[] }>(
       `/v1/workspaces/${session.account.workspaceId}/audit`,
     ),
     session.api.get<{ members: Array<{ id: string; email: string }> }>(
@@ -94,7 +92,6 @@ export async function runAudit(deps: SyncDeps, input: AuditInput = {}): Promise<
       metadata: e.metadata,
     })),
     total,
-    retentionDays,
     env: envFilter?.name,
   };
 }

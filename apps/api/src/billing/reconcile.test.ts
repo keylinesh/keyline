@@ -68,7 +68,7 @@ test("reconcile is a no-op when everything is in sync, and downgrades on cancele
     deps.subscriptions, deps.workspaces, deps.audit,
   ).run();
   assert.equal(drifted.healed, 1);
-  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "team_free");
+  assert.equal((await deps.workspaces.findById(ws.id))?.plan, "solo");
   assert.equal((await deps.subscriptions.findByWorkspace(ws.id))?.status, "canceled");
 });
 

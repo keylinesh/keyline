@@ -290,9 +290,6 @@ export function buildProgram(): Command {
       if (result.total > result.events.length) {
         console.log(`(${result.events.length} of ${result.total} — raise --limit to see more)`);
       }
-      if (result.retentionDays) {
-        console.log(`Showing the last ${result.retentionDays} days. Unlimited history on Team ($19/mo flat).`);
-      }
     });
 
   const members = program
