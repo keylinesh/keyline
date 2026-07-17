@@ -13,6 +13,30 @@
       "destination": "/install.sh"
     },
     {
+      "source": "/blog/audit-log-cant-lie",
+      "destination": "/blog-audit-log-cant-lie.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/blog.html"
+    },
+    {
+      "source": "/guides/share-env-files-with-team",
+      "destination": "/share-env-files-with-team.html"
+    },
+    {
+      "source": "/vs/dotenv-vault",
+      "destination": "/vs-dotenv-vault.html"
+    },
+    {
+      "source": "/vs/vault",
+      "destination": "/vs-vault.html"
+    },
+    {
+      "source": "/vs/infisical",
+      "destination": "/vs-infisical.html"
+    },
+    {
       "source": "/open",
       "destination": "/open.html"
     },
