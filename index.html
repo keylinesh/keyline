@@ -229,6 +229,12 @@
   .band-in{display:flex;align-items:center;justify-content:space-between;gap:30px;flex-wrap:wrap}
   .band b{font-family:'Bricolage Grotesque';color:var(--ink);font-size:clamp(22px,3vw,30px);font-weight:700;letter-spacing:-.02em}
   .band b .mint{color:var(--mint)}
+  .proof{display:flex;gap:9px;flex-wrap:wrap;max-width:560px;justify-content:flex-end}
+  .chip{font-family:'JetBrains Mono';font-size:12px;color:var(--muted);border:1px solid var(--line-2);border-radius:999px;padding:5px 13px;white-space:nowrap;transition:color .15s,border-color .15s}
+  a.chip{color:var(--mint-dim)}
+  a.chip:hover{color:var(--mint);border-color:var(--mint)}
+  @media (max-width:900px){.proof{justify-content:flex-start;max-width:none}}
+
   .band span{color:var(--faint);font-size:14px;font-family:'JetBrains Mono'}
 
   /* problem */
@@ -499,7 +505,13 @@
 <div class="band">
   <div class="wrap band-in">
     <b>We host your secrets. <span class="mint">We can't read them.</span></b>
-    <span>AES-256 · client-side encryption · audit everything</span>
+    <div class="proof">
+      <span class="chip">AES-256, sealed on your laptop</span>
+      <span class="chip">No passwords. Device keys</span>
+      <a class="chip" href="https://gitlab.com/resim.boyadzhiev/keyline-anchors">Audit log publicly witnessed</a>
+      <a class="chip" href="https://github.com/keylinesh/keyline">Source on GitHub</a>
+      <a class="chip" href="/security">Read the design</a>
+    </div>
   </div>
 </div>
 
