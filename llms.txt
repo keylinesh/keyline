@@ -16,9 +16,9 @@ keys); the design is public and verifiable rather than asserted.
 - [Security posture](https://keyline.sh/security): what our servers hold, the
   crypto primitives, the publicly anchored audit log, and how to report a
   vulnerability
-- [Encryption design](https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md):
+- [Encryption design](https://github.com/keylinesh/keyline/blob/main/docs/encryption-design.md):
   the full scheme with key hierarchy, threat model, and known trade-offs
-- [Source repository](https://gitlab.com/resim.boyadzhiev/keyline): the code
+- [Source repository](https://github.com/keylinesh/keyline): the code
   is public; read it, don't trust us
 - [Audit anchors](https://gitlab.com/resim.boyadzhiev/keyline-anchors): daily
   public witness of every workspace's audit chain head (hashes only)

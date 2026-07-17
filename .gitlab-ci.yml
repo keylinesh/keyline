@@ -111,6 +111,21 @@ load-test:
     - pnpm --filter @keylinesh/cli bundle
     - node scripts/load-test.mjs
 
+# Mirror to GitHub (public home for stars/trust; GitLab stays the dev
+# machine). Runs on every main pipeline; needs the GITHUB_MIRROR_TOKEN CI
+# variable (fine-grained, Contents read/write on the keylinesh org). Also
+# refreshes the Homebrew tap mirror from its GitLab source of truth.
+mirror-github:
+  stage: verify
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" && $GITHUB_MIRROR_TOKEN'
+  <<: *setup
+  script:
+    - git push --force "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/keylinesh/keyline.git" "HEAD:main"
+    - git push --force --tags "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/keylinesh/keyline.git"
+    - git clone --quiet https://gitlab.com/resim.boyadzhiev/homebrew-keyline.git /tmp/tap
+    - git -C /tmp/tap push --force "https://x-access-token:${GITHUB_MIRROR_TOKEN}@github.com/keylinesh/homebrew-keyline.git" "HEAD:main"
+
 # Dependency audit (SOC 2 readiness, CC7 in docs/compliance/gap-assessment.md).
 # Runs on scheduled pipelines (weekly schedule set in GitLab UI) and can be
 # started by hand. Gates on production dependencies; dev-chain advisories
