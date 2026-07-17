@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The audit log that can't lie, even to its owner · Keyline Engineering</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta name="theme-color" content="#0a0b0d">
+<meta name="description" content="How Keyline makes audit history tamper-evident with hash chains, then publishes chain heads to a public repo so even the vendor can't rewrite it. With the honest limits.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://keyline.sh/blog/audit-log-cant-lie">
+<style>
+/* Self-hosted fonts, latin subset, one VARIABLE woff2 per family (Google served
+   identical bytes for every weight). Kills the render-blocking
+   fonts.googleapis.com chain flagged by PageSpeed. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 500 800;
+  font-stretch: 100%;
+  font-display: swap;
+  src: url(/fonts/bricolage-grotesque-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(/fonts/hanken-grotesk-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(/fonts/jetbrains-mono-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+<style>
+  :root{--bg:#0a0b0d;--ink:#e9ebee;--muted:#878d97;--faint:#5b616b;--line:rgba(255,255,255,.08);--mint:#5eead4;--amber:#fbbf77;--red:#f0816b}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:'Hanken Grotesk',sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:840px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);padding:16px 0}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Bricolage Grotesque';font-weight:700;font-size:19px;color:var(--ink);text-decoration:none}
+  .brand .mk{width:28px;height:28px;border:1.5px solid var(--mint);border-radius:8px;display:grid;place-items:center;color:var(--mint);font-family:'JetBrains Mono';font-size:14px;font-weight:700;flex-shrink:0}
+  .brand:hover{text-decoration:none}
+  .hnav{display:flex;align-items:center;gap:20px;font-size:14.5px}
+  .hnav a{color:var(--muted)}
+  .hnav a:hover{color:var(--ink);text-decoration:none}
+  .hnav .hbtn{background:var(--mint);color:#06251f;font-weight:600;padding:7px 15px;border-radius:9px}
+  .hnav .hbtn:hover{opacity:.9}
+  @media (max-width:560px){.hnav a:not(.hbtn){display:none}}
+  main.wrap{padding:56px 24px 40px}
+  h1{font-family:'Bricolage Grotesque';font-size:38px;line-height:1.12;margin-bottom:12px;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:18px;margin-bottom:40px;max-width:60ch}
+  h2{font-family:'Bricolage Grotesque';font-size:22px;margin:40px 0 12px}
+  p,ul,ol{color:var(--muted);margin-bottom:14px}
+  ul,ol{padding-left:22px}
+  li{margin-bottom:7px}
+  strong{color:var(--ink);font-weight:600}
+  a{color:var(--mint);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code{font-family:'JetBrains Mono';font-size:14px;color:var(--amber)}
+  table{width:100%;border-collapse:collapse;margin:18px 0 8px;font-size:14.5px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+  th{color:var(--ink);font-weight:600;font-size:13.5px}
+  td:first-child{color:var(--ink);font-weight:500;white-space:nowrap}
+  .good{color:var(--mint)}
+  .meh{color:var(--faint)}
+  .verdict{border:1px solid var(--line);border-left:3px solid var(--mint);border-radius:10px;padding:16px 20px;margin:26px 0;color:var(--muted)}
+  .verdict b{color:var(--ink)}
+  .cta{margin:44px 0 10px;border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;background:linear-gradient(180deg,#10141a,#0d1015)}
+  .cta h2{margin-top:0}
+  .cta .cmd{display:inline-block;font-family:'JetBrains Mono';font-size:14px;background:#0a0c0f;border:1px solid var(--line);border-radius:8px;padding:10px 16px;margin:12px 0;color:var(--ink)}
+  .cta .cmd .pr{color:var(--mint)}
+  .btn{display:inline-block;background:var(--mint);color:#06251f;font-weight:600;padding:11px 22px;border-radius:10px;margin-top:8px}
+  .btn:hover{text-decoration:none;opacity:.9}
+  .note{color:var(--faint);font-size:13px;margin-top:10px}
+  footer{border-top:1px solid var(--line);padding:30px 0 50px;color:var(--faint);font-size:14px;margin-top:40px}
+  .foot-links{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+  .foot-links a{color:var(--faint)}
+  .foot-links a:hover{color:var(--ink)}
+  .table-scroll{overflow-x:auto}
+  @media (max-width:640px){h1{font-size:30px}}
+</style>
+<!-- Privacy-friendly analytics by Plausible (cookieless, EU). Marketing site only; the dashboard has none. -->
+<script async src="https://plausible.io/js/pa-aTnvDgpWHSVj2mkPktIA5.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+</head>
+<body>
+<header><div class="wrap nav-in">
+  <a class="brand" href="/"><span class="mk">k_</span> Keyline</a>
+  <nav class="hnav">
+    <a href="/#how">How it works</a>
+    <a href="/#pricing">Pricing</a>
+    <a href="/security">Security</a>
+    <a class="hbtn" href="/app">Sign up / Sign in</a>
+  </nav>
+</div></header>
+<style>pre{background:#0a0c0f;border:1px solid var(--line);border-radius:10px;padding:16px 18px;font-family:'JetBrains Mono';font-size:13.5px;line-height:1.6;overflow-x:auto;color:var(--ink);margin:14px 0}pre .c{color:var(--faint)}pre .m{color:var(--mint)}pre .a{color:var(--amber)}.byline{color:var(--faint);font-size:14px;margin:-28px 0 36px}</style><main class="wrap">
+  <h1>The audit log that can't lie, even to its owner</h1>
+  <p class="byline">Engineering · July 2026 · by the person who could otherwise quietly edit it</p>
+  <p class="sub">Every SaaS says "we have audit logs". Almost none can answer the harder question: what stops YOU from rewriting them? Here is how Keyline makes its own audit history tamper-evident, and then puts the proof where we can't touch it.</p>
+
+  <h2>The problem with trusting the logger</h2>
+  <p>An audit log is a table the vendor writes to. The vendor can also UPDATE and DELETE. So "we log every access" really means "trust our ops discipline and our intentions, forever". For a secrets manager, where the log answers "who read the production credentials and when", that is not good enough. We wanted a design where a rewritten history is <strong>detectable by the customer</strong>, with no trust in us required.</p>
+
+  <h2>Layer 1: a hash chain</h2>
+  <p>Every audit event in a workspace carries a sequence number and a hash that covers both its own content and the previous event's hash:</p>
+  <pre><span class="c">// simplified from the actual implementation</span>
+hash(n) = SHA-256(
+  prev_hash(n-1)
+  || seq || action || actor || target || outcome
+  || metadata || created_at
+)</pre>
+  <p>Edit any historical event and its hash no longer matches. Delete one and the chain has a hole. Reorder and the links break. Verification walks the chain from genesis and either says "intact" or names the exact sequence number where history diverges. Anyone on the team can run it:</p>
+  <pre><span class="m">$</span> keyline audit --verify
+Chain intact: 1,204 events verified.</pre>
+
+  <h2>Layer 2: the attack a chain can't stop</h2>
+  <p>Here is the honest limit of hash chains, usually left out of marketing: the operator can rewrite the <em>whole</em> chain. Recompute every hash from the edited event forward, and the forged history is internally consistent. Verification passes. This is not theoretical; it is exactly what a compromised or compelled vendor would do.</p>
+  <p>You cannot fix this with more cryptography inside the same database. The chain's head has to leave the building.</p>
+
+  <h2>Layer 3: public anchoring</h2>
+  <p>Once a day, a job takes each workspace's current chain head (the latest hash) and publishes it to a <a href="https://gitlab.com/resim.boyadzhiev/keyline-anchors">public git repository</a>. Two details matter:</p>
+  <ul>
+    <li><strong>Privacy</strong>: the repo is keyed by SHA-256 of the workspace id and contains only hashes. The public learns nothing about who you are or what happened, only that a specific history existed at a specific time.</li>
+    <li><strong>Independence</strong>: git history on a public host is itself tamper-evident and widely mirrored. Rewriting our database is easy for us; rewriting yesterday's commit in a public repo without anyone noticing is not.</li>
+  </ul>
+  <p>Verification now checks both layers: the chain must be internally intact <em>and</em> its head must match the last published anchor:</p>
+  <pre><span class="m">$</span> keyline audit --verify --json
+{ "ok": true, "count": 1204, "anchor": { "matches": <span class="a">true</span> } }</pre>
+  <p>Now the wholesale rewrite fails: forged history either breaks the chain, or carries a head that contradicts a public record we cannot retract. The trust equation flips from "trust the vendor" to "catch the vendor".</p>
+
+  <h2>What this costs</h2>
+  <p>Honesty section. The anchor granularity is daily, so a same-day rewrite before anchoring is theoretically clean; we accept that window at our size (and events within the day are still chained). The anchors repo is a single public witness today; adding a second independent witness (a transparency log, a different host) is the obvious next step. And none of this protects the secrecy of your values; that is the job of the <a href="/security">zero-knowledge encryption layer</a>, where secrets are sealed on your machine before upload.</p>
+
+  <h2>Why bother, at three people?</h2>
+  <p>Because "we can't read your secrets and we can't rewrite your history" are claims a one-person company can make <em>verifiable</em>, and verifiability is the only currency a small vendor has. The design doc, the source, and the anchors are public. Read them, don't trust us.</p>
+  <p class="byline" style="margin-top:34px">Discuss: <a href="https://gitlab.com/resim.boyadzhiev/keyline">the source</a> · <a href="https://gitlab.com/resim.boyadzhiev/keyline/-/blob/main/docs/encryption-design.md">the encryption design</a> · support@keyline.sh</p>
+<div class="cta">
+    <h2>Two minutes to the first encrypted push</h2>
+    <div class="cmd"><span class="pr">$</span> curl -fsSL keyline.sh/install | sh</div>
+    <p>Solo is free forever. Team is $19 flat for up to 10 people, 14-day trial.</p>
+    <a class="btn" href="/#how">See the whole journey</a>
+    <p class="note">No card for Solo. Your secrets are encrypted before they leave your laptop.</p>
+  </div>
+</main>
+<footer><div class="wrap">
+  <div class="foot-links"><a href="/">keyline.sh</a><a href="/security">Security</a><a href="/vs/doppler">vs Doppler</a><a href="/vs/sharing-env-in-slack">vs Slack sharing</a><a href="/open">Open company</a></div>
+  <span>© 2026 Keyline. Sealed before it leaves your laptop.</span>
+</div></footer>
+</body>
+</html>
