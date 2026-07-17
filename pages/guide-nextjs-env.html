@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How to share .env files with your team (5 ways, honestly ranked)</title>
+<title>Next.js environment variables, done right for teams</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="theme-color" content="#0a0b0d">
-<meta name="description" content="Slack, password managers, encrypted files in git, secrets platforms, or purpose-built .env sharing: the honest trade-offs of each, plus the checklist that matters.">
+<meta name="description" content="Build-time vs runtime, the NEXT_PUBLIC_ trap, the four .env flavors, and how a team keeps .env.local in sync without pasting it in Slack.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://keyline.sh/guides/share-env-files-with-team">
+<link rel="canonical" href="https://keyline.sh/guides/nextjs-environment-variables">
 <style>
 /* Self-hosted fonts, latin subset, one VARIABLE woff2 per family (Google served
    identical bytes for every weight). Kills the render-blocking
@@ -105,33 +105,36 @@
     <a class="hbtn" href="/app">Sign up / Sign in</a>
   </nav>
 </div></header>
-<main class="wrap">
-  <h1>How to share .env files with your team</h1>
-  <p class="sub">Every team solves this eventually, usually badly, usually the week someone new joins. Here are the five ways it is actually done, from worst to best, with honest trade-offs.</p>
-  <h2>1. Slack, email, or DMs (most common, worst)</h2>
-  <p>Paste the file, move on with your day. The cost arrives later: chat messages never expire, they live in every export and backup, there is no revoke when someone leaves, and no record of who used what. A production credential in chat is a permanent copy you no longer control. If you take one thing from this page: <a href="/vs/sharing-env-in-slack">stop doing this</a>.</p>
-  <h2>2. A shared password manager note</h2>
-  <p>Better: encrypted at rest, some access control. But .env files are not passwords: they change often, they differ per environment, and pasting a 40-line file into a note field guarantees stale copies. Password managers also cannot answer "who pulled prod config last Tuesday".</p>
-  <h2>3. Encrypted files in the repo (SOPS, dotenv-vault, git-crypt)</h2>
-  <p>A genuinely good pattern for infra-as-code shops: secrets ride along with git history, encrypted with a shared key. The weakness is the shared key itself: distributing it needs a second channel, and revoking one person means rotating and redistributing for everyone. Fine for stable senior teams; painful with churn. <a href="/vs/dotenv-vault">Comparison here</a>.</p>
-  <h2>4. A secrets platform (Vault, Doppler, Infisical)</h2>
-  <p>The right answer at scale: dynamic secrets, integrations, SSO. The cost is setup and ongoing ownership, and in most hosted platforms the provider can technically read your secrets, since they decrypt server-side to power features. For a 4-person team this is a lot of machine for the job. <a href="/vs/doppler">When it is worth it</a>.</p>
-  <h2>5. Purpose-built encrypted .env sharing</h2>
-  <p>The narrow tool: keep the .env format, encrypt on the developer's machine, give each person their own key, revoke in one command, log every access. This is what Keyline does. Setup is one command per person and the server never sees plaintext, so a breach of the vendor is not a breach of you.</p>
+<style>pre{background:#0a0c0f;border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-family:'JetBrains Mono';font-size:13px;line-height:1.6;overflow-x:auto;color:var(--ink);margin:12px 0}pre .c{color:var(--faint)}pre .m{color:var(--mint)}</style><main class="wrap">
+  <h1>Next.js environment variables, done right for teams</h1>
+  <p class="sub">Next.js has more env rules than any other framework: build-time vs runtime, the NEXT_PUBLIC_ trap, four .env file flavors. Here is the working model, plus how a team keeps them in sync without pasting files in chat.</p>
+  <h2>The two-worlds model</h2>
+  <p>Every variable in Next.js lives in one of two worlds. <strong>Server-only</strong> variables (no prefix) exist only in Node: API keys, database URLs. <strong>Browser-exposed</strong> variables need the <code>NEXT_PUBLIC_</code> prefix and are <em>inlined into the JavaScript bundle at build time</em>. That second part bites everyone once:</p>
+  <ul>
+    <li><code>NEXT_PUBLIC_*</code> values are public. Anyone can read them in the shipped JS. Never prefix a secret to "make it work".</li>
+    <li>Because they inline at build time, changing one requires a rebuild, not a restart.</li>
+  </ul>
+  <h2>The file flavors, in load order</h2>
+  <pre>.env                <span class="c"># base, all environments</span>
+.env.development    <span class="c"># next dev</span>
+.env.production     <span class="c"># next build / next start</span>
+.env.local          <span class="c"># machine-local overrides, gitignored, wins over all</span></pre>
+  <p>The working convention: commit <code>.env</code> and the per-mode files with <strong>non-secret defaults only</strong>; every real secret lives in <code>.env.local</code>, which stays gitignored. Next.js loads them in that order automatically, no dotenv import needed.</p>
+  <h2>Where teams fall apart</h2>
+  <p>The rules above handle one machine. The team problem is that everyone's <code>.env.local</code> drifts: the new dev is missing three keys, staging points at prod Stripe, and nobody knows who has the current Redis URL. The usual fix is pasting the file in Slack, which is <a href="/vs/sharing-env-in-slack">its own disaster</a>.</p>
+  <p>The clean pattern: treat <code>.env.local</code> as a synced, encrypted artifact:</p>
+  <pre><span class="m">$</span> keyline link my-app --env dev
+<span class="m">$</span> keyline pull -f .env.local   <span class="c"># everyone gets the same, decrypted locally</span>
+<span class="m">$</span> keyline push -f .env.local   <span class="c"># after you add a key</span></pre>
+  <p>Per-environment scoping maps 1:1 to Next.js modes: a <code>dev</code> environment for <code>.env.local</code> in development, a <code>prod</code> one for the values your host needs. Interns get dev, never prod.</p>
+  <h2>Deploy targets</h2>
+  <p>On Vercel or similar, production env vars live in the host's dashboard; your job is keeping the TEAM's local and staging values coherent. One rule saves audits later: the person who rotates a key updates it in one place (the shared environment), and everyone else is one <code>pull</code> from current.</p>
   <h2>More guides</h2>
   <ul>
-    <li><a href="#">How to share .env files with your team</a></li>
+    <li><a href="/guides/share-env-files-with-team">How to share .env files with your team</a></li>
     <li><a href="/guides/nextjs-environment-variables">Next.js environment variables, done right for teams</a></li>
     <li><a href="/guides/dotenv-in-ci">.env in CI without leaking it</a></li>
     <li><a href="/guides/docker-env-secrets">Docker and .env: keeping secrets out of images</a></li>
-  </ul>
-  <h2>The checklist, whatever you pick</h2>
-  <ul>
-    <li><strong>Client-side encryption</strong>: can the vendor read your secrets? Ask, then verify.</li>
-    <li><strong>Per-person access</strong>: leavers must be revocable without re-keying the whole team.</li>
-    <li><strong>Per-environment scoping</strong>: new contributors get dev, not prod.</li>
-    <li><strong>An audit trail of reads</strong>, not just writes: leaks start with a read.</li>
-    <li><strong>No workflow change</strong>: if the tool fights your app's config format, nobody will use it.</li>
   </ul>
 <div class="cta">
     <h2>Two minutes to the first encrypted push</h2>

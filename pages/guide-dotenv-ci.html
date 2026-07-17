@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>How to share .env files with your team (5 ways, honestly ranked)</title>
+<title>.env in CI without leaking it</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="theme-color" content="#0a0b0d">
-<meta name="description" content="Slack, password managers, encrypted files in git, secrets platforms, or purpose-built .env sharing: the honest trade-offs of each, plus the checklist that matters.">
+<meta name="description" content="Scoped CI credentials, masked variables, no .env in repos or images, and runtime injection: the five rules that keep pipelines from leaking secrets.">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://keyline.sh/guides/share-env-files-with-team">
+<link rel="canonical" href="https://keyline.sh/guides/dotenv-in-ci">
 <style>
 /* Self-hosted fonts, latin subset, one VARIABLE woff2 per family (Google served
    identical bytes for every weight). Kills the render-blocking
@@ -105,33 +105,38 @@
     <a class="hbtn" href="/app">Sign up / Sign in</a>
   </nav>
 </div></header>
-<main class="wrap">
-  <h1>How to share .env files with your team</h1>
-  <p class="sub">Every team solves this eventually, usually badly, usually the week someone new joins. Here are the five ways it is actually done, from worst to best, with honest trade-offs.</p>
-  <h2>1. Slack, email, or DMs (most common, worst)</h2>
-  <p>Paste the file, move on with your day. The cost arrives later: chat messages never expire, they live in every export and backup, there is no revoke when someone leaves, and no record of who used what. A production credential in chat is a permanent copy you no longer control. If you take one thing from this page: <a href="/vs/sharing-env-in-slack">stop doing this</a>.</p>
-  <h2>2. A shared password manager note</h2>
-  <p>Better: encrypted at rest, some access control. But .env files are not passwords: they change often, they differ per environment, and pasting a 40-line file into a note field guarantees stale copies. Password managers also cannot answer "who pulled prod config last Tuesday".</p>
-  <h2>3. Encrypted files in the repo (SOPS, dotenv-vault, git-crypt)</h2>
-  <p>A genuinely good pattern for infra-as-code shops: secrets ride along with git history, encrypted with a shared key. The weakness is the shared key itself: distributing it needs a second channel, and revoking one person means rotating and redistributing for everyone. Fine for stable senior teams; painful with churn. <a href="/vs/dotenv-vault">Comparison here</a>.</p>
-  <h2>4. A secrets platform (Vault, Doppler, Infisical)</h2>
-  <p>The right answer at scale: dynamic secrets, integrations, SSO. The cost is setup and ongoing ownership, and in most hosted platforms the provider can technically read your secrets, since they decrypt server-side to power features. For a 4-person team this is a lot of machine for the job. <a href="/vs/doppler">When it is worth it</a>.</p>
-  <h2>5. Purpose-built encrypted .env sharing</h2>
-  <p>The narrow tool: keep the .env format, encrypt on the developer's machine, give each person their own key, revoke in one command, log every access. This is what Keyline does. Setup is one command per person and the server never sees plaintext, so a breach of the vendor is not a breach of you.</p>
+<style>pre{background:#0a0c0f;border:1px solid var(--line);border-radius:10px;padding:14px 16px;font-family:'JetBrains Mono';font-size:13px;line-height:1.6;overflow-x:auto;color:var(--ink);margin:12px 0}pre .c{color:var(--faint)}pre .m{color:var(--mint)}</style><main class="wrap">
+  <h1>.env in CI without leaking it</h1>
+  <p class="sub">CI is where secrets most often leak: echoed in logs, baked into artifacts, or committed "just for the pipeline". The rules are simple and mostly free.</p>
+  <h2>Rule 1: the pipeline gets its own secrets, not your .env</h2>
+  <p>Your local .env contains YOUR keys. CI should run with its own scoped credentials: a test database, a sandbox payment key, a deploy token with least privilege. When the pipeline is compromised (a malicious dependency, a leaked log), the blast radius is the CI keys, not production.</p>
+  <h2>Rule 2: use the platform's secret store, with masking</h2>
+  <p>GitHub Actions:</p>
+  <pre><span class="c"># Settings -> Secrets and variables -> Actions</span>
+env:
+  DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+  API_KEY: ${{ secrets.SANDBOX_API_KEY }}</pre>
+  <p>GitLab CI: Settings → CI/CD → Variables, and tick <strong>Masked</strong> (hides the value in job logs) and <strong>Protected</strong> (only protected branches see it). The masking matters: one stray <code>printenv</code> in a debug session otherwise publishes everything to whoever can read logs.</p>
+  <h2>Rule 3: never write the .env into the repo or the image</h2>
+  <p>The classic accidents: committing <code>.env.ci</code> "temporarily", or a Dockerfile with <code>COPY .env .</code> (<a href="/guides/docker-env-secrets">that one gets its own guide</a>). Both put plaintext secrets into places with long memories.</p>
+  <h2>Rule 4: inject at runtime, write nothing to disk</h2>
+  <p>For steps that genuinely need the shared team config (integration tests against a staging stack), inject variables into the process instead of materializing a file:</p>
+  <pre><span class="m">$</span> keyline run -- npm test   <span class="c"># secrets exist only in the child process env</span></pre>
+  <p>A scoped machine identity with read-only access to a <code>ci</code> environment beats a copy of a human's .env in every way: revocable, auditable, least-privilege.</p>
+  <h2>The checklist</h2>
+  <ul>
+    <li>CI has its own keys, never a human's</li>
+    <li>Masked + protected variables on the platform</li>
+    <li>No .env in the repo, no .env in images</li>
+    <li>Grep your job logs once for a known secret fragment; you'll be glad you did</li>
+    <li>Rotate CI keys when someone with CI access leaves</li>
+  </ul>
   <h2>More guides</h2>
   <ul>
-    <li><a href="#">How to share .env files with your team</a></li>
+    <li><a href="/guides/share-env-files-with-team">How to share .env files with your team</a></li>
     <li><a href="/guides/nextjs-environment-variables">Next.js environment variables, done right for teams</a></li>
     <li><a href="/guides/dotenv-in-ci">.env in CI without leaking it</a></li>
     <li><a href="/guides/docker-env-secrets">Docker and .env: keeping secrets out of images</a></li>
-  </ul>
-  <h2>The checklist, whatever you pick</h2>
-  <ul>
-    <li><strong>Client-side encryption</strong>: can the vendor read your secrets? Ask, then verify.</li>
-    <li><strong>Per-person access</strong>: leavers must be revocable without re-keying the whole team.</li>
-    <li><strong>Per-environment scoping</strong>: new contributors get dev, not prod.</li>
-    <li><strong>An audit trail of reads</strong>, not just writes: leaks start with a read.</li>
-    <li><strong>No workflow change</strong>: if the tool fights your app's config format, nobody will use it.</li>
   </ul>
 <div class="cta">
     <h2>Two minutes to the first encrypted push</h2>

@@ -13,6 +13,18 @@
       "destination": "/install.sh"
     },
     {
+      "source": "/guides/docker-env-secrets",
+      "destination": "/guide-docker-env.html"
+    },
+    {
+      "source": "/guides/dotenv-in-ci",
+      "destination": "/guide-dotenv-ci.html"
+    },
+    {
+      "source": "/guides/nextjs-environment-variables",
+      "destination": "/guide-nextjs-env.html"
+    },
+    {
       "source": "/blog/audit-log-cant-lie",
       "destination": "/blog-audit-log-cant-lie.html"
     },
