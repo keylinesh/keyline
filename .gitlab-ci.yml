@@ -117,6 +117,8 @@ load-test:
 # refreshes the Homebrew tap mirror from its GitLab source of truth.
 mirror-github:
   stage: verify
+  variables:
+    GIT_DEPTH: "0" # full clone: a shallow history cannot be pushed to an empty mirror
   rules:
     - if: '$CI_COMMIT_BRANCH == "main" && $GITHUB_MIRROR_TOKEN'
   <<: *setup
