@@ -37,6 +37,10 @@ export function GettingStarted({ session }: { session: WebSession }) {
           hint="or use the Members tab"
         />
       </ol>
+      <p className="hint" style={{ marginTop: 16 }}>
+        Prefer a human? <a className="founder-link" href="mailto:support@keyline.sh?subject=Founder%20onboarding%20%2815%20min%29&body=Hi%20Resi%2C%0A%0AI%27d%20like%20the%2015-minute%20setup%20call%20for%20my%20team.%0A%0ATeam%20size%3A%0AStack%3A%0AA%20few%20time%20slots%20that%20work%20for%20me%3A%0A">Book 15 minutes with the founder</a> and
+        I&apos;ll set it up with your team, live.
+      </p>
     </div>
   );
 }
