@@ -598,6 +598,8 @@ select:focus { outline: none; border-color: var(--mint); box-shadow: 0 0 0 3px v
 .cmd-flags dd { color: var(--faint); margin: 0; }
 @media (max-width: 600px) { .cmd-flags div { flex-direction: column; gap: 1px; } .cmd-flags dt { flex: none; } }
 
+.founder-link { color: var(--mint); text-decoration: underline; text-underline-offset: 3px; }
+
 /* ---- states ---- */
 
 .placeholder {
